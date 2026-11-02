@@ -34,7 +34,20 @@ export const PlanSchema = z.object({
   assumptions: z.array(z.string().max(200)).max(6).default([]),
   searches: z.array(PlannedSearchSchema).max(MAX_SEARCHES).default([]),
   question: z.string().max(300).nullable().default(null),
+  // True when the only thing stopping a search is not knowing where they fly from.
+  needsOrigin: z.boolean().default(false),
 });
+
+/** The traveller's saved trip defaults, as the planner sees them. */
+export type TripDefaults = { homeAirports: string[]; cabin: string; stops: string; adults: number; bags: number };
+
+export function describeDefaults(d: TripDefaults): string {
+  const home = d.homeAirports.length ? `home airports ${d.homeAirports.join(", ")}` : "no home airport saved";
+  const stops = d.stops === "ANY" ? "any number of stops" : d.stops === "0" ? "nonstop only" : `at most ${d.stops} stop${d.stops === "1" ? "" : "s"}`;
+  const people = `${d.adults} adult${d.adults === 1 ? "" : "s"}`;
+  const bags = `${d.bags} checked bag${d.bags === 1 ? "" : "s"}`;
+  return `${home}; ${d.cabin.toLowerCase().replace("_", " ")} cabin; ${stops}; ${people}; ${bags}`;
+}
 
 export type PlannedSearch = z.infer<typeof PlannedSearchSchema>;
 export type Plan = z.infer<typeof PlanSchema>;
@@ -97,9 +110,10 @@ Rules:
 - Airports are three-letter IATA codes. Pick the airports a local would consider.
 - Dates are YYYY-MM-DD and must be after today. Resolve phrases like "Thanksgiving week" or "next month" to real dates.
 - Each search should test a different idea. Do not repeat the same search.
-- If the request has no destination or no timeframe at all, return no searches and ask one short question.
+- Fill gaps yourself instead of asking. The origin comes from the request, else the search form, else their home airports. Cabin, travellers, bags and stops come from their saved defaults unless the request says otherwise. For anything else make a sensible assumption and list it in assumptions.
+- Ask only when you truly cannot search: no destination, no timeframe at all, or no origin anywhere (not in the request, the form or their home airports). Then return no searches and one short question. Set needsOrigin to true when the origin is the only thing missing.
 Reply with JSON only, no prose:
-{"understanding": "one sentence", "assumptions": ["..."], "question": null,
+{"understanding": "one sentence", "assumptions": ["..."], "question": null, "needsOrigin": false,
  "searches": [{"label": "short name", "why": "the idea this tests", "from": ["SFO"], "to": ["JFK"], "depart": "YYYY-MM-DD", "return": "YYYY-MM-DD or null", "cabin": "ECONOMY|PREMIUM_ECONOMY|BUSINESS|FIRST", "stops": "ANY|0|1|2", "adults": 1, "bags": 0, "nearby": true, "flexible": false}]}`;
 }
 

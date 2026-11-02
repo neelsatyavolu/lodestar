@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { itin, leg, slice } from "../test-fixtures";
-import { buildCandidates, describe as describeIt, extractJson, parseCanvas, parsePlan, planSystemPrompt, toQuery } from "./canvas";
+import { buildCandidates, describe as describeIt, describeDefaults, extractJson, parseCanvas, parsePlan, planSystemPrompt, toQuery } from "./canvas";
 
 const plan = (searches: unknown[]) => JSON.stringify({ understanding: "Bay Area to NYC", assumptions: [], question: null, searches });
 const search = { label: "Bay Area to NYC", from: ["sfo", "OAK"], to: ["JFK"], depart: "2026-12-10", return: "2026-12-15" };
@@ -31,6 +31,26 @@ describe("parsePlan", () => {
 
   it("mentions today in the system prompt", () => {
     expect(planSystemPrompt("2026-11-01")).toContain("2026-11-01");
+  });
+
+  it("flags a missing origin only when the model says so", () => {
+    expect(parsePlan(plan([search]), "2026-11-01").needsOrigin).toBe(false);
+    const asked = parsePlan(JSON.stringify({ understanding: "", question: "Where from?", needsOrigin: true, searches: [] }), "2026-11-01");
+    expect(asked).toMatchObject({ needsOrigin: true, searches: [] });
+  });
+
+  it("tells the model to fill gaps from saved defaults instead of asking", () => {
+    const prompt = planSystemPrompt("2026-11-01");
+    expect(prompt).toContain("needsOrigin");
+    expect(prompt).toMatch(/home airports/i);
+  });
+
+  it("describes saved defaults, including when there is no home airport", () => {
+    const withHome = describeDefaults({ homeAirports: ["SFO", "OAK"], cabin: "BUSINESS", stops: "ANY", adults: 2, bags: 1 });
+    expect(withHome).toContain("home airports SFO, OAK");
+    expect(withHome).toContain("2 adults");
+    expect(withHome).toContain("business");
+    expect(describeDefaults({ homeAirports: [], cabin: "ECONOMY", stops: "0", adults: 1, bags: 0 })).toContain("no home airport saved");
   });
 
   it("turns a planned search into a query", () => {

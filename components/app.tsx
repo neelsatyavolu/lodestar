@@ -428,18 +428,22 @@ export function App() {
             )}
         </div>
         <div hidden={mode !== "ai"}>
-          <section className="pt-16 sm:pt-24">
-            <div className="mb-10 max-w-4xl">
-              <h1 className="font-display text-[clamp(40px,7vw,76px)] tracking-[-0.02em]">
-                Say the trip.
-                <br />
-                <span className="text-charcoal">Get the shortlist.</span>
-              </h1>
-              <p className="mt-6 max-w-xl text-[18px] leading-relaxed text-body">
-                Your ChatGPT or Grok account plans several live searches at once (other airports, other days, other cabins), then lays the best options out with the reasons and the catches.
-              </p>
-            </div>
+          <section className="pt-10 sm:pt-16">
             <AiCanvas
+              intro={
+                <div className="mb-10 max-w-4xl pt-6 sm:pt-8">
+                  <h1 className="font-display text-[clamp(40px,7vw,76px)] tracking-[-0.02em]">
+                    Say the trip.
+                    <br />
+                    <span className="text-charcoal">Get the shortlist.</span>
+                  </h1>
+                  <p className="mt-6 max-w-xl text-[18px] leading-relaxed text-body">
+                    Your ChatGPT or Grok account plans several live searches at once (other airports, other days, other cabins), then lays the best options out with the reasons and the catches.
+                  </p>
+                </div>
+              }
+              defaults={{ homeAirports: prefs.homeAirports, cabin: prefs.cabin, stops: prefs.stops, adults: prefs.adults, bags: prefs.bags }}
+              onSaveHome={(codes) => savePreferences({ ...prefs, homeAirports: codes })}
               provider={provider}
               models={provider ? (ai?.models[provider] ?? []) : []}
               connected={connected}

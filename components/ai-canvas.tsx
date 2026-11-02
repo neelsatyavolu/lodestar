@@ -1,10 +1,11 @@
 import { ArrowUp, Check, CircleAlert, LoaderCircle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import type { Canvas, Plan } from "@/lib/ai/canvas";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import type { Canvas, Plan, TripDefaults } from "@/lib/ai/canvas";
 import { readNdjson } from "@/lib/client";
 import { day, money } from "@/lib/format";
 import type { Hack } from "@/lib/hacks";
 import type { Itinerary } from "@/lib/types";
+import { AirportField } from "./airport-field";
 import { PROVIDER_NAME, type Provider } from "./connect-ai";
 import { ItineraryCard, type SellerCheck } from "./itinerary-card";
 import { Button, Pill } from "./ui";
@@ -29,6 +30,9 @@ const EXAMPLES = [
   "Chicago to London next spring, flexible by a few days, I'm bringing a checked bag.",
 ];
 
+/** Earlier turns sent with each message, so a short reply has context. */
+const MAX_HISTORY = 4;
+
 const TAG_TONE = { best: "accent", cheapest: "neutral", fastest: "neutral", comfort: "neutral", hack: "neutral", alternative: "neutral" } as const;
 
 export function AiCanvas({
@@ -41,6 +45,9 @@ export function AiCanvas({
   onCheck,
   trustedOnly,
   filters,
+  defaults,
+  onSaveHome,
+  intro,
 }: {
   provider: Provider | null;
   models: { id: string; label: string }[];
@@ -51,34 +58,48 @@ export function AiCanvas({
   onCheck: (it: Itinerary) => void;
   trustedOnly: boolean;
   filters: Record<string, unknown>;
+  defaults: TripDefaults;
+  /** Saves home airports to the traveller's preferences. Resolves with an error message or null. */
+  onSaveHome: (codes: string[]) => Promise<string | null>;
+  /** Shown until the first message; the conversation replaces it. */
+  intro: ReactNode;
 }) {
   const [prompt, setPrompt] = useState("");
-  const [board, setBoard] = useState<Board | null>(null);
+  const [turns, setTurns] = useState<Board[]>([]);
   const [model, setModel] = useState<string>("");
   const [active, setActive] = useState<Provider | null>(provider);
   const abort = useRef<AbortController | null>(null);
   const use = active && connected[active] ? active : provider;
+  const last = turns.at(-1) ?? null;
+  const running = Boolean(last?.running);
+  const started = turns.length > 0;
 
   // Stop generating on the traveller's subscription if this view goes away.
   useEffect(() => () => abort.current?.abort(), []);
 
-  const run = async (text: string, previous: Board | null) => {
-    if (!use || !text.trim() || board?.running) return;
+  const run = async (text: string, history: Board[] = turns, tripDefaults: TripDefaults = defaults) => {
+    if (!use || !text.trim() || running) return;
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
+    const index = history.length;
     const fresh: Board = { prompt: text, status: "Starting", plan: null, searches: [], canvas: null, options: {}, hacks: [], error: null, running: true };
-    setBoard(fresh);
+    setTurns([...history, fresh]);
     setPrompt("");
-    // Only the newest run may touch the board; an aborted earlier run stays quiet.
+    requestAnimationFrame(() => document.getElementById(`turn-${index}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    // Only the newest run may touch its turn; an aborted earlier run stays quiet.
     const update = (fn: (b: Board) => Board) => {
-      if (abort.current === ctrl) setBoard((b) => (b ? fn(b) : b));
+      if (abort.current === ctrl) setTurns((ts) => ts.map((b, i) => (i === index ? fn(b) : b)));
     };
+    const earlier = history
+      .filter((b) => b.canvas)
+      .slice(-MAX_HISTORY)
+      .map((b) => ({ prompt: b.prompt, reply: `${b.canvas!.headline} ${b.canvas!.summary}`.trim().slice(0, 600) }));
     try {
       const res = await fetch("/api/ai/canvas", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider: use, model: model || undefined, prompt: text, context, filters, previous: previous?.canvas ? { prompt: previous.prompt, headline: previous.canvas.headline } : null }),
+        body: JSON.stringify({ provider: use, model: model || undefined, prompt: text, context, filters, defaults: tripDefaults, history: earlier }),
         signal: ctrl.signal,
       });
       if (!res.ok) {
@@ -117,14 +138,40 @@ export function AiCanvas({
     }
   };
 
+  const newTrip = () => {
+    abort.current?.abort();
+    abort.current = null;
+    setTurns([]);
+    setPrompt("");
+  };
+
+  // Saving a home airport answers the planner's question, so ask the same thing again in place.
+  const saveHome = async (codes: string[]): Promise<string | null> => {
+    const problem = await onSaveHome(codes);
+    if (!problem && last) run(last.prompt, turns.slice(0, -1), { ...defaults, homeAirports: codes });
+    return problem;
+  };
+
   const connectedList = (Object.keys(connected) as Provider[]).filter((p) => connected[p]);
 
   return (
     <div className="space-y-8">
+      {!started && intro}
+
+      {turns.map((t, i) => {
+        const latest = i === turns.length - 1;
+        return (
+          <div key={i} id={`turn-${i}`} className={`scroll-mt-24 ${i > 0 ? "border-t border-hairline pt-8" : ""}`}>
+            <BoardView board={t} latest={latest} checks={checks} onCheck={onCheck} trustedOnly={trustedOnly} onFollowup={(f) => run(f)} />
+            {latest && t.plan?.needsOrigin && !t.running && !defaults.homeAirports.length && <OriginAsk onSave={saveHome} />}
+          </div>
+        );
+      })}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          run(prompt, board);
+          run(prompt);
         }}
         className="rounded-xl border border-hairline-strong bg-card has-[textarea:focus]:border-accent"
       >
@@ -134,14 +181,14 @@ export function AiCanvas({
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              run(prompt, board);
+              run(prompt);
             }
           }}
-          rows={3}
+          rows={started ? 2 : 3}
           maxLength={1200}
-          placeholder="Describe the trip. Where, roughly when, and what matters to you."
+          placeholder={started ? "Reply, or change the trip." : "Describe the trip. Where, roughly when, and what matters to you."}
           className="block w-full resize-none bg-transparent px-4 pt-4 text-[16px] leading-relaxed text-ink outline-none placeholder:text-stone focus-visible:shadow-none!"
-          aria-label="Describe your trip"
+          aria-label={started ? "Reply" : "Describe your trip"}
         />
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
           {connectedList.length > 1 && (
@@ -163,12 +210,17 @@ export function AiCanvas({
               ))}
             </select>
           )}
-          {context && <span className="text-xs text-ash">Uses your search form as a starting point</span>}
-          <div className="ml-auto">
+          {context && !started && <span className="text-xs text-ash">Uses your search form as a starting point</span>}
+          <div className="ml-auto flex items-center gap-2">
+            {started && (
+              <Button type="button" variant="ghost" onClick={newTrip}>
+                New trip
+              </Button>
+            )}
             {use ? (
-              <Button type="submit" variant="primary" disabled={!prompt.trim() || board?.running}>
-                {board?.running ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowUp size={15} />}
-                Plan trip
+              <Button type="submit" variant="primary" disabled={!prompt.trim() || running}>
+                {running ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowUp size={15} />}
+                {started ? "Send" : "Plan trip"}
               </Button>
             ) : (
               <Button type="button" variant="primary" onClick={onConnect}>
@@ -179,13 +231,13 @@ export function AiCanvas({
         </div>
       </form>
 
-      {!board && (
+      {!started && (
         <div className="grid gap-2 sm:grid-cols-2">
           {EXAMPLES.map((ex) => (
             <button
               key={ex}
               type="button"
-              onClick={() => (use ? run(ex, null) : setPrompt(ex))}
+              onClick={() => (use ? run(ex, []) : setPrompt(ex))}
               className="cursor-pointer rounded-lg border border-hairline bg-card p-4 text-left text-[13px] leading-relaxed text-mute hover:border-hairline-strong hover:text-body"
             >
               {ex}
@@ -193,13 +245,31 @@ export function AiCanvas({
           ))}
         </div>
       )}
-
-      {board && <BoardView board={board} checks={checks} onCheck={onCheck} trustedOnly={trustedOnly} onFollowup={(f) => run(f, board)} />}
     </div>
   );
 }
 
-function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board: Board; checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean; onFollowup: (f: string) => void }) {
+function OriginAsk({ onSave }: { onSave: (codes: string[]) => Promise<string | null> }) {
+  const [codes, setCodes] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const save = async () => {
+    setBusy(true);
+    setError(await onSave(codes));
+    setBusy(false);
+  };
+  return (
+    <div className="mt-6 max-w-xl space-y-3 rounded-lg border border-hairline-strong bg-card p-4">
+      <AirportField bare label="Where you usually fly from. Saved to your preferences, so Plan won't ask again." value={codes} onChange={setCodes} placeholder="City or airport" />
+      {error && <p className="text-[13px] text-danger">{error}</p>}
+      <Button variant="primary" size="sm" disabled={!codes.length || busy} onClick={save}>
+        {busy ? "Saving…" : "Save and plan"}
+      </Button>
+    </div>
+  );
+}
+
+function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollowup }: { board: Board; latest: boolean; checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean; onFollowup: (f: string) => void }) {
   const { plan, canvas } = board;
   return (
     <div className="space-y-8">
@@ -246,7 +316,7 @@ function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board:
       {canvas && (
         <section aria-label="AI picks" className="rise space-y-6 pt-4">
           <div>
-            <h2 className="font-display text-[clamp(40px,5vw,56px)] text-ink">{canvas.headline}</h2>
+            <h2 className={canvas.picks.length ? "font-display text-[clamp(40px,5vw,56px)] text-ink" : "text-[22px] leading-snug text-ink"}>{canvas.headline}</h2>
             {canvas.summary && <p className="mt-3 max-w-3xl text-[16px] leading-relaxed text-body">{canvas.summary}</p>}
           </div>
           <div className="space-y-4">
@@ -290,7 +360,7 @@ function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board:
               ))}
             </ul>
           )}
-          {canvas.followups.length > 0 && !board.running && (
+          {latest && canvas.followups.length > 0 && !board.running && (
             <div className="flex flex-wrap gap-2">
               {canvas.followups.map((f) => (
                 <button key={f} type="button" onClick={() => onFollowup(f)} className="h-8 cursor-pointer rounded-full border border-hairline-strong px-3 text-[13px] text-charcoal hover:text-ink">
