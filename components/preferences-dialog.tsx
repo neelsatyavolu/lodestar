@@ -50,7 +50,34 @@ export function PreferencesDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="Travel preferences" width={600}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Travel preferences"
+      width={600}
+      footer={
+        <div className="space-y-2">
+          {error && <p className="text-[13px] text-danger">{error}</p>}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {!signedIn && <span className="mr-auto text-xs text-ash">These apply now. Create an account to keep them.</span>}
+            {!signedIn && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  onCreateAccount(p);
+                  onClose();
+                }}
+              >
+                Create account
+              </Button>
+            )}
+            <Button variant="primary" disabled={busy} onClick={save}>
+              {busy ? "Saving…" : signedIn ? "Save preferences" : "Use for now"}
+            </Button>
+          </div>
+        </div>
+      }
+    >
       <div className="space-y-5 p-5">
         <Section title="Where you fly from">
           <AirportField bare label="Home airports (filled in for new searches)" value={p.homeAirports} onChange={(v) => set("homeAirports", v)} placeholder="City or airport" />
@@ -137,24 +164,6 @@ export function PreferencesDialog({
           </div>
         </Section>
 
-        {error && <p className="text-[13px] text-danger">{error}</p>}
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-hairline pt-4">
-          {!signedIn && <span className="mr-auto text-xs text-ash">These apply now. Create an account to keep them.</span>}
-          {!signedIn && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                onCreateAccount(p);
-                onClose();
-              }}
-            >
-              Create account
-            </Button>
-          )}
-          <Button variant="primary" disabled={busy} onClick={save}>
-            {busy ? "Saving…" : signedIn ? "Save preferences" : "Use for now"}
-          </Button>
-        </div>
       </div>
     </Dialog>
   );
