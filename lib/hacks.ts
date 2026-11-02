@@ -64,10 +64,29 @@ export function bestScore(it: Itinerary, fastestMinutes: number): number {
 
 export type Ranked = { cheapest?: string; fastest?: string; best?: string };
 
-export function rank(items: Itinerary[]): { ordered: Itinerary[]; labels: Ranked } {
+/** Some slice leaves at 9pm or later and lands the next day, or leaves before 5am. Times are local. */
+export function isRedEye(it: Itinerary): boolean {
+  return it.slices.some((s) => {
+    const first = s.legs[0];
+    const last = s.legs[s.legs.length - 1];
+    const hour = Number(first.depart.slice(11, 13));
+    const landsNextDay = last.arrive.slice(0, 10) > first.depart.slice(0, 10);
+    return (hour >= 21 && landsNextDay) || hour < 5;
+  });
+}
+
+/** Every flight in the itinerary is on one of these airlines. */
+export function allOn(it: Itinerary, airlines: Set<string>): boolean {
+  return airlines.size > 0 && it.slices.every((s) => s.legs.every((l) => airlines.has(l.airline.code)));
+}
+
+// Worth about this much to a traveller who prefers the airline (status, miles).
+const PREFERRED_AIRLINE_BONUS = 40;
+
+export function rank(items: Itinerary[], prefer: Set<string> = new Set()): { ordered: Itinerary[]; labels: Ranked } {
   if (!items.length) return { ordered: [], labels: {} };
   const fastestMinutes = Math.min(...items.map(totalMinutes));
-  const scored = items.map((it) => ({ it, score: bestScore(it, fastestMinutes) }));
+  const scored = items.map((it) => ({ it, score: bestScore(it, fastestMinutes) - (allOn(it, prefer) ? PREFERRED_AIRLINE_BONUS : 0) }));
   const ordered = [...scored].sort((a, b) => a.score - b.score).map((s) => s.it);
   const fastest = [...items].sort((a, b) => totalMinutes(a) - totalMinutes(b) || a.price - b.price)[0];
   return { ordered, labels: { best: ordered[0].id, cheapest: cheapest(items)?.id, fastest: fastest.id } };

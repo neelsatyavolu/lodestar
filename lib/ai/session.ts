@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { type Provider, type Tokens, refreshTokens } from "./providers";
 import { deriveKey, seal, unseal } from "./seal";
 
-// Contrail has no accounts. A random device id in an httpOnly cookie is the
+// Lodestar has no accounts. A random device id in an httpOnly cookie is the
 // owner of this browser's AI connection. Provider tokens live only in this
 // browser's cookies, encrypted (AES-GCM) and bound to that device id; the
 // server stores nothing. Cookies are scoped to /api/ai so pages never carry them.
@@ -14,7 +14,7 @@ const PKCE_TTL_SECONDS = 10 * 60;
 const CHUNK_SIZE = 3500;
 const MAX_CHUNKS = 6;
 const COOKIE_PATH = "/api/ai";
-const DEVICE_COOKIE = "ct_device";
+const DEVICE_COOKIE = "ls_device";
 
 const sessionPrefix = (p: Provider) => `${p}_s`;
 const pkceCookie = (p: Provider) => `${p}_pkce`;
@@ -29,8 +29,8 @@ const cookieOptions = (maxAge: number) => ({
 
 let cachedKey: Buffer | null = null;
 function key(): Buffer {
-  const secret = process.env.CONTRAIL_SECRET;
-  if (!secret) throw new Error("CONTRAIL_SECRET is not set");
+  const secret = process.env.LODESTAR_SECRET;
+  if (!secret) throw new Error("LODESTAR_SECRET is not set");
   cachedKey ??= deriveKey(secret, "ai-session-cookies");
   return cachedKey;
 }
@@ -146,5 +146,13 @@ export async function getActiveSession(provider: Provider, owner: string): Promi
   } catch (err) {
     console.error(`[ai-session] ${provider} refresh failed:`, err instanceof Error ? err.message : err);
     return null;
+  }
+}
+
+/** Forget this browser's AI sign-ins and any pending sign-in (used on account sign-out). */
+export async function clearAiSessions(): Promise<void> {
+  for (const p of ["codex", "grok"] as const) {
+    await clearSession(p);
+    await clearPkce(p);
   }
 }

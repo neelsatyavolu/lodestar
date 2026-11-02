@@ -73,7 +73,7 @@ export function ConnectAI({ open, onClose, onConnected, initial = "codex" }: { o
       </div>
       <div className="space-y-5 p-5">
         <p className="text-[13px] leading-relaxed text-mute">
-          Contrail&apos;s AI runs on your own ChatGPT or Grok subscription. The sign-in token is encrypted and kept only in this browser&apos;s cookies; Contrail&apos;s server never stores it.
+          Lodestar&apos;s AI runs on your own ChatGPT or Grok subscription. The sign-in token is encrypted and kept only in this browser&apos;s cookies; Lodestar&apos;s server never stores it.
         </p>
         <div className="grid grid-cols-2 gap-2">
           {(["codex", "grok"] as Provider[]).map((p) => (

@@ -1,7 +1,7 @@
 // Live smoke test for the AI canvas: real model, real fares, real route.
 // Needs the dev servers running and a ChatGPT sign-in from the Codex CLI.
 //
-//   pnpm smoke            (reads ~/.codex/auth.json and CONTRAIL_SECRET from .env.local)
+//   pnpm smoke            (reads ~/.codex/auth.json and LODESTAR_SECRET from .env.local)
 //
 // It seals the Codex CLI token into the same encrypted cookie the app sets
 // after sign-in, so the request goes through the real /api/ai/canvas path.
@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import { expect, it } from "vitest";
 import { deriveKey, seal } from "../lib/ai/seal";
 
-const BASE = process.env.CONTRAIL_URL ?? "http://localhost:3077";
+const BASE = process.env.LODESTAR_URL ?? "http://localhost:3077";
 
 function env(name: string): string {
   const line = readFileSync(".env.local", "utf8").split("\n").find((l) => l.startsWith(`${name}=`));
@@ -27,10 +27,10 @@ it("plans, searches and picks real flights", { timeout: 240_000 }, async () => {
   expect(exp).toBeGreaterThan(Date.now() + 5 * 60_000);
 
   const device = randomUUID();
-  const key = deriveKey(env("CONTRAIL_SECRET"), "ai-session-cookies");
+  const key = deriveKey(env("LODESTAR_SECRET"), "ai-session-cookies");
   const session = seal(key, JSON.stringify({ accessToken: t.access_token, refreshToken: t.refresh_token, expiresAt: exp, accountId: t.account_id, owner: device }), `codex:${device}`);
   const chunks = session.match(/.{1,3500}/g)!;
-  const cookie = [`ct_device=${device}`, ...chunks.map((c, i) => `codex_s_${i}=${c}`)].join("; ");
+  const cookie = [`ls_device=${device}`, ...chunks.map((c, i) => `codex_s_${i}=${c}`)].join("; ");
 
   const res = await fetch(`${BASE}/api/ai/canvas`, {
     method: "POST",

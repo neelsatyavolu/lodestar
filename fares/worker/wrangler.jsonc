@@ -1,11 +1,11 @@
 {
-  // Contrail fares service: the Python container behind a token-checking Worker.
+  // Lodestar fares service: the Python container behind a token-checking Worker.
   // Deploy: CLOUDFLARE_ACCOUNT_ID=<your account> pnpm exec wrangler deploy (Docker must be running).
-  "name": "contrail-fares",
+  "name": "lodestar-fares",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-15",
   "workers_dev": false,
-  "routes": [{ "pattern": "contrail-fares.xanom.co", "custom_domain": true }],
+  "routes": [{ "pattern": "lodestar-fares.xanom.co", "custom_domain": true }],
   "observability": { "enabled": true },
   "containers": [
     {

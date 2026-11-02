@@ -1,7 +1,7 @@
 import "server-only";
 import { airport, distanceKm, expandCode, nearbyAirports } from "./airports";
 import { FaresError, searchDates, searchFlights, type FlightsParams } from "./fares";
-import { flexHack, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning, type Hack, type Ranked } from "./hacks";
+import { flexHack, isRedEye, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning, type Hack, type Ranked } from "./hacks";
 import type { DayPrice, Itinerary, SearchQuery } from "./types";
 
 const MAX_AIRPORTS = 6;
@@ -61,6 +61,22 @@ function validated(q: SearchQuery): { from: string[]; to: string[] } {
   return { from, to };
 }
 
+/**
+ * Drops red-eyes and self-transfers when the traveller asked to avoid them,
+ * but never empties the results: then everything stays, with a note.
+ */
+export function applyAvoidances(items: Itinerary[], q: Pick<SearchQuery, "avoidRedEyes" | "avoidSelfTransfer">, warnings: string[]): Itinerary[] {
+  let out = items;
+  const drop = (keep: (it: Itinerary) => boolean, what: string) => {
+    const kept = out.filter(keep);
+    if (kept.length) out = kept;
+    else if (out.length) warnings.push(`Only ${what} were found, so they are shown anyway`);
+  };
+  if (q.avoidSelfTransfer) drop((it) => !it.slices.some((s) => s.self_transfer), "self-transfer itineraries");
+  if (q.avoidRedEyes) drop((it) => !isRedEye(it), "red-eye flights");
+  return out;
+}
+
 function withDeadline<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
@@ -77,7 +93,7 @@ export async function runCalendar(q: SearchQuery, signal?: AbortSignal): Promise
   // Google's calendar has no same-day round trips; a one-way calendar would not compare.
   if (tripDays === 0) return [];
   return searchDates(
-    { origins: from, destinations: to, start, end: addDays(q.depart, FLEX_DAYS), tripDays, cabin: q.cabin, maxStops: q.stops, adults: q.adults, children: q.children },
+    { origins: from, destinations: to, start, end: addDays(q.depart, FLEX_DAYS), tripDays, cabin: q.cabin, maxStops: q.stops, adults: q.adults, children: q.children, alliances: q.alliances, excludeAirlines: q.avoidAirlines },
     signal,
   );
 }
@@ -103,6 +119,9 @@ export async function runSearch(q: SearchQuery, signal?: AbortSignal, opts: { ca
     adults: q.adults,
     children: q.children,
     bags: q.bags,
+    alliances: q.alliances,
+    excludeAirlines: q.avoidAirlines,
+    excludeBasic: q.noBasicEconomy,
   };
 
   const main = searchFlights({ ...base, origins: allFrom, destinations: allTo, depart: q.depart, returnDate: q.return }, signal);
@@ -117,12 +136,15 @@ export async function runSearch(q: SearchQuery, signal?: AbortSignal, opts: { ca
   const [mainR, datesR, outR, backR] = await Promise.allSettled([main, dates ?? Promise.resolve(null), ...(split ?? [])]);
   if (mainR.status === "rejected") throw mainR.reason;
   const warnings: string[] = [];
-  const itineraries = mainR.value;
+  const itineraries = applyAvoidances(mainR.value, q, warnings);
   const calendar = settledValue(datesR, "Flexible dates", warnings) ?? [];
-  const out = settledValue(outR, "One-way outbound", warnings);
-  const back = settledValue(backR, "One-way return", warnings);
+  const quiet: string[] = [];
+  const outRaw = settledValue(outR, "One-way outbound", warnings);
+  const backRaw = settledValue(backR, "One-way return", warnings);
+  const out = outRaw && applyAvoidances(outRaw, q, quiet);
+  const back = backRaw && applyAvoidances(backRaw, q, quiet);
 
-  const { ordered, labels } = rank(itineraries);
+  const { ordered, labels } = rank(itineraries, new Set(q.preferAirlines));
   const baseline = itineraries.filter((it) => matchesRequest(it, from, to)).reduce<number | null>((m, it) => (m === null || it.price < m ? it.price : m), null);
   const hacks = [
     nearbyHack(itineraries, from, to, (c) => minKm(c, nearbyFrom.includes(c) ? from : to)),

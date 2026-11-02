@@ -14,7 +14,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 warnings.filterwarnings("ignore", category=FutureWarning, module="fli")
 
 from fli.models import (  # noqa: E402 - after the warning filter on purpose
+    Airline,
     Airport,
+    Alliance,
     BagsFilter,
     DateSearchFilters,
     FlightResult,
@@ -32,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 Cabin = Literal["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"]
 Stops = Literal["ANY", "0", "1", "2"]
+AllianceName = Literal["STAR_ALLIANCE", "ONEWORLD", "SKYTEAM"]
 STOPS = {"ANY": MaxStops.ANY, "0": MaxStops.NON_STOP, "1": MaxStops.ONE_STOP_OR_FEWER, "2": MaxStops.TWO_OR_FEWER_STOPS}
 
 
@@ -44,6 +47,42 @@ def clean_codes(value: list[str]) -> list[str]:
     if any(len(c) != 3 or not c.isalpha() for c in cleaned):
         raise ValueError("Airport codes are three letters.")
     return cleaned
+
+
+def airline_enums(codes: list[str]) -> list[Airline]:
+    """fli's Airline members for IATA codes; codes starting with a digit are prefixed with "_" (6E -> _6E)."""
+    out = []
+    for code in codes:
+        member = Airline.__members__.get(code) or Airline.__members__.get(f"_{code}")
+        if member is None:
+            raise SearchError(f"Unknown airline code {code}.")
+        out.append(member)
+    return out
+
+
+def clean_airlines(value: list[str]) -> list[str]:
+    cleaned = list(dict.fromkeys(v.strip().upper() for v in value))
+    if any(len(c) != 2 or not c.isalnum() for c in cleaned):
+        raise ValueError("Airline codes are two characters.")
+    return cleaned
+
+
+class Preferences(BaseModel):
+    """Traveller filters shared by flight and date searches."""
+
+    alliances: list[AllianceName] = Field(default_factory=list, max_length=3)
+    exclude_airlines: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("exclude_airlines")
+    @classmethod
+    def airline_codes(cls, value: list[str]) -> list[str]:
+        return clean_airlines(value)
+
+    def fli_filters(self) -> dict[str, Any]:
+        return {
+            "alliances": [Alliance[a] for a in self.alliances] or None,
+            "airlines_exclude": airline_enums(self.exclude_airlines) or None,
+        }
 
 
 def airports(codes: list[str]) -> list[list[Any]]:
@@ -70,7 +109,7 @@ class Passengers(BaseModel):
         return PassengerInfo(adults=self.adults, children=self.children)
 
 
-class FlightsRequest(BaseModel):
+class FlightsRequest(Preferences):
     origins: list[str] = Field(min_length=1, max_length=6)
     destinations: list[str] = Field(min_length=1, max_length=6)
     depart: date
@@ -98,7 +137,7 @@ class FlightsRequest(BaseModel):
         return self
 
 
-class DatesRequest(BaseModel):
+class DatesRequest(Preferences):
     origins: list[str] = Field(min_length=1, max_length=6)
     destinations: list[str] = Field(min_length=1, max_length=6)
     start: date
@@ -233,6 +272,7 @@ def search_flights(request: FlightsRequest) -> dict[str, Any]:
         sort_by=SortBy[request.sort],
         exclude_basic_economy=request.exclude_basic,
         bags=bags,
+        **request.fli_filters(),
     )
     client = SearchFlights()
     raw = client.search(filters, top_n=request.expand, currency="USD", language="en", country="US") or []
@@ -275,6 +315,7 @@ def search_dates(request: DatesRequest) -> dict[str, Any]:
         from_date=request.start.isoformat(),
         to_date=request.end.isoformat(),
         duration=request.trip_days,
+        **request.fli_filters(),
     )
     raw = SearchDates().search(filters, currency="USD", language="en", country="US") or []
     days = []

@@ -8,7 +8,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Contrail — lower fares from sellers you can trust",
+  title: "Lodestar — lower fares from sellers you can trust",
   description: "Live flight prices, travel hacks that actually save money, and an AI that compares the options for you. Only airlines and trusted agencies by default.",
 };
 

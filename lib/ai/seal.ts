@@ -10,7 +10,7 @@ const TAG_BYTES = 16;
 
 export function deriveKey(secret: string, label: string): Buffer {
   if (secret.length < 16) throw new Error("Cookie secret is too short.");
-  return Buffer.from(hkdfSync("sha256", secret, "contrail", label, 32));
+  return Buffer.from(hkdfSync("sha256", secret, "lodestar", label, 32));
 }
 
 export function seal(key: Buffer, plaintext: string, aad: string): string {

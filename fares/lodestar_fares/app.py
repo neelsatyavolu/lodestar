@@ -1,4 +1,4 @@
-"""HTTP API for the Contrail web app. Bind it to localhost or put it behind a token."""
+"""HTTP API for the Lodestar web app. Bind it to localhost or put it behind a token."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from .browser import BookingBrowser, BookingPageError, booking_url
 from .search import DatesRequest, FlightsRequest, SearchError, search_dates, search_flights
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-logger = logging.getLogger("contrail.fares")
+logger = logging.getLogger("lodestar.fares")
 browser = BookingBrowser()
 
 
@@ -24,7 +24,7 @@ async def lifespan(_: FastAPI):
     await browser.close()
 
 
-app = FastAPI(title="Contrail fares", lifespan=lifespan, docs_url=None, redoc_url=None)
+app = FastAPI(title="Lodestar fares", lifespan=lifespan, docs_url=None, redoc_url=None)
 
 
 def require_token(x_fares_token: str | None = Header(default=None)) -> None:

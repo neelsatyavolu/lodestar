@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from contrail_fares.booking_page import parse_booking_page, policy_from_features
-from contrail_fares.browser import booking_url
+from lodestar_fares.booking_page import parse_booking_page, policy_from_features
+from lodestar_fares.browser import booking_url
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -112,8 +112,8 @@ def test_booking_url_rejects_non_tokens() -> None:
 def test_identical_reads_share_one_page_load() -> None:
     import asyncio
 
-    from contrail_fares.booking_page import BookingPage, PriceInsight
-    from contrail_fares.browser import BookingBrowser
+    from lodestar_fares.booking_page import BookingPage, PriceInsight
+    from lodestar_fares.browser import BookingBrowser
 
     calls = 0
 

@@ -1,4 +1,4 @@
-// Who sells a fare, and whether Contrail shows them by default.
+// Who sells a fare, and whether Lodestar shows them by default.
 //
 // "airline"  — the airline itself (Google marks these). Best when plans change.
 // "trusted"  — large, long-established agencies: brands of public travel

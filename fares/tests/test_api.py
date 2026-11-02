@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from contrail_fares.app import app
+from lodestar_fares.app import app
 
 client = TestClient(app)
 
@@ -51,3 +51,17 @@ def test_token_enforced_when_set(monkeypatch) -> None:
     monkeypatch.setenv("FARES_TOKEN", "secret-token")
     res = client.post("/flights", json={"origins": ["SFO"], "destinations": ["JFK"], "depart": "2026-12-10"})
     assert res.status_code == 401
+
+
+def test_preferences_validated() -> None:
+    base = {"origins": ["SFO"], "destinations": ["JFK"], "depart": "2026-12-10"}
+    assert client.post("/flights", json={**base, "alliances": ["PANAM"]}).status_code == 422
+    assert client.post("/flights", json={**base, "exclude_airlines": ["TOOLONG"]}).status_code == 422
+    res = client.post("/flights", json={**base, "exclude_airlines": ["9Z"]})
+    assert res.status_code == 400 and "9Z" in res.json()["detail"]
+
+
+def test_airline_codes_with_digits() -> None:
+    from lodestar_fares.search import airline_enums
+
+    assert [a.name for a in airline_enums(["6E", "AA"])] == ["_6E", "AA"]

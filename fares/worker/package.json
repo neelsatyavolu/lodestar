@@ -1,5 +1,5 @@
 {
-  "name": "contrail-fares-worker",
+  "name": "lodestar-fares-worker",
   "private": true,
   "type": "module",
   "scripts": {

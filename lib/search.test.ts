@@ -6,7 +6,7 @@ const searchFlights = vi.fn();
 const searchDates = vi.fn();
 vi.mock("./fares", async (orig) => ({ ...(await orig<typeof import("./fares")>()), searchFlights, searchDates }));
 
-const { runSearch, runCalendar, resolveCodes } = await import("./search");
+const { runSearch, runCalendar, resolveCodes, applyAvoidances } = await import("./search");
 
 const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
@@ -82,5 +82,32 @@ describe("runSearch", () => {
   it("rejects past dates and same-airport trips", async () => {
     await expect(runSearch(SearchQuerySchema.parse({ from: ["SFO"], to: ["JFK"], depart: "2020-01-01" }))).rejects.toThrow(/passed/);
     await expect(runSearch(SearchQuerySchema.parse({ from: ["SFO"], to: ["SFO"], depart: future(10) }))).rejects.toThrow(/same/);
+  });
+});
+
+describe("applyAvoidances", () => {
+  const redEye = itin(150, [route("LAX", "JFK", { depart: "2026-12-10T23:00:00", arrive: "2026-12-11T07:00:00" })], "red");
+  const self = itin(160, [{ ...route("LAX", "JFK"), self_transfer: true }], "self");
+  const normal = itin(200, [route("LAX", "JFK")], "ok");
+
+  it("drops what the traveller avoids", () => {
+    const warnings: string[] = [];
+    const out = applyAvoidances([redEye, self, normal], { avoidRedEyes: true, avoidSelfTransfer: true }, warnings);
+    expect(out.map((i) => i.id)).toEqual(["ok"]);
+    expect(warnings).toEqual([]);
+  });
+
+  it("never empties the results", () => {
+    const warnings: string[] = [];
+    expect(applyAvoidances([redEye], { avoidRedEyes: true, avoidSelfTransfer: true }, warnings).map((i) => i.id)).toEqual(["red"]);
+    expect(warnings[0]).toMatch(/red-eye/);
+  });
+
+  it("passes filters through to the fares service", async () => {
+    searchFlights.mockReset();
+    searchFlights.mockResolvedValue([normal]);
+    const q = SearchQuerySchema.parse({ from: ["LAX"], to: ["JFK"], depart: future(20), nearby: false, alliances: ["ONEWORLD"], avoidAirlines: ["nk"], noBasicEconomy: true });
+    await runSearch(q);
+    expect(searchFlights.mock.calls[0][0]).toMatchObject({ alliances: ["ONEWORLD"], excludeAirlines: ["NK"], excludeBasic: true });
   });
 });

@@ -65,7 +65,14 @@ export type FlightsParams = {
   children?: number;
   bags?: number;
   expand?: number;
+  alliances?: string[];
+  excludeAirlines?: string[];
+  excludeBasic?: boolean;
 };
+
+function preferenceBody(p: Pick<FlightsParams, "alliances" | "excludeAirlines">) {
+  return { alliances: p.alliances ?? [], exclude_airlines: p.excludeAirlines ?? [] };
+}
 
 export async function searchFlights(p: FlightsParams, signal?: AbortSignal): Promise<Itinerary[]> {
   const res = await post(
@@ -79,7 +86,9 @@ export async function searchFlights(p: FlightsParams, signal?: AbortSignal): Pro
       max_stops: p.maxStops ?? "ANY",
       passengers: { adults: p.adults ?? 1, children: p.children ?? 0 },
       checked_bags: p.bags ?? 0,
+      exclude_basic: p.excludeBasic ?? false,
       expand: p.expand ?? 5,
+      ...preferenceBody(p),
     },
     FlightsResponseSchema,
     signal,
@@ -87,7 +96,7 @@ export async function searchFlights(p: FlightsParams, signal?: AbortSignal): Pro
   return res.itineraries;
 }
 
-export type DatesParams = Omit<FlightsParams, "depart" | "returnDate" | "bags" | "expand"> & {
+export type DatesParams = Omit<FlightsParams, "depart" | "returnDate" | "bags" | "expand" | "excludeBasic"> & {
   start: string;
   end: string;
   tripDays?: number | null;
@@ -105,6 +114,7 @@ export async function searchDates(p: DatesParams, signal?: AbortSignal): Promise
       cabin: p.cabin ?? "ECONOMY",
       max_stops: p.maxStops ?? "ANY",
       passengers: { adults: p.adults ?? 1, children: p.children ?? 0 },
+      ...preferenceBody(p),
     },
     DatesResponseSchema,
     signal,

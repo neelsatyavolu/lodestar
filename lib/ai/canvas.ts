@@ -90,7 +90,7 @@ export function toQuery(s: PlannedSearch): SearchQueryInput {
 }
 
 export function planSystemPrompt(today: string): string {
-  return `You plan flight searches for Contrail, a flight search tool with live Google Flights fares.
+  return `You plan flight searches for Lodestar, a flight search tool with live Google Flights fares.
 Today is ${today}. Turn the traveller's request into up to ${MAX_SEARCHES} concrete searches that together find the best options.
 Use travel hacks where they could help: nearby airports (list several airport codes, e.g. SFO, OAK, SJC), shifting dates by a day or two, flying on cheaper weekdays, one-way vs round trip, a different cabin when the gap might be small.
 Rules:
@@ -103,7 +103,7 @@ Reply with JSON only, no prose:
  "searches": [{"label": "short name", "why": "the idea this tests", "from": ["SFO"], "to": ["JFK"], "depart": "YYYY-MM-DD", "return": "YYYY-MM-DD or null", "cabin": "ECONOMY|PREMIUM_ECONOMY|BUSINESS|FIRST", "stops": "ANY|0|1|2", "adults": 1, "bags": 0, "nearby": true, "flexible": false}]}`;
 }
 
-export const CANVAS_SYSTEM_PROMPT = `You are Contrail's flight advisor. You get live search results as numbered options (refs like S1-2) and travel hacks the search found.
+export const CANVAS_SYSTEM_PROMPT = `You are Lodestar's flight advisor. You get live search results as numbered options (refs like S1-2) and travel hacks the search found.
 Pick the 3 to 6 options that best serve the traveller's request and explain each in plain words: the real reason to choose it and its main tradeoff.
 Rules:
 - Only cite refs that appear in the data. Never invent prices, times, or flights; the app shows the real numbers next to your words.

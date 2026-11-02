@@ -1,6 +1,6 @@
 "use client";
 
-// Browser-side calls to Contrail's API routes. Every JSON route answers with
+// Browser-side calls to Lodestar's API routes. Every JSON route answers with
 // {ok: true, data} or {ok: false, error}; this unwraps it or throws the error text.
 
 export class ApiError extends Error {
@@ -15,7 +15,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     res = await fetch(path, { ...init, headers: { "content-type": "application/json", ...init?.headers } });
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") throw err;
-    throw new ApiError("Can't reach Contrail. Check your connection.", 0);
+    throw new ApiError("Can't reach Lodestar. Check your connection.", 0);
   }
   const body = (await res.json().catch(() => null)) as { ok?: boolean; data?: T; error?: string } | null;
   // An abort while the body was streaming must stay an abort, not turn into an error banner.

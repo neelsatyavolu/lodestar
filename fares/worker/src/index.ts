@@ -1,6 +1,6 @@
 import { Container } from "@cloudflare/containers";
 
-// Only the Contrail web app may call the fares service: every request except
+// Only the Lodestar web app may call the fares service: every request except
 // /health must carry the shared FARES_TOKEN secret.
 
 type Env = { FARES: DurableObjectNamespace<FaresContainer>; FARES_TOKEN: string };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestScore, flexHack, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning } from "./hacks";
+import { allOn, bestScore, flexHack, isRedEye, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning } from "./hacks";
 import { itin, leg, route, slice } from "./test-fixtures";
 
 describe("matchesRequest", () => {
@@ -136,5 +136,26 @@ describe("nonstopHack and ulccWarning", () => {
     expect(ulccWarning([spirit])?.kind).toBe("ulcc");
     expect(ulccWarning([itin(200)])).toBeNull();
     expect(ulccWarning([])).toBeNull();
+  });
+});
+
+describe("preferences in ranking", () => {
+  it("spots red-eyes by local departure time", () => {
+    const redEye = itin(200, [route("LAX", "JFK", { depart: "2026-12-10T22:30:00", arrive: "2026-12-11T06:55:00" })]);
+    const early = itin(200, [route("LAX", "JFK", { depart: "2026-12-10T04:30:00", arrive: "2026-12-10T12:55:00" })]);
+    const lateSameDay = itin(200, [route("LAX", "SFO", { depart: "2026-12-10T21:30:00", arrive: "2026-12-10T23:00:00" })]);
+    const daytime = itin(200, [route("LAX", "JFK", { depart: "2026-12-10T08:00:00", arrive: "2026-12-10T16:30:00" })]);
+    expect(isRedEye(redEye)).toBe(true);
+    expect(isRedEye(early)).toBe(true);
+    expect(isRedEye(lateSameDay)).toBe(false);
+    expect(isRedEye(daytime)).toBe(false);
+  });
+
+  it("ranks preferred airlines higher", () => {
+    const united = itin(320, [route("SFO", "JFK", { airline: { code: "UA", name: "United" } })], "ua");
+    const american = itin(300, [route("SFO", "JFK", { airline: { code: "AA", name: "American" } })], "aa");
+    expect(rank([united, american]).labels.best).toBe("aa");
+    expect(rank([united, american], new Set(["UA"])).labels.best).toBe("ua");
+    expect(allOn(united, new Set())).toBe(false);
   });
 });

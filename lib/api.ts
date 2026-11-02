@@ -10,7 +10,29 @@ export function ok<T>(data: T, init?: ResponseInit): NextResponse {
 }
 
 export function fail(error: string, status: number): NextResponse {
-  return NextResponse.json({ ok: false, error }, { status });
+  return NextResponse.json({ ok: false, error }, { status, headers: { "cache-control": "no-store" } });
+}
+
+/** Browsers send Origin on POST; refuse requests another site started. */
+export function sameOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return true;
+  try {
+    const host = new URL(origin).host;
+    return host === new URL(req.url).host || host === req.headers.get("x-forwarded-host") || host === req.headers.get("host");
+  } catch {
+    return false;
+  }
+}
+
+/** Runs an account handler: refuses cross-site writes and maps errors to clean JSON. */
+export async function handle(req: Request, what: string, handler: () => Promise<Response>): Promise<Response> {
+  if (req.method !== "GET" && !sameOrigin(req)) return fail("Cross-site request refused.", 403);
+  try {
+    return await handler();
+  } catch (err) {
+    return fromError(err, what);
+  }
 }
 
 export function fromError(err: unknown, what: string): NextResponse {

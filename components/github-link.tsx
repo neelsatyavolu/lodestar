@@ -1,4 +1,4 @@
-export const REPO_URL = "https://github.com/neelsatyavolu/contrail";
+export const REPO_URL = "https://github.com/neelsatyavolu/lodestar";
 
 /** GitHub's mark, drawn inline so it needs no asset. */
 export function GitHubMark({ size = 16 }: { size?: number }) {
@@ -15,7 +15,7 @@ export function GitHubLink() {
       href={REPO_URL}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Contrail source code on GitHub"
+      aria-label="Lodestar source code on GitHub"
       title="Open source on GitHub (MIT)"
       className="inline-flex size-8 items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:size-10"
     >

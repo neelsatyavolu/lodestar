@@ -5,12 +5,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api, post } from "@/lib/client";
 import { money } from "@/lib/format";
 import { flexHack, type Hack } from "@/lib/hacks";
+import { ALLIANCE_LABEL, DEFAULT_PREFERENCES, type Preferences } from "@/lib/preferences";
 import type { SearchResult } from "@/lib/search";
 import type { DayPrice, Itinerary } from "@/lib/types";
 import type { Verified } from "@/lib/verify";
+import { SlidersHorizontal } from "lucide-react";
+import { AccountDialog, type Account } from "./account-dialog";
 import { AiCanvas } from "./ai-canvas";
 import { ConnectAI, PROVIDER_NAME, type Provider } from "./connect-ai";
 import { GitHubLink, GitHubMark, REPO_URL } from "./github-link";
+import { PreferencesDialog } from "./preferences-dialog";
 import { DateStrip, HackCards } from "./hacks";
 import { ItineraryCard, allAirlines, type SellerCheck } from "./itinerary-card";
 import { Results } from "./results";
@@ -62,6 +66,36 @@ function formFromUrl(): FormState | null {
   return { ...defaultForm(), from, to, depart, return: ret, roundTrip: Boolean(ret), cabin: (p.get("cabin") as FormState["cabin"]) ?? "ECONOMY", adults: Number(p.get("adults") ?? 1) || 1 };
 }
 
+/** Saved preferences as form defaults. Airports already typed (or from a shared link) are kept. */
+function applyPreferences(f: FormState, p: Preferences): FormState {
+  return { ...f, from: f.from.length ? f.from : p.homeAirports, cabin: p.cabin, stops: p.stops, adults: p.adults, bags: p.bags, nearby: p.nearby, flexible: p.flexible, split: p.split };
+}
+
+/** The search request: the form plus the traveller's filters. */
+function queryFor(f: FormState, p: Preferences) {
+  return {
+    ...toQuery(f),
+    alliances: p.alliances,
+    avoidAirlines: p.avoidedAirlines,
+    preferAirlines: p.preferredAirlines,
+    noBasicEconomy: p.noBasicEconomy,
+    avoidRedEyes: p.avoidRedEyes,
+    avoidSelfTransfer: p.avoidSelfTransfer,
+  };
+}
+
+/** Short labels for the filters in effect, shown under the search form. */
+function preferenceChips(p: Preferences): string[] {
+  return [
+    ...p.alliances.map((a) => `${ALLIANCE_LABEL[a]} only`),
+    p.preferredAirlines.length ? `Prefer ${p.preferredAirlines.join(", ")}` : "",
+    p.avoidedAirlines.length ? `Never ${p.avoidedAirlines.join(", ")}` : "",
+    p.avoidRedEyes ? "No red-eyes" : "",
+    p.noBasicEconomy ? "No basic economy" : "",
+    p.avoidSelfTransfer ? "No self-transfers" : "",
+  ].filter(Boolean);
+}
+
 function formToUrl(f: FormState): string {
   const p = new URLSearchParams({ from: f.from.join(","), to: f.to.join(","), depart: f.depart });
   if (f.roundTrip && f.return) p.set("return", f.return);
@@ -84,6 +118,11 @@ export function App() {
   const [splitOpen, setSplitOpen] = useState(false);
   const [ai, setAi] = useState<AiStatus | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFERENCES);
+  const [accountDialog, setAccountDialog] = useState<{ open: boolean; mode: "signin" | "register"; key: number }>({ open: false, mode: "signin", key: 0 });
+  const [prefsDialog, setPrefsDialog] = useState({ open: false, key: 0 });
+  const prefsRef = useRef<Preferences>(DEFAULT_PREFERENCES);
   const searchCtrl = useRef<AbortController | null>(null);
   const started = useRef(new Set<string>());
   const queue = useRef<ReturnType<typeof createQueue<Itinerary>> | null>(null);
@@ -123,7 +162,7 @@ export function App() {
       setHighlight(null);
       window.history.replaceState(null, "", formToUrl(f));
       try {
-        const data = await post<SearchResult>("/api/search", toQuery(f), ctrl.signal);
+        const data = await post<SearchResult>("/api/search", queryFor(f, prefsRef.current), ctrl.signal);
         setResult(data);
         setSearched(f);
         // Checks queued for the old results never ran: reset them so they can be retried.
@@ -136,7 +175,7 @@ export function App() {
           // The calendar is slow on Google's side; show results first and add it when it lands.
           const key = formToUrl(f);
           setCalendar({ key, days: null, loading: true });
-          post<DayPrice[]>("/api/calendar", toQuery(f), ctrl.signal)
+          post<DayPrice[]>("/api/calendar", queryFor(f, prefsRef.current), ctrl.signal)
             .then((days) => setCalendar((c) => (c.key === key ? { key, days, loading: false } : c)))
             .catch(() => setCalendar((c) => (c.key === key ? { key, days: [], loading: false } : c)));
         } else setCalendar({ key: "", days: null, loading: false });
@@ -152,16 +191,55 @@ export function App() {
     [check, sellerQueue],
   );
 
+  const adoptPreferences = useCallback((p: Preferences, fillForm: boolean) => {
+    prefsRef.current = p;
+    setPrefs(p);
+    setTrustedOnly(p.trustedOnly);
+    if (fillForm) setForm((f) => applyPreferences(f, p));
+  }, []);
+
   useEffect(() => {
     refreshAi();
     const fromUrl = formFromUrl();
-    if (fromUrl) {
-      // One-time read of a shared link's search from the URL after hydration.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm(fromUrl);
-      search(fromUrl);
+    // Saved preferences first (they filter the search), then a shared link's search if there is one.
+    api<{ user: Account | null; preferences: Preferences | null }>("/api/account")
+      .then((res) => {
+        setAccount(res.user);
+        if (res.preferences) adoptPreferences(res.preferences, !fromUrl);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (fromUrl) {
+          setForm(fromUrl);
+          search(fromUrl);
+        }
+      });
+  }, [refreshAi, search, adoptPreferences]);
+
+  const savePreferences = async (p: Preferences): Promise<string | null> => {
+    if (account) {
+      try {
+        await api("/api/preferences", { method: "PUT", body: JSON.stringify(p) });
+      } catch (err) {
+        return err instanceof Error ? err.message : "Couldn't save your preferences.";
+      }
     }
-  }, [refreshAi, search]);
+    adoptPreferences(p, true);
+    if (result && searched) search(applyPreferences(searched, p));
+    return null;
+  };
+
+  const signedIn = (a: Account, p: Preferences) => {
+    setAccount(a);
+    adoptPreferences(p, true);
+  };
+
+  const signOut = async () => {
+    await post("/api/account/logout", {}).catch(() => {});
+    setAccount(null);
+    adoptPreferences(DEFAULT_PREFERENCES, false);
+    refreshAi();
+  };
 
   const focus = (id: string) => {
     setHighlight(id);
@@ -198,12 +276,11 @@ export function App() {
     <>
       <header className="sticky top-0 z-40 border-b border-hairline bg-black/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-2 px-4 sm:gap-4 sm:px-8">
-          <Link href="/" className="flex items-center gap-2" aria-label="Contrail home">
+          <Link href="/" className="flex items-center gap-2" aria-label="Lodestar home">
             <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
-              <path d="M2 15 C 7 15, 9 7, 20 5" stroke="#fcfdff" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-              <path d="M2 18.5 C 8 18.5, 11 10, 20 8.5" stroke="rgba(252,253,255,0.4)" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+              <path d="M11 1.5 L12.6 9.4 L20.5 11 L12.6 12.6 L11 20.5 L9.4 12.6 L1.5 11 L9.4 9.4 Z" fill="#fcfdff" />
             </svg>
-            <span className="font-display text-[22px] tracking-[-0.01em] max-[400px]:sr-only">Contrail</span>
+            <span className="font-display text-[22px] tracking-[-0.01em] max-[400px]:sr-only">Lodestar</span>
           </Link>
           <nav className="inline-flex shrink-0 rounded-full bg-elevated p-0.5 text-[13px] sm:ml-2" aria-label="Mode">
             {(["search", "ai"] as Mode[]).map((m) => (
@@ -214,6 +291,24 @@ export function App() {
           </nav>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <GitHubLink />
+            <button
+              type="button"
+              onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))}
+              aria-label="Travel preferences"
+              title="Travel preferences"
+              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:size-10"
+            >
+              <SlidersHorizontal size={16} />
+            </button>
+            {account ? (
+              <button type="button" onClick={signOut} title={`Signed in as ${account.email}. Click to sign out.`} className="cursor-pointer max-sm:hidden">
+                <Pill>{account.email.split("@")[0]}</Pill>
+              </button>
+            ) : (
+              <Button size="sm" variant="quiet" onClick={() => setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }))}>
+                Sign in
+              </Button>
+            )}
             {provider ? (
               <button type="button" onClick={() => disconnect(provider)} title="Disconnect" className="cursor-pointer">
                 <Pill tone="green">
@@ -248,6 +343,23 @@ export function App() {
                 </div>
               )}
               <SearchForm form={form} onChange={setForm} onSubmit={() => search(form)} busy={busy} />
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                {preferenceChips(prefs).map((c) => (
+                  <Pill key={c}>{c}</Pill>
+                ))}
+                <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} className="cursor-pointer px-1 text-blue hover:underline">
+                  {account ? "Edit preferences" : "Set alliances and preferences"}
+                </button>
+                {!account && (
+                  <span className="text-ash">
+                    ·{" "}
+                    <button type="button" onClick={() => setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }))} className="cursor-pointer text-charcoal hover:text-ink">
+                      create an account
+                    </button>{" "}
+                    to keep them
+                  </span>
+                )}
+              </div>
             </section>
 
             {error && <p className="mb-6 rounded-lg border border-[rgba(255,32,71,0.3)] bg-card p-4 text-sm text-red">{error}</p>}
@@ -313,6 +425,14 @@ export function App() {
               connected={connected}
               onConnect={() => setConnectOpen(true)}
               context={form.from.length && form.to.length ? toQuery(form) : null}
+              filters={{
+                alliances: prefs.alliances,
+                avoidAirlines: prefs.avoidedAirlines,
+                preferAirlines: prefs.preferredAirlines,
+                noBasicEconomy: prefs.noBasicEconomy,
+                avoidRedEyes: prefs.avoidRedEyes,
+                avoidSelfTransfer: prefs.avoidSelfTransfer,
+              }}
               checks={checks}
               onCheck={check}
               trustedOnly={trustedOnly}
@@ -323,7 +443,7 @@ export function App() {
 
       <footer className="border-t border-hairline">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-8 text-xs text-ash sm:px-8">
-          <span>Live fares from Google Flights. Contrail doesn&apos;t sell tickets: you book with the airline or agency.</span>
+          <span>Live fares from Google Flights. Lodestar doesn&apos;t sell tickets: you book with the airline or agency.</span>
           <span>Prices in USD, taxes included, per the seller at search time.</span>
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-charcoal hover:text-ink sm:ml-auto">
             <GitHubMark size={14} /> Open source on GitHub · MIT
@@ -331,6 +451,26 @@ export function App() {
         </div>
       </footer>
 
+      <AccountDialog
+        key={`account-${accountDialog.key}`}
+        open={accountDialog.open}
+        initialMode={accountDialog.mode}
+        onClose={() => setAccountDialog((d) => ({ ...d, open: false }))}
+        onSignedIn={signedIn}
+        pendingPreferences={prefs}
+      />
+      <PreferencesDialog
+        key={`prefs-${prefsDialog.key}`}
+        open={prefsDialog.open}
+        onClose={() => setPrefsDialog((d) => ({ ...d, open: false }))}
+        value={prefs}
+        signedIn={Boolean(account)}
+        onSave={savePreferences}
+        onCreateAccount={(p) => {
+          adoptPreferences(p, true);
+          setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }));
+        }}
+      />
       <ConnectAI open={connectOpen} onClose={() => setConnectOpen(false)} onConnected={() => refreshAi()} />
     </>
   );

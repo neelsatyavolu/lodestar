@@ -14,7 +14,7 @@ import { resolveModel } from "@/lib/ai/models";
 import { isProvider, type Provider } from "@/lib/ai/providers";
 import { deviceId, getActiveSession } from "@/lib/ai/session";
 import { runSearch } from "@/lib/search";
-import { SearchQuerySchema } from "@/lib/types";
+import { AirlineCode, ALLIANCES, SearchQuerySchema } from "@/lib/types";
 
 // Plans, runs up to five live searches, then picks: allow a few minutes.
 export const maxDuration = 300;
@@ -22,9 +22,22 @@ export const maxDuration = 300;
 const Body = z.object({
   provider: z.string().refine(isProvider, "Unknown provider."),
   model: z.string().max(60).optional(),
-  prompt: z.string().trim().min(3, "Tell Contrail where you want to go.").max(1200),
+  prompt: z.string().trim().min(3, "Tell Lodestar where you want to go.").max(1200),
   context: z.record(z.string(), z.unknown()).nullable().optional(),
   previous: z.object({ prompt: z.string().max(1200), headline: z.string().max(200) }).nullable().optional(),
+  // The traveller's saved or current filters, applied to every planned search.
+  filters: z
+    .object({
+      alliances: z.array(z.enum(ALLIANCES)).max(3).default([]),
+      avoidAirlines: z.array(AirlineCode).max(20).default([]),
+      preferAirlines: z.array(AirlineCode).max(10).default([]),
+      noBasicEconomy: z.boolean().default(false),
+      avoidRedEyes: z.boolean().default(false),
+      avoidSelfTransfer: z.boolean().default(true),
+    })
+    .partial()
+    .nullable()
+    .optional(),
 });
 
 const SEARCH_CONCURRENCY = 2;
@@ -45,6 +58,8 @@ async function pool<T, R>(items: T[], limit: number, fn: (item: T, index: number
 function userPrompt(body: z.infer<typeof Body>): string {
   const parts = [`Traveller: ${body.prompt}`];
   if (body.context) parts.push(`Their current search form (use it as defaults): ${JSON.stringify(body.context)}`);
+  if (body.filters && Object.values(body.filters).some((v) => (Array.isArray(v) ? v.length : v)))
+    parts.push(`Their saved preferences (already applied to every search; mention them only if they matter): ${JSON.stringify(body.filters)}`);
   if (body.previous) parts.push(`Earlier in this conversation they asked "${body.previous.prompt}" and got: ${body.previous.headline}`);
   return parts.join("\n");
 }
@@ -91,7 +106,7 @@ export async function POST(req: Request) {
         const outcomes = await pool(plan.searches, SEARCH_CONCURRENCY, async (search, index): Promise<SearchOutcome> => {
           send({ type: "search", index, state: "running" });
           try {
-            const result = await runSearch(SearchQuerySchema.parse(toQuery(search)), signal, { calendarMs: 12_000 });
+            const result = await runSearch(SearchQuerySchema.parse({ ...toQuery(search), ...(body.filters ?? {}) }), signal, { calendarMs: 12_000 });
             const cheapest = result.itineraries.reduce<number | null>((m, it) => (m === null || it.price < m ? it.price : m), null);
             send({ type: "search", index, state: "done", count: result.itineraries.length, cheapest });
             return { search, itineraries: result.itineraries, hacks: result.hacks };

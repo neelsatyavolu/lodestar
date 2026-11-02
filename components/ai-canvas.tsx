@@ -40,6 +40,7 @@ export function AiCanvas({
   checks,
   onCheck,
   trustedOnly,
+  filters,
 }: {
   provider: Provider | null;
   models: { id: string; label: string }[];
@@ -49,6 +50,7 @@ export function AiCanvas({
   checks: Record<string, SellerCheck>;
   onCheck: (it: Itinerary) => void;
   trustedOnly: boolean;
+  filters: Record<string, unknown>;
 }) {
   const [prompt, setPrompt] = useState("");
   const [board, setBoard] = useState<Board | null>(null);
@@ -76,7 +78,7 @@ export function AiCanvas({
       const res = await fetch("/api/ai/canvas", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider: use, model: model || undefined, prompt: text, context, previous: previous?.canvas ? { prompt: previous.prompt, headline: previous.canvas.headline } : null }),
+        body: JSON.stringify({ provider: use, model: model || undefined, prompt: text, context, filters, previous: previous?.canvas ? { prompt: previous.prompt, headline: previous.canvas.headline } : null }),
         signal: ctrl.signal,
       });
       if (!res.ok) {

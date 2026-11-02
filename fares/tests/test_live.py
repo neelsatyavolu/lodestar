@@ -1,4 +1,4 @@
-"""Live tests against Google Flights. Run with CONTRAIL_LIVE=1; skipped otherwise."""
+"""Live tests against Google Flights. Run with LODESTAR_LIVE=1; skipped otherwise."""
 
 import os
 from datetime import date, timedelta
@@ -6,9 +6,9 @@ from datetime import date, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from contrail_fares.app import app
+from lodestar_fares.app import app
 
-pytestmark = pytest.mark.skipif(os.environ.get("CONTRAIL_LIVE") != "1", reason="live network test")
+pytestmark = pytest.mark.skipif(os.environ.get("LODESTAR_LIVE") != "1", reason="live network test")
 DEPART = (date.today() + timedelta(days=40)).isoformat()
 RETURN = (date.today() + timedelta(days=45)).isoformat()
 
@@ -64,3 +64,14 @@ def test_ids_differ_by_cabin(client) -> None:
     economy = client.post("/flights", json=body).json()["itineraries"]
     business = client.post("/flights", json={**body, "cabin": "BUSINESS"}).json()["itineraries"]
     assert not {i["id"] for i in economy} & {i["id"] for i in business}
+
+
+def test_alliance_filter(client) -> None:
+    res = client.post(
+        "/flights", json={"origins": ["SFO"], "destinations": ["LHR"], "depart": DEPART, "alliances": ["ONEWORLD"]}
+    )
+    assert res.status_code == 200, res.text
+    # Google's alliance filter includes close partners, e.g. Aer Lingus (EI) sold through IAG/BA.
+    oneworld = {"AA", "BA", "IB", "AY", "QR", "JL", "CX", "QF", "AS", "RJ", "UL", "MH", "AT", "WY", "FJ", "EI"}
+    carriers = {leg["airline"]["code"] for i in res.json()["itineraries"] for s in i["slices"] for leg in s["legs"]}
+    assert carriers and carriers <= oneworld, carriers

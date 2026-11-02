@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Shapes returned by the fares service (fares/contrail_fares). Parsed with zod
+// Shapes returned by the fares service (fares/lodestar_fares). Parsed with zod
 // at the boundary so a Google-side change fails loudly instead of rendering junk.
 
 const Airline = z.object({ code: z.string(), name: z.string() });
@@ -100,7 +100,11 @@ export type Cabin = (typeof CABINS)[number];
 export const STOPS = ["ANY", "0", "1", "2"] as const;
 export type MaxStops = (typeof STOPS)[number];
 
-const Iata = z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Use a three-letter airport code.");
+export const ALLIANCES = ["STAR_ALLIANCE", "ONEWORLD", "SKYTEAM"] as const;
+export type AllianceName = (typeof ALLIANCES)[number];
+
+export const Iata = z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Use a three-letter airport code.");
+export const AirlineCode = z.string().trim().toUpperCase().regex(/^[A-Z0-9]{2}$/, "Use a two-character airline code.");
 const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD.");
 
 /** What the browser (or the AI planner) asks the search API for. */
@@ -118,6 +122,13 @@ export const SearchQuerySchema = z
     nearby: z.boolean().default(true),
     flexible: z.boolean().default(true),
     split: z.boolean().default(true),
+    // Traveller preferences (saved on an account, or set per search).
+    alliances: z.array(z.enum(ALLIANCES)).max(3).default([]),
+    avoidAirlines: z.array(AirlineCode).max(20).default([]),
+    preferAirlines: z.array(AirlineCode).max(10).default([]),
+    noBasicEconomy: z.boolean().default(false),
+    avoidRedEyes: z.boolean().default(false),
+    avoidSelfTransfer: z.boolean().default(true),
   })
   .refine((q) => !q.return || q.return >= q.depart, { message: "Return is before departure.", path: ["return"] })
   .refine((q) => q.adults + q.children <= 9, { message: "At most 9 travellers.", path: ["adults"] });

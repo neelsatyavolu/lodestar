@@ -14,7 +14,7 @@ export default defineConfig({
       provider: "v8",
       include: ["lib/**/*.ts"],
       // Thin wrappers over cookies, network and the shared auth package; covered by the live checks.
-      exclude: ["lib/**/*.test.ts", "lib/ai/session.ts", "lib/ai/providers.ts", "lib/ai/models.ts", "lib/api.ts"],
+      exclude: ["lib/**/*.test.ts", "lib/ai/session.ts", "lib/ai/providers.ts", "lib/ai/models.ts", "lib/api.ts", "lib/server/**", "lib/test-fixtures.ts"],
     },
   },
 });

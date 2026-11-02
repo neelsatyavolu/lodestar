@@ -2,7 +2,7 @@ import "server-only";
 import { bundledModels, loadModels, selectModels, type Model } from "@neelsatyavolu/shared-ai-auth";
 import type { Provider } from "./providers";
 
-// Add model IDs here only when Contrail should hide them. New IDs show by default.
+// Add model IDs here only when Lodestar should hide them. New IDs show by default.
 const HIDDEN_MODELS: Record<Provider, string[]> = { codex: [], grok: [] };
 const CACHE_MS = 5 * 60_000;
 let cached = bundledModels;

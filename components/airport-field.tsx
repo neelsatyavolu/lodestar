@@ -2,11 +2,39 @@ import { X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "@/lib/client";
 
-type Suggestion = { code: string; label: string; detail: string; metro: boolean };
+type Suggestion = { code: string; label: string; detail: string };
+type Kind = "airport" | "airline";
 
-const MAX_CODES = 4;
+const SOURCES: Record<Kind, { url: (q: string) => string; codeLength: number; toSuggestions: (data: unknown) => Suggestion[] }> = {
+  airport: { url: (q) => `/api/airports?q=${encodeURIComponent(q)}`, codeLength: 3, toSuggestions: (d) => d as Suggestion[] },
+  airline: {
+    url: (q) => `/api/airlines?q=${encodeURIComponent(q)}`,
+    codeLength: 2,
+    toSuggestions: (d) => (d as { code: string; name: string }[]).map((a) => ({ code: a.code, label: a.name, detail: a.code })),
+  },
+};
 
-export function AirportField({ label, value, onChange, placeholder }: { label: string; value: string[]; onChange: (codes: string[]) => void; placeholder: string }) {
+/** Chips for several codes, with type-ahead suggestions. Airports by default; airlines with kind="airline". */
+export function AirportField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  kind = "airport",
+  max = 4,
+  bare = false,
+}: {
+  label: string;
+  value: string[];
+  onChange: (codes: string[]) => void;
+  placeholder: string;
+  kind?: Kind;
+  max?: number;
+  /** Without the form-cell padding, for use inside other layouts. */
+  bare?: boolean;
+}) {
+  const MAX_CODES = max;
+  const source = SOURCES[kind];
   const [text, setText] = useState("");
   const [fetched, setFetched] = useState<{ q: string; items: Suggestion[] }>({ q: "", items: [] });
   const [open, setOpen] = useState(false);
@@ -19,9 +47,9 @@ export function AirportField({ label, value, onChange, placeholder }: { label: s
     if (!q) return;
     const ctrl = new AbortController();
     const t = setTimeout(() => {
-      api<Suggestion[]>(`/api/airports?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
-        .then((s) => {
-          setFetched({ q, items: s });
+      api<unknown>(source.url(q), { signal: ctrl.signal })
+        .then((data) => {
+          setFetched({ q, items: source.toSuggestions(data) });
           setActive(0);
         })
         .catch(() => {});
@@ -30,7 +58,7 @@ export function AirportField({ label, value, onChange, placeholder }: { label: s
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [text]);
+  }, [text, source]);
 
   // Only show suggestions for what is typed now; stale ones vanish as soon as the text changes.
   const items = text.trim() && fetched.q === text.trim() ? fetched.items : [];
@@ -51,7 +79,7 @@ export function AirportField({ label, value, onChange, placeholder }: { label: s
     } else if (e.key === "Enter" && open && items[active]) {
       e.preventDefault();
       add(items[active].code);
-    } else if (e.key === "Enter" && /^[a-z]{3}$/i.test(text.trim())) {
+    } else if (e.key === "Enter" && text.trim().length === source.codeLength && /^[a-z0-9]+$/i.test(text.trim())) {
       e.preventDefault();
       add(text.trim().toUpperCase());
     } else if (e.key === "Backspace" && !text && value.length) {
@@ -61,8 +89,11 @@ export function AirportField({ label, value, onChange, placeholder }: { label: s
 
   return (
     <div className="relative min-w-0 flex-1">
-      <label className="block px-3 pt-2.5 text-[11px] text-ash">{label}</label>
-      <div className="flex min-h-10 flex-wrap items-center gap-1.5 px-3 pb-2" onClick={() => input.current?.focus()}>
+      <label className={`block text-[11px] text-ash ${bare ? "pb-1.5" : "px-3 pt-2.5"}`}>{label}</label>
+      <div
+        className={`flex min-h-10 flex-wrap items-center gap-1.5 ${bare ? "rounded-md border border-hairline-strong bg-deep px-2 py-1" : "px-3 pb-2"}`}
+        onClick={() => input.current?.focus()}
+      >
         {value.map((code) => (
           <span key={code} className="inline-flex items-center gap-1 rounded-sm bg-elevated py-0.5 pl-2 pr-1 font-mono text-[13px] text-ink">
             {code}
