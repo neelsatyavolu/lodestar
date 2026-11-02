@@ -126,7 +126,7 @@ export function AiCanvas({
           e.preventDefault();
           run(prompt, board);
         }}
-        className="rounded-xl border border-hairline-strong bg-card"
+        className="rounded-xl border border-hairline-strong bg-card has-[textarea:focus]:border-accent"
       >
         <textarea
           value={prompt}
@@ -140,7 +140,7 @@ export function AiCanvas({
           rows={3}
           maxLength={1200}
           placeholder="Describe the trip. Where, roughly when, and what matters to you."
-          className="block w-full resize-none bg-transparent px-4 pt-4 text-[16px] leading-relaxed text-ink outline-none placeholder:text-stone"
+          className="block w-full resize-none bg-transparent px-4 pt-4 text-[16px] leading-relaxed text-ink outline-none placeholder:text-stone focus-visible:shadow-none!"
           aria-label="Describe your trip"
         />
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
@@ -168,7 +168,7 @@ export function AiCanvas({
             {use ? (
               <Button type="submit" variant="primary" disabled={!prompt.trim() || board?.running}>
                 {board?.running ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowUp size={15} />}
-                Canvas it
+                Plan trip
               </Button>
             ) : (
               <Button type="button" variant="primary" onClick={onConnect}>

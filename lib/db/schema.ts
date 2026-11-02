@@ -28,6 +28,14 @@ const STATEMENTS = [
     data jsonb NOT NULL,
     updated_at timestamptz NOT NULL
   )`,
+  // AI sign-ins (ChatGPT, Grok) made while signed in, sealed by lib/ai/session.
+  `CREATE TABLE IF NOT EXISTS ai_connections (
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    provider text NOT NULL,
+    sealed text NOT NULL,
+    updated_at timestamptz NOT NULL,
+    PRIMARY KEY (user_id, provider)
+  )`,
 ];
 
 export async function migrate(db: Queryable): Promise<void> {

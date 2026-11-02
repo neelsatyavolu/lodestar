@@ -1,6 +1,6 @@
 import { fail, ok, rateLimited, readJson } from "@/lib/api";
 import { exchangeCode, extractCodeAndState, isProvider } from "@/lib/ai/providers";
-import { clearPkce, deviceId, readPkce, writeSession } from "@/lib/ai/session";
+import { aiOwner, clearPkce, readPkce, writeSession } from "@/lib/ai/session";
 
 // POST /api/ai/:provider/complete: exchange the pasted callback link or code for tokens.
 export async function POST(req: Request, { params }: { params: Promise<{ provider: string }> }) {
@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
 
   try {
     const tokens = await exchangeCode(provider, code, pkce.verifier);
-    await writeSession(provider, await deviceId(), tokens);
+    await writeSession(provider, await aiOwner(), tokens);
     await clearPkce(provider);
     return ok({ connected: provider });
   } catch (err) {

@@ -2,7 +2,7 @@
 
 **Live: [lodestar.xanom.co](https://lodestar.xanom.co)** · MIT licensed
 
-Flight search that finds lower fares and shows who is selling them. Live prices come from Google Flights. Every search also tries nearby airports, three days either side, and two one-way tickets. An optional account saves your preferences (home airports, alliances, airlines to prefer or avoid, red-eyes, basic economy, cabin and bags) and applies them to every search. Each itinerary can be checked seller by seller, and agencies we haven't vetted are hidden by default. The AI canvas uses your own ChatGPT or Grok subscription to plan several searches at once and pick the best options from the live results.
+Flight search that finds lower fares and shows who is selling them. Live prices come from Google Flights. Every search also tries nearby airports, three days either side, and two one-way tickets. An optional account saves your preferences (home airports, alliances, airlines to prefer or avoid, red-eyes, basic economy, cabin and bags) and applies them to every search. Each itinerary can be checked seller by seller, and agencies we haven't vetted are hidden by default. Plan uses your own ChatGPT or Grok subscription to plan several searches at once and pick the best options from the live results.
 
 ## Run it
 
@@ -34,9 +34,9 @@ Blackletter: a flat black canvas (light mode by system setting or the theme togg
 | Hacks | `lib/hacks.ts`, `lib/stopovers.ts` | Applied to every search automatically: nearby airports, shifted dates, two one-ways, a day earlier or later home, driving to a bigger airport 120–300 km away, the next cabin up when it costs little more, booking a group one seat at a time, a round trip that undercuts a one-way, what an overnight flight saves, airline stopover programs (Icelandair, TAP, Iberia, Copa, Turkish, Etihad, Qatar), nonstop for a little more, and no-frills fares. Extra searches run in parallel with a 10-second cap; a card shows only when the saving is real. |
 | Seller trust | `lib/sellers.ts`, `lib/verify.ts` | Airline direct, trusted agency (Expedia Group, Booking Holdings, Trip.com Group brands, card travel portals) or not vetted. Not-vetted sellers are hidden unless you ask. |
 | Logos | `app/api/logo/*` | Google's airline logos, then Kiwi's (with its placeholder image rejected), then a drawn monogram, so a logo never shows broken. Seller icons come from Google's and DuckDuckGo's icon services; the seller's own site is never contacted. |
-| AI canvas | `lib/ai/canvas.ts`, `app/api/ai/canvas` | The model turns your request into up to five searches, the server runs them on live fares, then the model picks and explains options. It can only cite options by reference, so every price shown is a real search result. |
+| Plan | `lib/ai/canvas.ts`, `app/api/ai/canvas` | The model turns your request into up to five searches, the server runs them on live fares, then the model picks and explains options. It can only cite options by reference, so every price shown is a real search result. |
 | Accounts | `lib/account`, `lib/db`, `app/api/account` | Email and password (scrypt), signed session cookies that a password reset or "sign out everywhere" revokes, reset links by email through Resend. Preferences are one validated JSON row per account in Postgres (Neon in production, PGlite locally). |
-| AI sign-in | `lib/ai/session.ts` | ChatGPT or Grok OAuth through `@neelsatyavolu/shared-ai-auth`. Tokens are AES-GCM sealed into httpOnly cookies scoped to `/api/ai` and bound to an anonymous device id. The server stores nothing. |
+| AI sign-in | `lib/ai/session.ts` | ChatGPT or Grok OAuth through `@neelsatyavolu/shared-ai-auth`. Tokens are AES-GCM sealed and bound to their owner. Signed in, they are saved to the account (`ai_connections`) and survive sign-out; signed out, they live in httpOnly cookies scoped to `/api/ai`, bound to an anonymous device id. Signing in moves a browser's connection into the account. |
 
 Booking links open the exact itinerary on Google Flights, where you continue to the seller you picked. Lodestar never sells tickets.
 

@@ -11,7 +11,7 @@ const HOW: Record<Provider, string> = {
   grok: "Sign in with your X / Grok account. Grok then shows a code. Copy it and paste it below.",
 };
 
-export function ConnectAI({ open, onClose, onConnected, initial = "codex" }: { open: boolean; onClose: () => void; onConnected: (p: Provider) => void; initial?: Provider }) {
+export function ConnectAI({ open, onClose, onConnected, signedIn, initial = "codex" }: { open: boolean; onClose: () => void; onConnected: (p: Provider) => void; signedIn: boolean; initial?: Provider }) {
   const [provider, setProvider] = useState<Provider>(initial);
   const [started, setStarted] = useState(false);
   const [pasted, setPasted] = useState("");
@@ -73,7 +73,10 @@ export function ConnectAI({ open, onClose, onConnected, initial = "codex" }: { o
       </div>
       <div className="space-y-5 p-5">
         <p className="text-[13px] leading-relaxed text-mute">
-          Lodestar&apos;s AI runs on your own ChatGPT or Grok subscription. The sign-in token is encrypted and kept only in this browser&apos;s cookies; Lodestar&apos;s server never stores it.
+          Lodestar&apos;s AI runs on your own ChatGPT or Grok subscription.{" "}
+          {signedIn
+            ? "The sign-in token is encrypted and saved to your Lodestar account, so it works wherever you sign in. Disconnect to remove it."
+            : "The sign-in token is encrypted and kept only in this browser’s cookies. Sign in to Lodestar first to save it to your account."}
         </p>
         <div className="grid grid-cols-2 gap-2">
           {(["codex", "grok"] as Provider[]).map((p) => (

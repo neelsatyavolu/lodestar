@@ -24,16 +24,20 @@ export function PreferencesDialog({
   onClose,
   value,
   signedIn,
+  email,
   onSave,
   onCreateAccount,
+  onSignOut,
 }: {
   open: boolean;
   onClose: () => void;
   value: Preferences;
   signedIn: boolean;
+  email: string | null;
   /** Applies the preferences now; saves them when signed in. Resolves with an error message or null. */
   onSave: (prefs: Preferences) => Promise<string | null>;
   onCreateAccount: (prefs: Preferences) => void;
+  onSignOut: () => void;
 }) {
   const [p, setP] = useState<Preferences>(value);
   const [busy, setBusy] = useState(false);
@@ -60,6 +64,18 @@ export function PreferencesDialog({
           {error && <p className="text-[13px] text-danger">{error}</p>}
           <div className="flex flex-wrap items-center justify-end gap-2">
             {!signedIn && <span className="mr-auto text-xs text-ash">These apply now. Create an account to keep them.</span>}
+            {signedIn && email && <span className="mr-auto truncate text-xs text-ash">Signed in as {email}</span>}
+            {signedIn && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  onSignOut();
+                  onClose();
+                }}
+              >
+                Sign out
+              </Button>
+            )}
             {!signedIn && (
               <Button
                 variant="ghost"

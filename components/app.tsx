@@ -233,6 +233,7 @@ export function App() {
   const signedIn = (a: Account, p: Preferences) => {
     setAccount(a);
     adoptPreferences(p, true);
+    refreshAi();
   };
 
   const signOut = async () => {
@@ -296,7 +297,7 @@ export function App() {
           <nav className="inline-flex shrink-0 rounded-full bg-elevated p-0.5 text-[13px] sm:ml-2" aria-label="Mode">
             {(["search", "ai"] as Mode[]).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
-                {m === "search" ? "Search" : "AI canvas"}
+                {m === "search" ? "Search" : "Plan"}
               </button>
             ))}
           </nav>
@@ -315,7 +316,7 @@ export function App() {
               <SlidersHorizontal size={16} />
             </button>
             {account ? (
-              <button type="button" onClick={signOut} title={`Signed in as ${account.email}. Click to sign out.`} className="cursor-pointer max-sm:hidden">
+              <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} className="cursor-pointer max-sm:hidden">
                 <Pill>{account.email.split("@")[0]}</Pill>
               </button>
             ) : (
@@ -486,13 +487,15 @@ export function App() {
         onClose={() => setPrefsDialog((d) => ({ ...d, open: false }))}
         value={prefs}
         signedIn={Boolean(account)}
+        email={account?.email ?? null}
         onSave={savePreferences}
+        onSignOut={signOut}
         onCreateAccount={(p) => {
           adoptPreferences(p, true);
           setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }));
         }}
       />
-      <ConnectAI open={connectOpen} onClose={() => setConnectOpen(false)} onConnected={() => refreshAi()} />
+      <ConnectAI open={connectOpen} onClose={() => setConnectOpen(false)} onConnected={() => refreshAi()} signedIn={Boolean(account)} />
     </>
   );
 }

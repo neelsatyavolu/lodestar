@@ -12,7 +12,7 @@ import {
 import { ModelError, complete } from "@/lib/ai/complete";
 import { resolveModel } from "@/lib/ai/models";
 import { isProvider, type Provider } from "@/lib/ai/providers";
-import { deviceId, getActiveSession } from "@/lib/ai/session";
+import { aiOwner, getActiveSession } from "@/lib/ai/session";
 import { runSearch } from "@/lib/search";
 import { AirlineCode, ALLIANCES, SearchQuerySchema } from "@/lib/types";
 
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     return fail(err instanceof z.ZodError ? (err.issues[0]?.message ?? "Invalid request.") : "Invalid request.", 400);
   }
   const provider = body.provider as Provider;
-  const tokens = await getActiveSession(provider, await deviceId());
+  const tokens = await getActiveSession(provider, await aiOwner());
   if (!tokens) return fail(`Connect your ${provider === "codex" ? "ChatGPT" : "Grok"} account first.`, 401);
 
   const encoder = new TextEncoder();
