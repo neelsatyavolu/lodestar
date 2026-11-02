@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { addDays } from "@/lib/format";
 import type { Cabin, MaxStops } from "@/lib/types";
 import { AirportField } from "./airport-field";
+import { DateRangeField } from "./date-picker";
 import { Button, Toggle } from "./ui";
 
 export type FormState = {
@@ -83,7 +84,20 @@ function Select<T extends string | number>({ value, options, onChange, label }: 
   );
 }
 
-export function SearchForm({ form, onChange, onSubmit, busy }: { form: FormState; onChange: (f: FormState) => void; onSubmit: () => void; busy: boolean }) {
+export function SearchForm({
+  form,
+  onChange,
+  onSubmit,
+  busy,
+  filters = {},
+}: {
+  form: FormState;
+  onChange: (f: FormState) => void;
+  onSubmit: () => void;
+  busy: boolean;
+  /** Saved preference filters, so calendar fares match the real search. */
+  filters?: Record<string, unknown>;
+}) {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => onChange({ ...form, [k]: v });
   const today = useToday();
   const ready = form.from.length > 0 && form.to.length > 0 && form.depart >= today && (!form.roundTrip || (form.return && form.return >= form.depart));
@@ -132,32 +146,15 @@ export function SearchForm({ form, onChange, onSubmit, busy }: { form: FormState
         <div className="flex items-stretch border-b border-hairline lg:border-b-0 lg:border-l lg:border-r">
           <AirportField label="To" value={form.to} onChange={(v) => set("to", v)} placeholder="City or airport" />
         </div>
-        <div className="grid grid-cols-2">
-          <label className="block border-r border-hairline px-3 py-2.5">
-            <span className="block text-[11px] text-ash">Depart</span>
-            <input
-              type="date"
-              min={today}
-              value={form.depart}
-              onChange={(e) => {
-                const depart = e.target.value;
-                onChange({ ...form, depart, return: form.return && form.return < depart ? addDays(depart, 5) : form.return });
-              }}
-              className="mt-1 w-full bg-transparent text-[15px] text-ink outline-none tnum"
-            />
-          </label>
-          <label className={`block px-3 py-2.5 ${form.roundTrip ? "" : "opacity-40"}`}>
-            <span className="block text-[11px] text-ash">Return</span>
-            <input
-              type="date"
-              min={form.depart}
-              disabled={!form.roundTrip}
-              value={form.return ?? ""}
-              onChange={(e) => set("return", e.target.value)}
-              className="mt-1 w-full bg-transparent text-[15px] text-ink outline-none tnum"
-            />
-          </label>
-        </div>
+        <DateRangeField
+          depart={form.depart}
+          ret={form.roundTrip ? form.return : null}
+          roundTrip={form.roundTrip}
+          today={today}
+          onChange={(depart, ret) => onChange({ ...form, depart, return: form.roundTrip ? ret : form.return })}
+          onRoundTrip={(rt) => onChange({ ...form, roundTrip: rt, return: rt ? (form.return && form.return >= form.depart ? form.return : addDays(form.depart, 5)) : form.return })}
+          priceQuery={form.from.length && form.to.length ? { ...toQuery(form), ...filters } : null}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-3 py-3">

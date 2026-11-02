@@ -79,6 +79,17 @@ describe("runSearch", () => {
     expect(args.tripDays).toBe(7);
   });
 
+  it("prices a visible window, capped at two months and never in the past", async () => {
+    searchDates.mockReset();
+    searchDates.mockResolvedValue([]);
+    const q = SearchQuerySchema.parse({ from: ["SFO"], to: ["JFK"], depart: future(20), return: future(25) });
+    await runCalendar(q, undefined, { start: future(-10), end: future(200) });
+    const args = searchDates.mock.calls[0][0];
+    expect(args.start).toBe(future(1));
+    expect(args.end).toBe(future(62));
+    expect(args.tripDays).toBe(5);
+  });
+
   it("rejects past dates and same-airport trips", async () => {
     await expect(runSearch(SearchQuerySchema.parse({ from: ["SFO"], to: ["JFK"], depart: "2020-01-01" }))).rejects.toThrow(/passed/);
     await expect(runSearch(SearchQuerySchema.parse({ from: ["SFO"], to: ["SFO"], depart: future(10) }))).rejects.toThrow(/same/);

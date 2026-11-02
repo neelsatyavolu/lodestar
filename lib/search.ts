@@ -86,14 +86,27 @@ function withDeadline<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
 }
 
 /** Lowest fare per departure day, three days either side, same trip length. Google can be slow here. */
-export async function runCalendar(q: SearchQuery, signal?: AbortSignal): Promise<DayPrice[]> {
+export const MAX_CALENDAR_DAYS = 62;
+
+/**
+ * Lowest fare per departure day, same trip length. By default three days
+ * either side of the chosen date; with `window`, any span up to two months
+ * (the picker's visible months). Google can be slow here.
+ */
+export async function runCalendar(q: SearchQuery, signal?: AbortSignal, window?: { start: string; end: string }): Promise<DayPrice[]> {
   const { from, to } = validated(q);
-  const start = [addDays(q.depart, -FLEX_DAYS), addDays(today(), 1)].sort().at(-1)!;
+  const tomorrow = addDays(today(), 1);
+  const wantedStart = window?.start ?? addDays(q.depart, -FLEX_DAYS);
+  const start = wantedStart > tomorrow ? wantedStart : tomorrow;
+  const wantedEnd = window?.end ?? addDays(q.depart, FLEX_DAYS);
+  const cap = addDays(start, MAX_CALENDAR_DAYS - 1);
+  const end = wantedEnd < cap ? wantedEnd : cap;
+  if (end < start) return [];
   const tripDays = q.return ? Math.round((Date.parse(q.return) - Date.parse(q.depart)) / 86_400_000) : null;
   // Google's calendar has no same-day round trips; a one-way calendar would not compare.
   if (tripDays === 0) return [];
   return searchDates(
-    { origins: from, destinations: to, start, end: addDays(q.depart, FLEX_DAYS), tripDays, cabin: q.cabin, maxStops: q.stops, adults: q.adults, children: q.children, alliances: q.alliances, excludeAirlines: q.avoidAirlines },
+    { origins: from, destinations: to, start, end, tripDays, cabin: q.cabin, maxStops: q.stops, adults: q.adults, children: q.children, alliances: q.alliances, excludeAirlines: q.avoidAirlines },
     signal,
   );
 }

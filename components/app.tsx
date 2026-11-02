@@ -292,7 +292,9 @@ export function App() {
           </nav>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <GitHubLink />
+            <span className="max-sm:hidden">
+              <GitHubLink />
+            </span>
             <button
               type="button"
               onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))}
@@ -319,9 +321,8 @@ export function App() {
                 </Pill>
               </button>
             ) : (
-              <Button size="sm" onClick={() => setConnectOpen(true)}>
-                <span className="sm:hidden">Connect</span>
-                <span className="max-sm:hidden">Connect AI</span>
+              <Button size="sm" onClick={() => setConnectOpen(true)} className="max-sm:hidden">
+                Connect AI
               </Button>
             )}
           </div>
@@ -344,7 +345,13 @@ export function App() {
                   </p>
                 </div>
               )}
-              <SearchForm form={form} onChange={setForm} onSubmit={() => search(form)} busy={busy} />
+              <SearchForm
+                form={form}
+                onChange={setForm}
+                onSubmit={() => search(form)}
+                busy={busy}
+                filters={{ alliances: prefs.alliances, avoidAirlines: prefs.avoidedAirlines }}
+              />
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                 {preferenceChips(prefs).map((c) => (
                   <Pill key={c}>{c}</Pill>
@@ -444,10 +451,12 @@ export function App() {
       </main>
 
       <footer className="border-t border-hairline">
-        <div className="mx-auto flex max-w-[1120px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-8 text-xs text-ash sm:px-8">
-          <span>Live fares from Google Flights. Lodestar doesn&apos;t sell tickets: you book with the airline or agency.</span>
-          <span>Prices in USD, taxes included, per the seller at search time.</span>
-          <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-charcoal hover:text-ink sm:ml-auto">
+        <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 text-xs text-ash sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div className="space-y-1">
+            <p>Live fares from Google Flights. Lodestar doesn&apos;t sell tickets: you book with the airline or agency.</p>
+            <p>Prices in USD, taxes included, per the seller at search time.</p>
+          </div>
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-charcoal hover:text-ink">
             <GitHubMark size={14} /> Open source on GitHub · MIT
           </a>
         </div>
