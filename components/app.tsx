@@ -18,6 +18,7 @@ import { PreferencesDialog } from "./preferences-dialog";
 import { ThemeToggle } from "./theme-toggle";
 import { Onboarding } from "./onboarding";
 import { Tour, type TourStep } from "./tour";
+import { Stays } from "./stays";
 import { Trips } from "./trips";
 import { DateStrip, HackCards } from "./hacks";
 import { ItineraryCard, allAirlines, type SellerCheck } from "./itinerary-card";
@@ -25,8 +26,8 @@ import { Results } from "./results";
 import { SearchForm, defaultForm, toQuery, type FormState } from "./search-form";
 import { Button, Pill } from "./ui";
 
-type Mode = "search" | "ai" | "trips";
-const MODE_LABEL: Record<Mode, string> = { search: "Search", ai: "Plan", trips: "Trips" };
+type Mode = "search" | "stays" | "ai" | "trips";
+const MODE_LABEL: Record<Mode, string> = { search: "Search", stays: "Stays", ai: "Plan", trips: "Trips" };
 
 function tourSteps(showPlan: () => void): TourStep[] {
   return [
@@ -328,7 +329,7 @@ export function App() {
             <span className="text-[18px] font-medium tracking-[-0.02em] max-[400px]:sr-only">Lodestar</span>
           </Link>
           <nav className="inline-flex shrink-0 rounded-full bg-elevated p-0.5 text-[13px] sm:ml-2" aria-label="Mode">
-            {((account ? ["search", "ai", "trips"] : ["search", "ai"]) as Mode[]).map((m) => (
+            {((account ? ["search", "stays", "ai", "trips"] : ["search", "stays", "ai"]) as Mode[]).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
                 {MODE_LABEL[m]}
               </button>
@@ -461,6 +462,9 @@ export function App() {
               </div>
             )}
         </div>
+        <div hidden={mode !== "stays"}>
+          <Stays trustedOnly={trustedOnly} />
+        </div>
         <div hidden={mode !== "ai"}>
           <section className="pt-10 sm:pt-16">
             <AiCanvas
@@ -509,7 +513,7 @@ export function App() {
       <footer className="border-t border-hairline">
         <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 text-xs text-ash sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div className="space-y-1">
-            <p>Live fares from Google Flights. Lodestar doesn&apos;t sell tickets: you book with the airline or agency.</p>
+            <p>Live prices from Google Flights and Google Hotels. Lodestar doesn&apos;t sell tickets or rooms: you book with the airline, hotel or agency.</p>
             <p>Prices in USD, taxes included, per the seller at search time.</p>
           </div>
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-charcoal hover:text-ink">

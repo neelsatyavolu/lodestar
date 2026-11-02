@@ -65,3 +65,18 @@ def test_airline_codes_with_digits() -> None:
     from lodestar_fares.search import airline_enums
 
     assert [a.name for a in airline_enums(["6E", "AA"])] == ["_6E", "AA"]
+
+
+def test_stays_rejects_checkout_before_checkin() -> None:
+    res = client.post("/stays/search", json={"city": "Lisbon", "checkin": "2026-12-10", "checkout": "2026-12-10"})
+    assert res.status_code == 422
+
+
+def test_stays_rejects_odd_city_text() -> None:
+    res = client.post("/stays/search", json={"city": "<script>", "checkin": "2026-12-10", "checkout": "2026-12-13"})
+    assert res.status_code == 422
+
+
+def test_stays_prices_rejects_a_key_that_is_not_a_hotel() -> None:
+    res = client.post("/stays/prices", json={"key": "../../accounts", "checkin": "2026-12-10", "checkout": "2026-12-13"})
+    assert res.status_code == 422

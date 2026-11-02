@@ -10,12 +10,13 @@ import {
   type Itinerary,
   type MaxStops,
 } from "./types";
+import { StaysPricesResponseSchema, StaysSearchResponseSchema, type Hotel, type Offer, type StaysPrices, type StaysSearch } from "./stays/types";
 
 // Typed client for the Python fares service (fares/). Every call has a bounded
 // timeout and its response is validated before anything downstream sees it.
 
 const BASE = process.env.FARES_URL ?? "http://127.0.0.1:8787";
-const TIMEOUT_MS = { flights: 30_000, dates: 25_000, booking: 45_000 } as const;
+const TIMEOUT_MS = { flights: 30_000, dates: 25_000, booking: 45_000, "stays/search": 45_000, "stays/prices": 45_000 } as const;
 
 export class FaresError extends Error {
   constructor(message: string, readonly status: number) {
@@ -26,6 +27,7 @@ export class FaresError extends Error {
 async function post<S extends z.ZodType>(path: keyof typeof TIMEOUT_MS, body: unknown, schema: S, signal?: AbortSignal): Promise<z.infer<S>> {
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (process.env.FARES_TOKEN) headers["x-fares-token"] = process.env.FARES_TOKEN;
+  const hotels = path.startsWith("stays/");
   const timeout = AbortSignal.timeout(TIMEOUT_MS[path]);
   let res: Response;
   try {
@@ -38,18 +40,18 @@ async function post<S extends z.ZodType>(path: keyof typeof TIMEOUT_MS, body: un
     });
   } catch (err) {
     const timedOut = err instanceof Error && err.name === "TimeoutError";
-    throw new FaresError(timedOut ? "The fare search took too long. Try again." : "The fares service is not reachable. Is it running?", 503);
+    throw new FaresError(timedOut ? `The ${hotels ? "hotel" : "fare"} search took too long. Try again.` : "The fares service is not reachable. Is it running?", 503);
   }
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const detail = (json as { detail?: unknown } | null)?.detail;
-    const message = typeof detail === "string" ? detail : res.status === 422 ? "Some search details are not valid." : "The fare search failed.";
+    const message = typeof detail === "string" ? detail : res.status === 422 ? "Some search details are not valid." : `The ${hotels ? "hotel" : "fare"} search failed.`;
     throw new FaresError(message, res.status);
   }
   const parsed = schema.safeParse(json);
   if (!parsed.success) {
     console.error(`[fares] ${path} response did not match schema`, parsed.error.issues.slice(0, 3));
-    throw new FaresError("Google Flights returned data we could not read.", 502);
+    throw new FaresError(`${hotels ? "Google Hotels" : "Google Flights"} returned data we could not read.`, 502);
   }
   return parsed.data;
 }
@@ -124,4 +126,12 @@ export async function searchDates(p: DatesParams, signal?: AbortSignal): Promise
 
 export function bookingPage(tfs: string, signal?: AbortSignal): Promise<BookingPage> {
   return post("booking", { tfs }, BookingResponseSchema, signal);
+}
+
+export async function searchStays(q: StaysSearch, signal?: AbortSignal): Promise<{ hotels: Hotel[]; url: string }> {
+  return post("stays/search", { city: q.city, checkin: q.checkin, checkout: q.checkout, adults: q.adults }, StaysSearchResponseSchema, signal);
+}
+
+export async function stayOffers(q: StaysPrices, signal?: AbortSignal): Promise<{ offers: Offer[]; url: string }> {
+  return post("stays/prices", { key: q.key, checkin: q.checkin, checkout: q.checkout, adults: q.adults }, StaysPricesResponseSchema, signal);
 }

@@ -29,6 +29,12 @@ const KNOWN: Record<string, Known> = {
   "chase travel": { domain: "chase.com", tier: "trusted" },
   "capital one travel": { domain: "capitalone.com", tier: "trusted" },
   "costco travel": { domain: "costcotravel.com", tier: "trusted" },
+  // Hotel sellers (Stays): Expedia Group, Booking Holdings and Tripadvisor brands.
+  "hotels.com": { domain: "hotels.com", tier: "trusted" },
+  vrbo: { domain: "vrbo.com", tier: "trusted" },
+  tripadvisor: { domain: "tripadvisor.com", tier: "trusted" },
+  momondo: { domain: "momondo.com", tier: "trusted" },
+  hotelscombined: { domain: "hotelscombined.com", tier: "trusted" },
   flighthub: { domain: "flighthub.com", tier: "unvetted" },
   justfly: { domain: "justfly.com", tier: "unvetted" },
   gotogate: { domain: "gotogate.com", tier: "unvetted" },

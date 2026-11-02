@@ -56,6 +56,10 @@ class BookingBrowser:
                 self._browser = await self._playwright.chromium.launch(headless=True)
             return self._browser
 
+    async def chromium(self) -> Browser:
+        """The shared browser, for other page readers (Stays) to open their own pages in."""
+        return await self._ensure()
+
     async def close(self) -> None:
         if self._browser:
             await self._browser.close()
