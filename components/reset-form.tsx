@@ -18,7 +18,7 @@ export function ResetForm() {
     return (
       <p className="mt-6 text-[15px] text-body">
         Your password is changed and you&apos;re signed in. Every other session was signed out.{" "}
-        <Link href="/" className="text-blue hover:underline">
+        <Link href="/" className="text-accent hover:underline">
           Back to Lodestar
         </Link>
       </p>
@@ -42,11 +42,11 @@ export function ResetForm() {
         }
       }}
     >
-      {!token && <p className="text-[13px] text-red">This link is missing its code. Open the link from the email again.</p>}
+      {!token && <p className="text-[13px] text-danger">This link is missing its code. Open the link from the email again.</p>}
       <Field label="New password" hint="At least 8 characters.">
         <input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
       </Field>
-      {error && <p className="text-[13px] text-red">{error}</p>}
+      {error && <p className="text-[13px] text-danger">{error}</p>}
       <Button type="submit" variant="primary" disabled={busy || !token} className="w-full">
         {busy ? "Saving…" : "Set new password"}
       </Button>

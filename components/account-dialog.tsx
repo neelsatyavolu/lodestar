@@ -82,15 +82,15 @@ export function AccountDialog({
             />
           </Field>
         )}
-        {error && <p className="text-[13px] text-red">{error}</p>}
-        {notice && <p className="text-[13px] text-green">{notice}</p>}
+        {error && <p className="text-[13px] text-danger">{error}</p>}
+        {notice && <p className="text-[13px] text-body">{notice}</p>}
         <Button type="submit" variant="primary" disabled={busy} className="w-full">
           {busy ? "One moment…" : mode === "signin" ? "Sign in" : mode === "register" ? "Create account" : "Email me a reset link"}
         </Button>
         <div className="flex flex-wrap justify-between gap-2 text-[13px]">
           {mode === "signin" ? (
             <>
-              <button type="button" className="cursor-pointer text-blue hover:underline" onClick={() => switchTo("register")}>
+              <button type="button" className="cursor-pointer text-accent hover:underline" onClick={() => switchTo("register")}>
                 Create an account
               </button>
               <button type="button" className="cursor-pointer text-mute hover:text-ink" onClick={() => switchTo("forgot")}>
@@ -98,7 +98,7 @@ export function AccountDialog({
               </button>
             </>
           ) : (
-            <button type="button" className="cursor-pointer text-blue hover:underline" onClick={() => switchTo("signin")}>
+            <button type="button" className="cursor-pointer text-accent hover:underline" onClick={() => switchTo("signin")}>
               {mode === "register" ? "Have an account? Sign in" : "Back to sign in"}
             </button>
           )}

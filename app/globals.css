@@ -1,57 +1,132 @@
 @import "tailwindcss";
 
-/* Tokens from the Resend DESIGN.md: true-black canvas, translucent-white
-   hairlines instead of shadows, white as the only bright surface, accents
-   only as inline highlights or low-opacity glows. */
+/* Blackletter (~/DESIGN.md): flat canvas, off-white ink, Geist Serif display,
+   Geist for everything else, blue as the only color, depth from luminance steps
+   and hairlines. Dark by default; light by system setting or data-theme.
+   Lodestar has no code wells, so --deep is an inset panel and goes light in
+   light mode (the spec keeps it dark only for code). */
 :root {
   --canvas: #000000;
-  --surface-card: #0a0a0c;
-  --surface-elevated: #101012;
-  --surface-deep: #06060a;
-  --surface-light: #f1f7fe;
+  --card: #0a0a0c;
+  --elev: #111114;
+  --deep: #06060a;
   --ink: #fcfdff;
   --body: rgba(252, 253, 255, 0.86);
   --charcoal: rgba(252, 253, 255, 0.7);
   --mute: #a1a4a5;
   --ash: #888e90;
   --stone: #464a4d;
-  --hairline: rgba(255, 255, 255, 0.06);
-  --hairline-strong: rgba(255, 255, 255, 0.14);
-  --divider-soft: rgba(255, 255, 255, 0.04);
-  --orange: #ff801f;
-  --orange-glow: rgba(255, 89, 0, 0.22);
-  --yellow: #ffc53d;
-  --blue: #3b9eff;
-  --blue-glow: rgba(0, 117, 255, 0.34);
-  --green: #11ff99;
-  --green-glow: rgba(34, 255, 153, 0.18);
-  --red: #ff2047;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --line-3: rgba(255, 255, 255, 0.3);
+  --hover: rgba(255, 255, 255, 0.04);
+  --primary: #fcfdff;
+  --primary-on: #000000;
+  --primary-hover: #e8f0ff;
+  --accent: #4c8dff;
+  --accent-hover: #6fa3ff;
+  --accent-on: #000000;
+  --tint: rgba(76, 141, 255, 0.12);
+  --ring: rgba(76, 141, 255, 0.55);
+  --ok: #3dd68c;
+  --danger: #ff4d5e;
+  --warn: #ffc53d;
+  --scrim: rgba(0, 0, 0, 0.7);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
   color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --canvas: #fcfcfd;
+    --card: #ffffff;
+    --elev: #f4f5f7;
+    --deep: #f7f8fa;
+    --ink: #0a0a0c;
+    --body: rgba(10, 10, 12, 0.82);
+    --charcoal: rgba(10, 10, 12, 0.66);
+    --mute: #5f6366;
+    --ash: #7a7f82;
+    --stone: #c4c7ca;
+    --line: rgba(0, 0, 0, 0.06);
+    --line-2: rgba(0, 0, 0, 0.12);
+    --line-3: rgba(0, 0, 0, 0.28);
+    --hover: rgba(0, 0, 0, 0.035);
+    --primary: #0a0a0c;
+    --primary-on: #fcfdff;
+    --primary-hover: #26262b;
+    --accent: #2f6fe0;
+    --accent-hover: #2459ba;
+    --accent-on: #ffffff;
+    --tint: rgba(47, 111, 224, 0.08);
+    --ring: rgba(47, 111, 224, 0.45);
+    --ok: #14915a;
+    --danger: #d92d3f;
+    --warn: #b7791f;
+    --scrim: rgba(10, 10, 12, 0.4);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --canvas: #fcfcfd;
+  --card: #ffffff;
+  --elev: #f4f5f7;
+  --deep: #f7f8fa;
+  --ink: #0a0a0c;
+  --body: rgba(10, 10, 12, 0.82);
+  --charcoal: rgba(10, 10, 12, 0.66);
+  --mute: #5f6366;
+  --ash: #7a7f82;
+  --stone: #c4c7ca;
+  --line: rgba(0, 0, 0, 0.06);
+  --line-2: rgba(0, 0, 0, 0.12);
+  --line-3: rgba(0, 0, 0, 0.28);
+  --hover: rgba(0, 0, 0, 0.035);
+  --primary: #0a0a0c;
+  --primary-on: #fcfdff;
+  --primary-hover: #26262b;
+  --accent: #2f6fe0;
+  --accent-hover: #2459ba;
+  --accent-on: #ffffff;
+  --tint: rgba(47, 111, 224, 0.08);
+  --ring: rgba(47, 111, 224, 0.45);
+  --ok: #14915a;
+  --danger: #d92d3f;
+  --warn: #b7791f;
+  --scrim: rgba(10, 10, 12, 0.4);
+  color-scheme: light;
 }
 
 @theme inline {
   --color-canvas: var(--canvas);
-  --color-card: var(--surface-card);
-  --color-elevated: var(--surface-elevated);
-  --color-deep: var(--surface-deep);
-  --color-light: var(--surface-light);
+  --color-card: var(--card);
+  --color-elevated: var(--elev);
+  --color-deep: var(--deep);
   --color-ink: var(--ink);
   --color-body: var(--body);
   --color-charcoal: var(--charcoal);
   --color-mute: var(--mute);
   --color-ash: var(--ash);
   --color-stone: var(--stone);
-  --color-hairline: var(--hairline);
-  --color-hairline-strong: var(--hairline-strong);
-  --color-orange: var(--orange);
-  --color-yellow: var(--yellow);
-  --color-blue: var(--blue);
-  --color-green: var(--green);
-  --color-red: var(--red);
-  --font-display: var(--font-newsreader);
-  --font-body: var(--font-geist);
-  --font-ui: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --color-hairline: var(--line);
+  --color-hairline-strong: var(--line-2);
+  --color-hairline-hover: var(--line-3);
+  --color-hover: var(--hover);
+  --color-primary: var(--primary);
+  --color-primary-on: var(--primary-on);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-on: var(--accent-on);
+  --color-tint: var(--tint);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-scrim: var(--scrim);
+  --font-serif: var(--font-geist-serif), Georgia, serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -65,59 +140,93 @@ html {
 body {
   background: var(--canvas);
   color: var(--ink);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Geist Serif: hero and section openers only, 40px and up, tight leading. */
 .font-display {
-  font-family: var(--font-newsreader), Georgia, serif;
-  font-feature-settings: "ss01", "liga";
+  font-family: var(--font-serif);
+  font-weight: 400;
   line-height: 1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
-.font-body {
-  font-family: var(--font-geist), system-ui, sans-serif;
-  letter-spacing: -0.005em;
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 .tnum {
   font-variant-numeric: tabular-nums;
 }
 
-/* Atmospheric glow: one per section, anchored at the top edge. */
-.glow-blue {
-  background: radial-gradient(60% 420px at 50% 0%, var(--blue-glow), transparent 70%);
-}
-.glow-green {
-  background: radial-gradient(70% 380px at 50% 0%, var(--green-glow), transparent 72%);
-}
-.glow-orange {
-  background: radial-gradient(60% 360px at 50% 0%, var(--orange-glow), transparent 70%);
-}
-
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
   opacity: 0.55;
   cursor: pointer;
 }
+:root:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none;
+  }
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    color 150ms var(--ease),
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    box-shadow 150ms var(--ease);
+}
 
 :focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+  border-radius: 6px;
 }
 
-@keyframes shimmer {
-  from { background-position: -400px 0; }
-  to { background-position: 400px 0; }
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 250ms var(--ease) both;
+}
+
+/* Loading placeholder: a flat surface that breathes while a live request runs. */
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--surface-card) 0%, var(--surface-elevated) 50%, var(--surface-card) 100%);
-  background-size: 800px 100%;
-  animation: shimmer 1.4s linear infinite;
+  background: var(--elev);
+  border: 1px solid var(--line);
+  animation: breathe 1.6s var(--ease) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton { animation: none; }
-  * { transition: none !important; }
+  .skeleton,
+  .rise {
+    animation: none;
+  }
+  * {
+    transition: none !important;
+  }
 }

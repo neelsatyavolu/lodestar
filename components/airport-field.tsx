@@ -134,7 +134,7 @@ export function AirportField({
                 add(s.code);
               }}
               onMouseEnter={() => setActive(i)}
-              className={`flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 ${i === active ? "bg-[rgba(255,255,255,0.06)]" : ""}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 ${i === active ? "bg-hover" : ""}`}
             >
               <span className="w-10 shrink-0 font-mono text-[13px] text-ink">{s.code}</span>
               <span className="min-w-0">

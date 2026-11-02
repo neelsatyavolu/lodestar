@@ -18,6 +18,7 @@
   "dependencies": {
     "@neelsatyavolu/shared-ai-auth": "github:neelsatyavolu/shared-ai-auth#bce03a005bee",
     "@vercel/functions": "^3.10.5",
+    "geist": "^1.9.0",
     "lucide-react": "^1.66.0",
     "next": "16.4.2",
     "pg": "^8.23.1",

@@ -15,7 +15,7 @@ export function Dialog({ open, onClose, title, children, width = 520 }: { open: 
       ref={ref}
       onClose={onClose}
       style={{ width: `min(${width}px, calc(100vw - 32px))` }}
-      className="m-auto max-h-[calc(100dvh-32px)] rounded-xl border border-hairline-strong bg-card p-0 text-ink backdrop:bg-black/70"
+      className="m-auto max-h-[calc(100dvh-32px)] rounded-xl border border-hairline-strong bg-card p-0 text-ink backdrop:bg-scrim"
     >
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-card px-5 py-4">
         <h2 className="text-base font-medium">{title}</h2>

@@ -21,6 +21,10 @@ pnpm dev:fares   # fares service on 127.0.0.1:8787
 pnpm dev         # web app on localhost:3000
 ```
 
+## Design
+
+Blackletter: a flat black canvas (light mode by system setting or the theme toggle), Geist Serif for the hero only, Geist for everything else, Geist Mono for codes, and blue (`#4C8DFF`) as the one color. Green, yellow and red appear only as small status dots. Tokens live in `app/globals.css`.
+
 ## How it works
 
 | Piece | Where | What it does |

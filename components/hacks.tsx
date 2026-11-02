@@ -15,18 +15,18 @@ export function HackCards({ hacks, onAction }: { hacks: Hack[]; onAction: (h: Ha
         return (
           <div key={`${h.kind}-${h.title}`} className="flex flex-col rounded-lg border border-hairline-strong bg-card p-4">
             <div className="flex items-start gap-3">
-              <Icon size={16} className={`mt-0.5 shrink-0 ${h.kind === "ulcc" ? "text-yellow" : "text-charcoal"}`} />
+              <Icon size={16} className={`mt-0.5 shrink-0 ${h.kind === "ulcc" ? "text-warn" : "text-charcoal"}`} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="text-sm font-medium text-ink">{h.title}</h3>
-                  {h.saving > 0 && <span className="shrink-0 text-sm text-green tnum">−{money(h.saving)}</span>}
+                  {h.saving > 0 && <span className="shrink-0 text-sm text-ink tnum">−{money(h.saving)}</span>}
                 </div>
                 <p className="mt-1 text-[13px] leading-relaxed text-mute">{h.detail}</p>
                 {h.caution && <p className="mt-2 text-xs text-ash">{h.caution}</p>}
               </div>
             </div>
             <div className="mt-auto pt-3 pl-7">
-              <button type="button" onClick={() => onAction(h)} className="cursor-pointer text-[13px] text-blue hover:underline">
+              <button type="button" onClick={() => onAction(h)} className="cursor-pointer text-[13px] text-accent hover:underline">
                 {ACTION[h.kind]} →
               </button>
             </div>
@@ -57,12 +57,12 @@ export function DateStrip({ days, selected, onPick }: { days: DayPrice[]; select
               type="button"
               onClick={() => onPick(d)}
               aria-pressed={isSel}
-              className={`group flex min-w-16 flex-1 cursor-pointer flex-col items-center gap-1.5 rounded-md p-1.5 ${isSel ? "bg-elevated" : "hover:bg-[rgba(255,255,255,0.03)]"}`}
+              className={`group flex min-w-16 flex-1 cursor-pointer flex-col items-center gap-1.5 rounded-md p-1.5 ${isSel ? "bg-elevated" : "hover:bg-hover"}`}
             >
-              <span className={`text-xs tnum ${isMin ? "text-green" : isSel ? "text-ink" : "text-mute"}`}>{money(d.price)}</span>
+              <span className={`text-xs tnum ${isMin ? "text-accent" : isSel ? "text-ink" : "text-mute"}`}>{money(d.price)}</span>
               <span className="flex h-14 w-full items-end">
                 <span
-                  className={`w-full rounded-sm ${isMin ? "bg-green/70" : isSel ? "bg-ink" : "bg-stone group-hover:bg-ash"}`}
+                  className={`w-full rounded-sm ${isMin ? "bg-accent" : isSel ? "bg-ink" : "bg-stone group-hover:bg-ash"}`}
                   style={{ height: `${max === min ? 60 : 25 + ((d.price - min) / (max - min)) * 75}%` }}
                 />
               </span>

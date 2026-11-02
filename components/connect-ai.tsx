@@ -64,7 +64,7 @@ export function ConnectAI({ open, onClose, onConnected, initial = "codex" }: { o
   };
 
   return (
-    <dialog ref={dialog} onClose={onClose} className="m-auto w-[min(520px,calc(100vw-32px))] rounded-xl border border-hairline-strong bg-card p-0 text-ink backdrop:bg-black/70">
+    <dialog ref={dialog} onClose={onClose} className="m-auto w-[min(520px,calc(100vw-32px))] rounded-xl border border-hairline-strong bg-card p-0 text-ink backdrop:bg-scrim">
       <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
         <h2 className="text-base font-medium">Connect an AI account</h2>
         <button type="button" onClick={onClose} aria-label="Close" className="cursor-pointer text-ash hover:text-ink">
@@ -81,7 +81,7 @@ export function ConnectAI({ open, onClose, onConnected, initial = "codex" }: { o
               key={p}
               type="button"
               onClick={() => reset(p)}
-              className={`h-11 cursor-pointer rounded-md border text-sm ${provider === p ? "border-[rgba(255,255,255,0.4)] bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+              className={`h-11 cursor-pointer rounded-md border text-sm ${provider === p ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
             >
               {PROVIDER_NAME[p]}
             </button>
@@ -116,7 +116,7 @@ export function ConnectAI({ open, onClose, onConnected, initial = "codex" }: { o
             </div>
           </li>
         </ol>
-        {error && <p className="text-[13px] text-red">{error}</p>}
+        {error && <p className="text-[13px] text-danger">{error}</p>}
         <div className="flex justify-end gap-2">
           <Button variant="quiet" onClick={onClose}>
             Cancel

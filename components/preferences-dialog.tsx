@@ -68,7 +68,7 @@ export function PreferencesDialog({
                     type="button"
                     aria-pressed={on}
                     onClick={() => set("alliances", on ? p.alliances.filter((x) => x !== a) : [...p.alliances, a])}
-                    className={`h-9 cursor-pointer rounded-full border px-3.5 text-[13px] max-sm:h-10 ${on ? "border-[rgba(255,255,255,0.4)] bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+                    className={`h-9 cursor-pointer rounded-full border px-3.5 text-[13px] max-sm:h-10 ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
                   >
                     {ALLIANCE_LABEL[a]}
                   </button>
@@ -137,7 +137,7 @@ export function PreferencesDialog({
           </div>
         </Section>
 
-        {error && <p className="text-[13px] text-red">{error}</p>}
+        {error && <p className="text-[13px] text-danger">{error}</p>}
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-hairline pt-4">
           {!signedIn && <span className="mr-auto text-xs text-ash">These apply now. Create an account to keep them.</span>}
           {!signedIn && (

@@ -70,7 +70,7 @@ function Select<T extends string | number>({ value, options, onChange, label }: 
       <select
         value={String(value)}
         onChange={(e) => onChange(options.find(([v]) => String(v) === e.target.value)![0])}
-        className="h-8 cursor-pointer appearance-none rounded-md border border-hairline-strong bg-card pl-3 pr-7 text-[13px] text-ink outline-none hover:border-[rgba(255,255,255,0.28)] max-sm:h-10"
+        className="h-8 cursor-pointer appearance-none rounded-md border border-hairline-strong bg-card pl-3 pr-7 text-[13px] text-ink outline-none hover:border-hairline-hover max-sm:h-10"
       >
         {options.map(([v, l]) => (
           <option key={String(v)} value={String(v)}>

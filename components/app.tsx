@@ -15,6 +15,7 @@ import { AiCanvas } from "./ai-canvas";
 import { ConnectAI, PROVIDER_NAME, type Provider } from "./connect-ai";
 import { GitHubLink, GitHubMark, REPO_URL } from "./github-link";
 import { PreferencesDialog } from "./preferences-dialog";
+import { ThemeToggle } from "./theme-toggle";
 import { DateStrip, HackCards } from "./hacks";
 import { ItineraryCard, allAirlines, type SellerCheck } from "./itinerary-card";
 import { Results } from "./results";
@@ -274,22 +275,23 @@ export function App() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-hairline bg-black/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-2 px-4 sm:gap-4 sm:px-8">
+      <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
+        <div className="mx-auto flex h-16 max-w-[1120px] items-center gap-2 px-4 sm:gap-4 sm:px-8">
           <Link href="/" className="flex items-center gap-2" aria-label="Lodestar home">
             <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
-              <path d="M11 1.5 L12.6 9.4 L20.5 11 L12.6 12.6 L11 20.5 L9.4 12.6 L1.5 11 L9.4 9.4 Z" fill="#fcfdff" />
+              <path d="M11 1.5 L12.6 9.4 L20.5 11 L12.6 12.6 L11 20.5 L9.4 12.6 L1.5 11 L9.4 9.4 Z" fill="currentColor" />
             </svg>
-            <span className="font-display text-[22px] tracking-[-0.01em] max-[400px]:sr-only">Lodestar</span>
+            <span className="text-[18px] font-medium tracking-[-0.02em] max-[400px]:sr-only">Lodestar</span>
           </Link>
           <nav className="inline-flex shrink-0 rounded-full bg-elevated p-0.5 text-[13px] sm:ml-2" aria-label="Mode">
             {(["search", "ai"] as Mode[]).map((m) => (
-              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-[rgba(255,255,255,0.1)] text-ink" : "text-mute hover:text-charcoal"}`}>
+              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
                 {m === "search" ? "Search" : "AI canvas"}
               </button>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
             <GitHubLink />
             <button
               type="button"
@@ -311,7 +313,7 @@ export function App() {
             )}
             {provider ? (
               <button type="button" onClick={() => disconnect(provider)} title="Disconnect" className="cursor-pointer">
-                <Pill tone="green">
+                <Pill dot="ok">
                   <span className="sm:hidden">{PROVIDER_NAME[provider]}</span>
                   <span className="max-sm:hidden">{PROVIDER_NAME[provider]} connected</span>
                 </Pill>
@@ -326,18 +328,18 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-24 sm:px-8">
+      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-24 sm:px-8">
         {/* Both modes stay mounted so switching tabs keeps the search and a running AI canvas. */}
         <div hidden={mode !== "search"}>
             <section className={`${result ? "pt-8 pb-6" : "pt-20 pb-10 sm:pt-28"}`}>
               {!result && (
-                <div className="mb-10 max-w-3xl">
+                <div className="mb-10 max-w-4xl">
                   <h1 className="font-display text-[clamp(44px,8vw,88px)] tracking-[-0.02em]">
                     Lower fares.
                     <br />
-                    <span className="italic text-charcoal">Sellers you can trust.</span>
+                    <span className="text-charcoal">Sellers you can trust.</span>
                   </h1>
-                  <p className="mt-6 max-w-xl font-body text-[18px] leading-relaxed text-body">
+                  <p className="mt-6 max-w-xl text-[18px] leading-relaxed text-body">
                     Live prices from Google Flights, checked seller by seller. Every search also tries nearby airports, nearby dates and two one-way tickets, and leaves out agencies we haven&apos;t vetted.
                   </p>
                 </div>
@@ -347,7 +349,7 @@ export function App() {
                 {preferenceChips(prefs).map((c) => (
                   <Pill key={c}>{c}</Pill>
                 ))}
-                <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} className="cursor-pointer px-1 text-blue hover:underline">
+                <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} className="cursor-pointer px-1 text-accent hover:underline">
                   {account ? "Edit preferences" : "Set alliances and preferences"}
                 </button>
                 {!account && (
@@ -362,7 +364,7 @@ export function App() {
               </div>
             </section>
 
-            {error && <p className="mb-6 rounded-lg border border-[rgba(255,32,71,0.3)] bg-card p-4 text-sm text-red">{error}</p>}
+            {error && <p className="mb-6 rounded-lg border border-danger/40 bg-card p-4 text-sm text-danger">{error}</p>}
             {busy && !result && (
               <div className="space-y-2.5">
                 {[0, 1, 2, 3].map((i) => (
@@ -409,13 +411,13 @@ export function App() {
         </div>
         <div hidden={mode !== "ai"}>
           <section className="pt-16 sm:pt-24">
-            <div className="mb-10 max-w-3xl">
+            <div className="mb-10 max-w-4xl">
               <h1 className="font-display text-[clamp(40px,7vw,76px)] tracking-[-0.02em]">
                 Say the trip.
                 <br />
-                <span className="italic text-charcoal">Get the shortlist.</span>
+                <span className="text-charcoal">Get the shortlist.</span>
               </h1>
-              <p className="mt-6 max-w-xl font-body text-[18px] leading-relaxed text-body">
+              <p className="mt-6 max-w-xl text-[18px] leading-relaxed text-body">
                 Your ChatGPT or Grok account plans several live searches at once (other airports, other days, other cabins), then lays the best options out with the reasons and the catches.
               </p>
             </div>
@@ -442,7 +444,7 @@ export function App() {
       </main>
 
       <footer className="border-t border-hairline">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-8 text-xs text-ash sm:px-8">
+        <div className="mx-auto flex max-w-[1120px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-8 text-xs text-ash sm:px-8">
           <span>Live fares from Google Flights. Lodestar doesn&apos;t sell tickets: you book with the airline or agency.</span>
           <span>Prices in USD, taxes included, per the seller at search time.</span>
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-charcoal hover:text-ink sm:ml-auto">

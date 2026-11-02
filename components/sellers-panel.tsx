@@ -1,17 +1,17 @@
-import { ArrowUpRight, Check, Minus, TrendingDown, X } from "lucide-react";
+import { ArrowUpRight, Check, Minus, X } from "lucide-react";
 import { useState } from "react";
 import { money } from "@/lib/format";
 import { TIER_LABEL } from "@/lib/sellers";
 import type { FarePolicy } from "@/lib/types";
 import type { Verified, VerifiedSeller } from "@/lib/verify";
 import { Logo } from "./logo";
-import { Pill } from "./ui";
+import { Pill, StatusDot } from "./ui";
 
 function PolicyChip({ ok, label }: { ok: boolean | null; label: string }) {
   const Icon = ok === null ? Minus : ok ? Check : X;
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${ok === null ? "text-ash" : ok ? "text-body" : "text-mute line-through decoration-stone"}`}>
-      <Icon size={12} className={ok ? "text-green" : "text-ash"} />
+      <Icon size={12} className={ok ? "text-ink" : "text-ash"} />
       {label}
     </span>
   );
@@ -34,7 +34,7 @@ function policyChips(p: FarePolicy) {
   ];
 }
 
-const TIER_TONE = { airline: "green", trusted: "blue", unvetted: "yellow" } as const;
+const TIER_DOT = { airline: "ok", trusted: "ok", unvetted: "warn" } as const;
 
 function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl: string }) {
   const tiers = seller.fares.length > 1 || seller.fares[0]?.name;
@@ -44,7 +44,7 @@ function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl:
         <Logo src={seller.logo} name={seller.name} size={28} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink">{seller.name}</div>
-          <Pill tone={TIER_TONE[seller.tier]} className="mt-0.5 !bg-transparent !px-0 !py-0 text-[11px]">
+          <Pill dot={TIER_DOT[seller.tier]} className="mt-0.5 !bg-transparent !px-0 !py-0 text-[11px] !text-charcoal">
             {TIER_LABEL[seller.tier]}
           </Pill>
         </div>
@@ -57,7 +57,7 @@ function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl:
           target="_blank"
           rel="noopener noreferrer"
           title={`Opens this exact itinerary on Google Flights, where you continue to ${seller.name}`}
-          className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] text-ink hover:border-[rgba(255,255,255,0.28)] max-sm:h-10"
+          className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] text-ink hover:border-hairline-hover max-sm:h-10"
         >
           Book <ArrowUpRight size={13} />
         </a>
@@ -85,13 +85,13 @@ function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl:
 
 export function Insight({ insight }: { insight: Verified["insight"] }) {
   if (!insight.level && !insight.summary) return null;
-  const tone = insight.level === "low" ? "text-green" : insight.level === "high" ? "text-red" : "text-yellow";
+  const state = insight.level === "low" ? "ok" : insight.level === "high" ? "danger" : "warn";
   return (
     <div className="flex gap-3 rounded-md border border-hairline bg-deep p-3">
-      <TrendingDown size={16} className={`mt-0.5 shrink-0 ${tone}`} />
+      <StatusDot state={state} className="mt-1.5" />
       <div className="text-[13px] leading-relaxed text-body">
         {insight.level && (
-          <span className={tone}>
+          <span className="text-ink">
             Price is {insight.level}
             {insight.cheaper_than_usual_by ? `, $${insight.cheaper_than_usual_by} under usual` : ""}.{" "}
           </span>
@@ -117,7 +117,7 @@ export function SellersPanel({ verified, trustedOnly }: { verified: Verified; tr
         {!shown.length && <p className="py-3 text-sm text-mute">No airline or trusted agency sells this itinerary. Only unvetted agencies list it.</p>}
       </div>
       {hidden.length > 0 && (
-        <button type="button" onClick={() => setShowAll(!showAll)} className="cursor-pointer text-[13px] text-blue hover:underline">
+        <button type="button" onClick={() => setShowAll(!showAll)} className="cursor-pointer text-[13px] text-accent hover:underline">
           {showAll ? "Hide unvetted agencies" : `Show ${hidden.length} unvetted agenc${hidden.length === 1 ? "y" : "ies"}`}
           {!showAll && verified.unvettedGap > 0 && <span className="text-ash"> (from {money(verified.lowestAny)}, ${Math.round(verified.unvettedGap)} less)</span>}
         </button>

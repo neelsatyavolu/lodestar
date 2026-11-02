@@ -14,7 +14,7 @@ const INK_2 = "#a1a4a5";
 const LINE = "#2a2a2e";
 const BUTTON = "#fcfdff";
 const BUTTON_TEXT = "#000000";
-const SANS = "Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
+const SANS = "Geist,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "Georgia,'Times New Roman',serif";
 
 const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };

@@ -90,7 +90,7 @@ export function Results({
                 key={code}
                 type="button"
                 onClick={() => setAirlines(on ? airlines.filter((a) => a !== code) : [...airlines, code])}
-                className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full border pl-1 pr-3 text-[13px] ${on ? "border-[rgba(255,255,255,0.4)] bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+                className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full border pl-1 pr-3 text-[13px] ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
               >
                 <AirlineLogo code={code} name={c.name} size={24} />
                 {c.name}

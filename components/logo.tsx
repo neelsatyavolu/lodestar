@@ -8,7 +8,7 @@ export function Logo({ src, name, size = 28, className = "" }: { src: string; na
   const style = { width: size, height: size };
   if (failed) {
     return (
-      <span style={style} className={`inline-flex shrink-0 items-center justify-center rounded-md border border-hairline-strong bg-elevated font-ui text-[10px] font-medium text-ink ${className}`} aria-label={name}>
+      <span style={style} className={`inline-flex shrink-0 items-center justify-center rounded-md border border-hairline-strong bg-elevated text-[10px] font-medium text-ink ${className}`} aria-label={name}>
         {name.slice(0, 2).toUpperCase()}
       </span>
     );

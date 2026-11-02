@@ -6,7 +6,7 @@ import type { Itinerary, Leg, Slice } from "@/lib/types";
 import type { Verified } from "@/lib/verify";
 import { AirlineLogo } from "./logo";
 import { SellersPanel } from "./sellers-panel";
-import { Button, Pill, Spinner } from "./ui";
+import { Button, Pill, Spinner, StatusDot } from "./ui";
 
 export type SellerCheck = { state: "loading" } | { state: "done"; data: Verified } | { state: "error"; error: string };
 
@@ -38,7 +38,7 @@ function SliceRow({ slice, label, alt }: { slice: Slice; label?: string; alt: Se
       <div className="min-w-0">
         <div className="text-[15px] text-ink tnum">
           {clock(first.depart)} – {clock(last.arrive)}
-          {shift > 0 && <sup className="ml-0.5 text-[10px] text-yellow">+{shift}</sup>}
+          {shift > 0 && <sup className="ml-0.5 text-[10px] text-mute">+{shift}</sup>}
         </div>
         <div className="truncate text-xs text-ash">
           {label && <span className="text-mute">{label} · </span>}
@@ -48,11 +48,11 @@ function SliceRow({ slice, label, alt }: { slice: Slice; label?: string; alt: Se
       <div className="max-sm:hidden">
         <div className="text-sm text-body tnum">{duration(slice.minutes)}</div>
         <div className="font-mono text-xs text-ash">
-          <span className={alt.has(first.from) ? "text-yellow" : ""}>{first.from}</span>–<span className={alt.has(last.to) ? "text-yellow" : ""}>{last.to}</span>
+          <span className={alt.has(first.from) ? "text-accent" : ""}>{first.from}</span>–<span className={alt.has(last.to) ? "text-accent" : ""}>{last.to}</span>
         </div>
       </div>
       <div className="max-sm:col-start-2">
-        <div className={`text-sm ${slice.stops ? "text-body" : "text-green"}`}>
+        <div className="text-sm text-body">
           {slice.stops ? plural(slice.stops, "stop") : "Nonstop"}
           <span className="text-ash sm:hidden"> · {duration(slice.minutes)} · {first.from}–{last.to}</span>
         </div>
@@ -116,7 +116,8 @@ function SliceDetail({ slice, label }: { slice: Slice; label: string }) {
           <div key={`${leg.flight_number}-${i}`}>
             <LegDetail leg={leg} />
             {slice.layovers[i] && (
-              <div className={`my-3 ml-8 rounded-md border px-3 py-2 text-xs ${slice.layovers[i].minutes < 60 || slice.layovers[i].overnight || slice.layovers[i].change_of_airport ? "border-[rgba(255,197,61,0.3)] text-yellow" : "border-hairline text-mute"}`}>
+              <div className={`my-3 ml-8 flex items-center gap-2 rounded-md border px-3 py-2 text-xs ${hardLayover(slice.layovers[i]) ? "border-warn/40 text-body" : "border-hairline text-mute"}`}>
+                {hardLayover(slice.layovers[i]) && <StatusDot state="warn" />}
                 {duration(slice.layovers[i].minutes)} layover in {slice.layovers[i].city ?? slice.layovers[i].airport}
                 {slice.layovers[i].overnight && " · overnight"}
                 {slice.layovers[i].change_of_airport && " · change airports"}
@@ -127,10 +128,17 @@ function SliceDetail({ slice, label }: { slice: Slice; label: string }) {
         ))}
       </div>
       {slice.self_transfer && (
-        <p className="mt-3 text-xs text-yellow">Self-transfer: separate tickets. You collect and re-check bags, and a missed connection is on you.</p>
+        <p className="mt-3 flex items-start gap-2 text-xs text-body">
+          <StatusDot state="warn" className="mt-1" />
+          Self-transfer: separate tickets. You collect and re-check bags, and a missed connection is on you.
+        </p>
       )}
     </div>
   );
+}
+
+function hardLayover(l: Slice["layovers"][number]): boolean {
+  return l.minutes < 60 || l.overnight || l.change_of_airport;
 }
 
 function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; googlePrice: number; trustedOnly: boolean }) {
@@ -143,12 +151,18 @@ function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; 
     );
   if (check.state === "error") return <div className="text-[11px] text-ash">Couldn&apos;t check sellers</div>;
   const v = check.data;
-  if (v.lowestTrusted === null) return <div className="text-[11px] text-yellow">Only unvetted agencies</div>;
+  if (v.lowestTrusted === null)
+    return (
+      <div className="inline-flex items-center gap-1.5 text-[11px] text-charcoal">
+        <StatusDot state="warn" className="!size-1.5" /> Only unvetted agencies
+      </div>
+    );
   const airline = v.sellers.find((s) => s.tier === "airline" && s.lowest === v.lowestTrusted);
   const label = airline ? "Airline direct" : v.trustedSeller;
   const differs = trustedOnly && Math.round(v.lowestTrusted) !== Math.round(googlePrice);
   return (
-    <div className={`text-[11px] ${differs ? "text-yellow" : "text-green"}`}>
+    <div className="inline-flex items-center justify-end gap-1.5 text-[11px] text-charcoal">
+      <StatusDot state={differs ? "warn" : "ok"} className="!size-1.5" />
       {label}
       {differs && v.lowestTrusted > googlePrice && <span className="text-ash"> · {money(googlePrice)} elsewhere</span>}
     </div>
@@ -184,13 +198,13 @@ export function ItineraryCard({
     setOpen(!open);
   };
   return (
-    <article id={`it-${it.id}`} className={`rounded-lg border bg-card transition-colors ${highlight ? "border-[rgba(255,255,255,0.4)]" : "border-hairline-strong hover:border-[rgba(255,255,255,0.24)]"}`}>
+    <article id={`it-${it.id}`} className={`rounded-lg border bg-card transition-colors ${highlight ? "border-hairline-hover" : "border-hairline-strong hover:border-hairline-hover"}`}>
       <button type="button" onClick={toggle} aria-expanded={open} className="flex w-full cursor-pointer items-center gap-4 p-4 text-left">
         <div className="min-w-0 flex-1 space-y-3">
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {badges.map((b) => (
-                <Pill key={b} tone={b === "Best" ? "green" : b === "Cheapest" ? "blue" : b === "Nearby airport" ? "yellow" : "neutral"}>
+                <Pill key={b} tone={b === "Best" ? "accent" : "neutral"} dot={b === "Self-transfer" ? "warn" : undefined}>
                   {b}
                 </Pill>
               ))}
@@ -201,7 +215,7 @@ export function ItineraryCard({
           ))}
         </div>
         <div className="w-28 shrink-0 text-right">
-          <div className="font-body text-xl text-ink tnum">{money(price)}</div>
+          <div className="text-xl text-ink tnum">{money(price)}</div>
           <div className="text-[11px] text-ash">{it.slices.length > 1 ? "round trip" : "one way"}</div>
           <div className="mt-1">
             <SellerLine check={check} googlePrice={it.price} trustedOnly={trustedOnly} />
@@ -232,7 +246,7 @@ export function ItineraryCard({
                 <p>{check.error}</p>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={onCheck}>Try again</Button>
-                  <a href={it.booking_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center px-3 text-[13px] text-blue hover:underline">
+                  <a href={it.booking_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center px-3 text-[13px] text-accent hover:underline">
                     Open on Google Flights
                   </a>
                 </div>

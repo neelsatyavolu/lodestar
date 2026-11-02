@@ -29,7 +29,7 @@ const EXAMPLES = [
   "Chicago to London next spring, flexible by a few days, I'm bringing a checked bag.",
 ];
 
-const TAG_TONE = { best: "green", cheapest: "blue", fastest: "neutral", comfort: "neutral", hack: "yellow", alternative: "neutral" } as const;
+const TAG_TONE = { best: "accent", cheapest: "neutral", fastest: "neutral", comfort: "neutral", hack: "neutral", alternative: "neutral" } as const;
 
 export function AiCanvas({
   provider,
@@ -140,7 +140,7 @@ export function AiCanvas({
           rows={3}
           maxLength={1200}
           placeholder="Describe the trip. Where, roughly when, and what matters to you."
-          className="block w-full resize-none bg-transparent px-4 pt-4 font-body text-[16px] leading-relaxed text-ink outline-none placeholder:text-stone"
+          className="block w-full resize-none bg-transparent px-4 pt-4 text-[16px] leading-relaxed text-ink outline-none placeholder:text-stone"
           aria-label="Describe your trip"
         />
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
@@ -205,7 +205,7 @@ function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board:
     <div className="space-y-8">
       <div>
         <p className="text-xs text-ash">You asked</p>
-        <p className="mt-1 font-body text-[15px] text-body">{board.prompt}</p>
+        <p className="mt-1 text-[15px] text-body">{board.prompt}</p>
       </div>
 
       {plan && plan.searches.length > 0 && (
@@ -217,7 +217,7 @@ function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board:
               return (
                 <li key={i} className="flex items-start gap-3 text-[13px]">
                   <span className="mt-0.5 shrink-0">
-                    {st?.state === "done" ? <Check size={14} className="text-green" /> : st?.state === "error" ? <CircleAlert size={14} className="text-red" /> : st?.state === "running" ? <LoaderCircle size={14} className="animate-spin text-charcoal" /> : <span className="block size-3.5 rounded-full border border-hairline-strong" />}
+                    {st?.state === "done" ? <Check size={14} className="text-ink" /> : st?.state === "error" ? <CircleAlert size={14} className="text-danger" /> : st?.state === "running" ? <LoaderCircle size={14} className="animate-spin text-charcoal" /> : <span className="block size-3.5 rounded-full border border-hairline-strong" />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="text-ink">{s.label}</span>
@@ -241,13 +241,13 @@ function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board:
           <LoaderCircle size={14} className="animate-spin" /> {board.status}…
         </p>
       )}
-      {board.error && <p className="rounded-lg border border-[rgba(255,32,71,0.3)] bg-card p-4 text-[13px] text-red">{board.error}</p>}
+      {board.error && <p className="rounded-lg border border-danger/40 bg-card p-4 text-[13px] text-danger">{board.error}</p>}
 
       {canvas && (
-        <section aria-label="AI picks" className="glow-green -mx-4 space-y-6 px-4 pt-8 sm:-mx-8 sm:px-8">
+        <section aria-label="AI picks" className="rise space-y-6 pt-4">
           <div>
-            <h2 className="font-display text-[clamp(32px,5vw,48px)] tracking-[-0.02em] text-ink">{canvas.headline}</h2>
-            {canvas.summary && <p className="mt-3 max-w-3xl font-body text-[16px] leading-relaxed text-body">{canvas.summary}</p>}
+            <h2 className="font-display text-[clamp(40px,5vw,56px)] text-ink">{canvas.headline}</h2>
+            {canvas.summary && <p className="mt-3 max-w-3xl text-[16px] leading-relaxed text-body">{canvas.summary}</p>}
           </div>
           <div className="space-y-4">
             {canvas.picks.map((p) => {
@@ -277,7 +277,7 @@ function BoardView({ board, checks, onCheck, trustedOnly, onFollowup }: { board:
               <ul className="space-y-1.5 text-[13px] text-mute">
                 {board.hacks.map((h) => (
                   <li key={`${h.search}-${h.title}`}>
-                    <span className="text-green tnum">−{money(h.saving)}</span> <span className="text-body">{h.title}</span> ({h.search}). {h.detail}
+                    <span className="text-ink tnum">−{money(h.saving)}</span> <span className="text-body">{h.title}</span> ({h.search}). {h.detail}
                   </li>
                 ))}
               </ul>
