@@ -46,7 +46,7 @@ describe("saved trips", () => {
   });
 
   it("re-arms a target or reminder when it changes, and refuses other accounts", async () => {
-    await recordCheck(db, tripId, { lastPrice: 1700, checkedAt: 2000, alertPrice: 1700, targetHit: true, reminded: true });
+    await recordCheck(db, tripId, null, { lastPrice: 1700, checkedAt: 2000, alertPrice: 1700, targetHit: true, reminded: true });
     expect(await updateTripAlerts(db, bob, tripId, { alertDrop: false })).toBeNull();
     const t = await updateTripAlerts(db, ada, tripId, { targetPrice: 1500, remindOn: "2026-11-20", alertDrop: false });
     expect(t).toMatchObject({ targetPrice: 1500, targetHit: false, remindOn: "2026-11-20", reminded: false, alertDrop: false, lastPrice: 1700 });

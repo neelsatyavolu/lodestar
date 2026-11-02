@@ -5,7 +5,7 @@ import { clock, day, dayShift, duration, money, plural } from "@/lib/format";
 import type { Itinerary, Leg, Slice } from "@/lib/types";
 import type { Verified } from "@/lib/verify";
 import { AirlineLogo } from "./logo";
-import { SellersPanel } from "./sellers-panel";
+import { SellersPanel, type OnBook } from "./sellers-panel";
 import { Button, Pill, Spinner, StatusDot } from "./ui";
 
 export type SellerCheck = { state: "loading" } | { state: "done"; data: Verified } | { state: "error"; error: string };
@@ -182,6 +182,7 @@ export function ItineraryCard({
   trustedOnly,
   alt,
   highlight,
+  onBook,
 }: {
   it: Itinerary;
   badges: string[];
@@ -190,6 +191,8 @@ export function ItineraryCard({
   trustedOnly: boolean;
   alt: Set<string>;
   highlight?: boolean;
+  /** Only offered when the exact flights can be read again later. */
+  onBook?: OnBook;
 }) {
   const [open, setOpen] = useState(false);
   const price = displayPrice(it, check, trustedOnly);
@@ -252,7 +255,7 @@ export function ItineraryCard({
                 </div>
               </div>
             )}
-            {check?.state === "done" && <SellersPanel verified={check.data} trustedOnly={trustedOnly} />}
+            {check?.state === "done" && <SellersPanel verified={check.data} trustedOnly={trustedOnly} onBook={it.tfs ? onBook : undefined} />}
           </div>
         </div>
       )}

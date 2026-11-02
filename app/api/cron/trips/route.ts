@@ -2,14 +2,16 @@ import { timingSafeEqual } from "node:crypto";
 import { connection } from "next/server";
 import { fail, ok } from "@/lib/api";
 import { getDb } from "@/lib/db/client";
+import { bookingPage } from "@/lib/fares";
 import { runSearch } from "@/lib/search";
 import { env } from "@/lib/server/env";
 import { allow } from "@/lib/server/limits";
+import { bookedFarePrice } from "@/lib/trips/booked";
 import { checkTrips } from "@/lib/trips/check";
 import { sendTripAlert } from "@/lib/trips/mail";
 
 // Vercel Cron calls this once a day (vercel.json). Each trip runs up to five
-// live searches, so stop starting trips well before the function's limit.
+// live searches (a booked trip reads one booking page instead), so stop starting trips well before the function's limit.
 export const maxDuration = 300;
 const STOP_AFTER_MS = 240_000;
 const BATCH = 40;
@@ -38,6 +40,7 @@ export async function GET(req: Request) {
         const { itineraries } = await runSearch(q, req.signal);
         return itineraries.reduce<number | null>((m, it) => (m === null || it.price < m ? it.price : m), null);
       },
+      bookedPrice: async (b) => bookedFarePrice(await bookingPage(b.tfs, req.signal), b),
       mayEmail: () => allow("tripAlertsDaily", "all"),
       email: (to, alert) => sendTripAlert(to, alert, config.RESEND_API_KEY),
       batch: BATCH,

@@ -57,6 +57,8 @@ const STATEMENTS = [
     created_at timestamptz NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS saved_trips_user ON saved_trips (user_id, created_at DESC)`,
+  // Set once the traveller books: the exact fare bought and what they paid (lib/trips/booked).
+  `ALTER TABLE saved_trips ADD COLUMN IF NOT EXISTS booking jsonb`,
 ];
 
 export async function migrate(db: Queryable): Promise<void> {

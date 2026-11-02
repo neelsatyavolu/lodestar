@@ -2,14 +2,32 @@ import { money } from "../format";
 import { sendEmail } from "../mail/send";
 import { renderEmail, type RenderedEmail } from "../mail/template";
 import type { AlertReason } from "./alerts";
+import { creditVerdict, type Booking } from "./booked";
 
 // The one email a saved trip's daily check sends, whatever fired it.
 
 const FROM = "Lodestar <no-reply@n3el.dev>";
 
-export type TripAlert = { title: string; reasons: AlertReason[]; cheapest: number | null; previous: number; target: number | null; url: string };
+export type TripAlert = { title: string; reasons: AlertReason[]; cheapest: number | null; previous: number; target: number | null; url: string; booking?: Booking | null };
+
+/** A booked fare only ever alerts on a drop; say how far below the price paid it is and whether that can come back. */
+function bookedDropEmail(a: TripAlert & { booking: Booking; cheapest: number }): RenderedEmail {
+  const b = a.booking;
+  const fare = b.fare ? `${b.fare} fare` : "fare";
+  const since = a.previous < b.paid ? ` It was ${money(a.previous)} when we last emailed.` : "";
+  return renderEmail({
+    subject: `${money(b.paid - a.cheapest)} cheaper since you booked: ${a.title}`,
+    heading: a.title,
+    body: `The ${fare} you booked with ${b.seller} is now ${money(a.cheapest)}, down from the ${money(b.paid)} you paid.${since} ${creditVerdict(b).text}`,
+    button: "Open the trip",
+    url: a.url,
+    linkHint: "Or paste this link into your browser:",
+    footer: "You get this because you marked this trip booked in Trips. Turn the alert off there. Fares change quickly; check the price and the fare rules before you rebook.",
+  });
+}
 
 export function tripAlertEmail(a: TripAlert): RenderedEmail {
+  if (a.booking && a.cheapest !== null && a.reasons.includes("drop")) return bookedDropEmail({ ...a, booking: a.booking, cheapest: a.cheapest });
   const now = a.cheapest !== null ? money(a.cheapest) : null;
   const lines: string[] = [];
   if (a.reasons.includes("drop") && now) lines.push(`The best fare fell to ${now}, down from ${money(a.previous)}.`);

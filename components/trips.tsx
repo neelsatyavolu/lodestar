@@ -3,19 +3,26 @@ import { useEffect, useState } from "react";
 import type { TripSummary } from "@/lib/db/trips";
 import { ApiError, api } from "@/lib/client";
 import { day, money } from "@/lib/format";
+import { creditVerdict, type Booking } from "@/lib/trips/booked";
 import type { Snapshot } from "@/lib/trips/input";
 import type { Itinerary } from "@/lib/types";
+import type { VerifiedSeller } from "@/lib/verify";
 import { BoardView, type Board } from "./ai-canvas";
+import { Dialog } from "./dialog";
 import type { SellerCheck } from "./itinerary-card";
+import type { Fare } from "./sellers-panel";
 import { Button, Toggle } from "./ui";
 
 // Saved Plan shortlists, each with its email alerts: price drops, a target
 // fare and a book-by reminder. A daily check re-runs the trip's searches.
+// Once booked, it watches the booked fare and says whether a drop can come back.
 
 type Shared = { checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean };
 
 const inputClass = "h-9 rounded-md border border-hairline-strong bg-deep px-2.5 text-[14px] text-ink outline-none focus:border-accent";
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback);
+/** Google's policy words, kept only when they're ones the booking API accepts. */
+const oneOf = <T extends string>(v: string | null, allowed: readonly T[]): T | null => (allowed.includes(v as T) ? (v as T) : null);
 
 export function Trips({ focus, onPlan, ...shared }: Shared & { focus: string | null; onPlan: () => void }) {
   const [trips, setTrips] = useState<TripSummary[] | null>(null);
@@ -56,6 +63,7 @@ function TripCard({ trip, focused, onChange, onDelete, ...shared }: Shared & { t
   const [open, setOpen] = useState(focused);
   const [target, setTarget] = useState(trip.targetPrice?.toString() ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [marking, setMarking] = useState<Booking | null>(null);
   const departed = trip.firstDepart <= new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -107,7 +115,28 @@ function TripCard({ trip, focused, onChange, onDelete, ...shared }: Shared & { t
     }
   };
 
-  const change = trip.lastPrice !== null ? trip.lastPrice - trip.savedPrice : null;
+  const startBooking = (it: Itinerary, seller: VerifiedSeller, fare: Fare) => {
+    if (!it.tfs) return;
+    setMarking({ tfs: it.tfs, seller: seller.name, isAirline: seller.is_airline, fare: fare.name, paid: fare.price, changes: oneOf(fare.policy.changes, ["free", "fee", "none"]), refunds: oneOf(fare.policy.refunds, ["full", "partial", "none"]) });
+  };
+
+  /** Saves or clears the booking; returns the error to show, if any. */
+  const setBooked = async (b: Booking | null): Promise<string | null> => {
+    try {
+      const { trip: next } = await api<{ trip: TripSummary }>(`/api/trips/${trip.id}/booking`, b ? { method: "PUT", body: JSON.stringify(b) } : { method: "DELETE" });
+      onChange(next);
+      setMarking(null);
+      // Booking clears the target on the server; keep the input in step for an undo.
+      setTarget(next.targetPrice?.toString() ?? "");
+      return null;
+    } catch (err) {
+      return errorText(err, b ? "Couldn't mark the trip booked." : "Couldn't undo the booking.");
+    }
+  };
+
+  const booking = trip.booking;
+  const basePrice = booking?.paid ?? trip.savedPrice;
+  const change = trip.lastPrice !== null ? trip.lastPrice - basePrice : null;
 
   return (
     <article id={`trip-${trip.id}`} className={`scroll-mt-24 rounded-lg border bg-card p-5 ${focused ? "border-accent" : "border-hairline-strong"}`}>
@@ -118,15 +147,20 @@ function TripCard({ trip, focused, onChange, onDelete, ...shared }: Shared & { t
         </div>
         <div className="text-right text-[13px] tnum">
           <p className="text-ink">
-            {trip.lastPrice !== null ? `Now ${money(trip.lastPrice)}` : `Saved at ${money(trip.savedPrice)}`}
+            {trip.lastPrice !== null ? `Now ${money(trip.lastPrice)}` : booking ? `Paid ${money(booking.paid)}` : `Saved at ${money(trip.savedPrice)}`}
             {change !== null && change !== 0 && <span className={change < 0 ? "text-ok" : "text-mute"}> {change < 0 ? `−${money(-change)}` : `+${money(change)}`}</span>}
           </p>
           <p className="text-xs text-ash">{trip.checkedAt ? `Checked ${day(new Date(trip.checkedAt).toISOString().slice(0, 10))}` : "First check within a day"}</p>
         </div>
       </div>
 
+      {booking && <BookedSummary booking={booking} departed={departed} onUndo={async () => setError(await setBooked(null))} />}
       {departed ? (
         <p className="mt-4 text-[13px] text-ash">This trip has departed, so its alerts are off.</p>
+      ) : booking ? (
+        <div className="mt-4 border-t border-hairline pt-4 text-[13px] text-body">
+          <Toggle checked={trip.alertDrop} onChange={(v) => update({ alertDrop: v })} label="Email me if this fare drops below what I paid" />
+        </div>
       ) : (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-hairline pt-4 text-[13px] text-body">
           <Toggle checked={trip.alertDrop} onChange={(v) => update({ alertDrop: v })} label="Email me when it drops" />
@@ -155,9 +189,67 @@ function TripCard({ trip, focused, onChange, onDelete, ...shared }: Shared & { t
       {open && board && (
         <div className="mt-6 border-t border-hairline pt-6">
           <p className="mb-4 text-xs text-ash">Prices as of when you saved it. Check a fare before booking.</p>
-          <BoardView board={board} latest={false} onFollowup={() => {}} {...shared} />
+          <BoardView board={board} latest={false} onFollowup={() => {}} onBook={booking || departed ? undefined : startBooking} {...shared} />
         </div>
       )}
+      {marking && <MarkBookedDialog booking={marking} onCancel={() => setMarking(null)} onSave={setBooked} />}
     </article>
+  );
+}
+
+function BookedSummary({ booking, departed, onUndo }: { booking: Booking; departed: boolean; onUndo: () => void }) {
+  return (
+    <div className="mt-4 border-t border-hairline pt-4 text-[13px] leading-relaxed">
+      <p className="text-ink">
+        Booked {booking.fare ? `${booking.fare} ` : ""}with {booking.seller} for {money(booking.paid)}.{" "}
+        <button type="button" onClick={onUndo} className="cursor-pointer text-mute hover:text-ink hover:underline">
+          Undo
+        </button>
+      </p>
+      {!departed && <p className="mt-1 text-body">{creditVerdict(booking).text}</p>}
+    </div>
+  );
+}
+
+function MarkBookedDialog({ booking, onCancel, onSave }: { booking: Booking; onCancel: () => void; onSave: (b: Booking) => Promise<string | null> }) {
+  const [paid, setPaid] = useState(String(booking.paid));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const save = async () => {
+    const value = Number(paid.replace(/[$,\s]/g, ""));
+    if (!(value > 0)) return setError("Enter what you paid in dollars, like 1500.");
+    setBusy(true);
+    setError(await onSave({ ...booking, paid: value }));
+    setBusy(false);
+  };
+  return (
+    <Dialog
+      open
+      onClose={onCancel}
+      title="Mark as booked"
+      width={440}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="quiet" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="primary" disabled={busy} onClick={save}>
+            {busy ? "Saving…" : "Watch this fare"}
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4 p-5 text-[14px] leading-relaxed text-body">
+        <p>
+          <span className="text-ink">{booking.fare ?? "This fare"}</span> with <span className="text-ink">{booking.seller}</span>. Lodestar will check this exact fare every day and email you if it drops below what you paid.
+        </p>
+        <label className="flex items-center gap-2 text-[13px]">
+          You paid $
+          <input inputMode="decimal" value={paid} onChange={(e) => setPaid(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} className={`${inputClass} w-28`} aria-label="Price you paid in dollars" autoFocus />
+        </label>
+        <p className="text-[13px] text-mute">{creditVerdict(booking).text}</p>
+        {error && <p className="text-[13px] text-danger">{error}</p>}
+      </div>
+    </Dialog>
   );
 }

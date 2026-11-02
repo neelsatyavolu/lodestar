@@ -21,4 +21,12 @@ describe("trip alert email", () => {
   it("links to the trip on the configured site", () => {
     expect(tripLink("https://lodestar.xanom.co", "abc")).toBe("https://lodestar.xanom.co/?trip=abc");
   });
+
+  it("says how far a booked fare fell below what was paid and whether credit comes back", () => {
+    const booking = { tfs: "CBwQAhoeEgoyMDI2LTEyLTA3", seller: "United", isAirline: true, fare: "Economy", paid: 1822, changes: "free" as const, refunds: "none" as const };
+    const m = tripAlertEmail({ ...base, target: null, reasons: ["drop"], booking });
+    expect(m.subject).toBe("$172 cheaper since you booked: SFO → MAA · Dec 7 – Dec 20");
+    expect(m.text).toContain("The Economy fare you booked with United is now $1,650, down from the $1,822 you paid.");
+    expect(m.text).toContain("keep the difference as travel credit");
+  });
 });

@@ -36,7 +36,19 @@ function policyChips(p: FarePolicy) {
 
 const TIER_DOT = { airline: "ok", trusted: "ok", unvetted: "warn" } as const;
 
-function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl: string }) {
+export type Fare = VerifiedSeller["fares"][number];
+/** Set inside a saved trip: marks the trip booked at this seller's fare. */
+export type OnBook = (seller: VerifiedSeller, fare: Fare) => void;
+
+function BookedButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="cursor-pointer text-xs text-accent hover:underline">
+      I booked this
+    </button>
+  );
+}
+
+function SellerRow({ seller, bookingUrl, onBook }: { seller: VerifiedSeller; bookingUrl: string; onBook?: OnBook }) {
   const tiers = seller.fares.length > 1 || seller.fares[0]?.name;
   return (
     <div className="border-t border-hairline py-3 first:border-t-0">
@@ -62,6 +74,11 @@ function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl:
           Book <ArrowUpRight size={13} />
         </a>
       </div>
+      {!tiers && onBook && seller.fares[0] && (
+        <div className="mt-1.5 pl-10">
+          <BookedButton onClick={() => onBook(seller, seller.fares[0])} />
+        </div>
+      )}
       {tiers && (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {seller.fares.map((f) => (
@@ -75,6 +92,11 @@ function SellerRow({ seller, bookingUrl }: { seller: VerifiedSeller; bookingUrl:
                   <PolicyChip key={c.label} {...c} />
                 ))}
               </div>
+              {onBook && (
+                <div className="mt-2">
+                  <BookedButton onClick={() => onBook(seller, f)} />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -103,7 +125,7 @@ export function Insight({ insight }: { insight: Verified["insight"] }) {
   );
 }
 
-export function SellersPanel({ verified, trustedOnly }: { verified: Verified; trustedOnly: boolean }) {
+export function SellersPanel({ verified, trustedOnly, onBook }: { verified: Verified; trustedOnly: boolean; onBook?: OnBook }) {
   const [showAll, setShowAll] = useState(!trustedOnly);
   const hidden = verified.sellers.filter((s) => s.tier === "unvetted");
   const shown = showAll ? verified.sellers : verified.sellers.filter((s) => s.tier !== "unvetted");
@@ -112,7 +134,7 @@ export function SellersPanel({ verified, trustedOnly }: { verified: Verified; tr
       <Insight insight={verified.insight} />
       <div>
         {shown.map((s) => (
-          <SellerRow key={s.name} seller={s} bookingUrl={verified.bookingUrl} />
+          <SellerRow key={s.name} seller={s} bookingUrl={verified.bookingUrl} onBook={onBook} />
         ))}
         {!shown.length && <p className="py-3 text-sm text-mute">No airline or trusted agency sells this itinerary. Only unvetted agencies list it.</p>}
       </div>

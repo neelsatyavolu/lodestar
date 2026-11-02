@@ -5,9 +5,11 @@ import { ApiError, post, readNdjson } from "@/lib/client";
 import { day, money } from "@/lib/format";
 import type { Hack } from "@/lib/hacks";
 import type { Itinerary } from "@/lib/types";
+import type { VerifiedSeller } from "@/lib/verify";
 import { AirportField } from "./airport-field";
 import { PROVIDER_NAME, type Provider } from "./connect-ai";
 import { ItineraryCard, type SellerCheck } from "./itinerary-card";
+import type { Fare } from "./sellers-panel";
 import { Button, Pill } from "./ui";
 
 type SearchState = { state: "waiting" | "running" | "done" | "error"; count?: number; cheapest?: number | null; error?: string };
@@ -344,7 +346,7 @@ function OriginAsk({ onSave }: { onSave: (codes: string[]) => Promise<string | n
   );
 }
 
-export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollowup, save = null }: { board: Board; latest: boolean; save?: ReactNode; checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean; onFollowup: (f: string) => void }) {
+export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollowup, save = null, onBook }: { board: Board; latest: boolean; save?: ReactNode; checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean; onFollowup: (f: string) => void; onBook?: (it: Itinerary, seller: VerifiedSeller, fare: Fare) => void }) {
   const { plan, canvas } = board;
   return (
     <div className="space-y-8">
@@ -412,7 +414,7 @@ export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollo
                     {p.why}
                     {p.tradeoff && <span className="text-mute"> Tradeoff: {p.tradeoff}</span>}
                   </p>
-                  <ItineraryCard it={opt.itinerary} badges={[]} check={checks[opt.itinerary.id]} onCheck={() => onCheck(opt.itinerary)} trustedOnly={trustedOnly} alt={new Set()} />
+                  <ItineraryCard it={opt.itinerary} badges={[]} check={checks[opt.itinerary.id]} onCheck={() => onCheck(opt.itinerary)} trustedOnly={trustedOnly} alt={new Set()} onBook={onBook && ((s, f) => onBook(opt.itinerary, s, f))} />
                 </div>
               );
             })}
