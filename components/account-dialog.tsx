@@ -18,7 +18,7 @@ export function AccountDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSignedIn: (account: Account, preferences: Preferences) => void;
+  onSignedIn: (account: Account, preferences: Preferences, created: boolean) => void;
   initialMode?: Mode;
   /** Preferences set before signing up; saved with the new account. */
   pendingPreferences: Preferences;
@@ -49,7 +49,7 @@ export function AccountDialog({
       const body = mode === "register" ? { email, password, preferences: pendingPreferences } : { email, password };
       const res = await post<{ user: Account; preferences: Preferences }>(`/api/account/${mode === "register" ? "register" : "login"}`, body);
       setPassword("");
-      onSignedIn(res.user, res.preferences);
+      onSignedIn(res.user, res.preferences, mode === "register");
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't work. Try again.");

@@ -16,13 +16,28 @@ import { ConnectAI, PROVIDER_NAME, type Provider } from "./connect-ai";
 import { GitHubLink, GitHubMark, REPO_URL } from "./github-link";
 import { PreferencesDialog } from "./preferences-dialog";
 import { ThemeToggle } from "./theme-toggle";
+import { Onboarding } from "./onboarding";
+import { Tour, type TourStep } from "./tour";
+import { Trips } from "./trips";
 import { DateStrip, HackCards } from "./hacks";
 import { ItineraryCard, allAirlines, type SellerCheck } from "./itinerary-card";
 import { Results } from "./results";
 import { SearchForm, defaultForm, toQuery, type FormState } from "./search-form";
 import { Button, Pill } from "./ui";
 
-type Mode = "search" | "ai";
+type Mode = "search" | "ai" | "trips";
+const MODE_LABEL: Record<Mode, string> = { search: "Search", ai: "Plan", trips: "Trips" };
+
+function tourSteps(showPlan: () => void): TourStep[] {
+  return [
+    { target: '[data-tour="ai"]', title: "Plan", body: "Start here. Plan finds flights from a plain sentence instead of a form.", before: showPlan },
+    { target: '[data-tour="plan-box"]', title: "Say the trip", body: "Type where and roughly when, like “Chennai Dec 7 to 20, nonstop if it's close”. Plan runs several live searches with your preferences and shortlists the best options. Reply to change anything." },
+    { target: '[data-tour="search"]', title: "Search", body: "Prefer a form? Search shows live fares and also tries nearby airports, a few days either side, and two one-way tickets." },
+    { target: '[data-tour="trips"]', title: "Trips", body: "Save a Plan shortlist here. Lodestar checks the fare daily and emails you when it drops, hits your target, or on the day you want to book." },
+    { target: '[data-tour="prefs"]', title: "Your preferences", body: "Everything you just set lives here. Change it any time." },
+    { target: '[data-tour="account"]', title: "Your account", body: "Click your name for preferences, your AI connection and sign out." },
+  ];
+}
 type AiStatus = { connected: Record<Provider, boolean>; models: Record<Provider, { id: string; label: string }[]> };
 
 const AUTO_CHECK = 4;
@@ -107,6 +122,8 @@ function formToUrl(f: FormState): string {
 
 export function App() {
   const [mode, setMode] = useState<Mode>("search");
+  // The saved trip to show in Trips, from an alert email's link or a fresh save.
+  const [focusTrip, setFocusTrip] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(defaultForm);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searched, setSearched] = useState<FormState | null>(null);
@@ -123,6 +140,10 @@ export function App() {
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [accountDialog, setAccountDialog] = useState<{ open: boolean; mode: "signin" | "register"; key: number }>({ open: false, mode: "signin", key: 0 });
   const [prefsDialog, setPrefsDialog] = useState({ open: false, key: 0 });
+  const [onboarding, setOnboarding] = useState({ open: false, key: 0 });
+  const [touring, setTouring] = useState(false);
+  // Set when onboarding hands off to the AI sign-in, so the tour starts once that closes.
+  const tourAfterConnect = useRef(false);
   const prefsRef = useRef<Preferences>(DEFAULT_PREFERENCES);
   const searchCtrl = useRef<AbortController | null>(null);
   const started = useRef(new Set<string>());
@@ -206,10 +227,19 @@ export function App() {
     api<{ user: Account | null; preferences: Preferences | null }>("/api/account")
       .then((res) => {
         setAccount(res.user);
+        const trip = new URLSearchParams(window.location.search).get("trip");
+        if (res.user && trip) {
+          setFocusTrip(trip);
+          setMode("trips");
+        }
         if (res.preferences) adoptPreferences(res.preferences, !fromUrl);
       })
       .catch(() => {})
       .finally(() => {
+        // Development only: /?welcome replays the sign-up onboarding and tour.
+        if (process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).has("welcome")) {
+          setOnboarding((o) => ({ open: true, key: o.key + 1 }));
+        }
         if (fromUrl) {
           setForm(fromUrl);
           search(fromUrl);
@@ -230,15 +260,18 @@ export function App() {
     return null;
   };
 
-  const signedIn = (a: Account, p: Preferences) => {
+  const signedIn = (a: Account, p: Preferences, created: boolean) => {
     setAccount(a);
     adoptPreferences(p, true);
     refreshAi();
+    // A new account answers a few questions, connects its AI, then gets a short tour.
+    if (created) setOnboarding((o) => ({ open: true, key: o.key + 1 }));
   };
 
   const signOut = async () => {
     await post("/api/account/logout", {}).catch(() => {});
     setAccount(null);
+    setMode((m) => (m === "trips" ? "search" : m));
     adoptPreferences(DEFAULT_PREFERENCES, false);
     refreshAi();
   };
@@ -295,9 +328,9 @@ export function App() {
             <span className="text-[18px] font-medium tracking-[-0.02em] max-[400px]:sr-only">Lodestar</span>
           </Link>
           <nav className="inline-flex shrink-0 rounded-full bg-elevated p-0.5 text-[13px] sm:ml-2" aria-label="Mode">
-            {(["search", "ai"] as Mode[]).map((m) => (
-              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
-                {m === "search" ? "Search" : "Plan"}
+            {((account ? ["search", "ai", "trips"] : ["search", "ai"]) as Mode[]).map((m) => (
+              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
+                {MODE_LABEL[m]}
               </button>
             ))}
           </nav>
@@ -310,13 +343,14 @@ export function App() {
               type="button"
               onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))}
               aria-label="Travel preferences"
+              data-tour="prefs"
               title="Travel preferences"
               className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:size-10"
             >
               <SlidersHorizontal size={16} />
             </button>
             {account ? (
-              <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} className="cursor-pointer max-sm:hidden">
+              <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} data-tour="account" className="cursor-pointer max-sm:hidden">
                 <Pill>{account.email.split("@")[0]}</Pill>
               </button>
             ) : (
@@ -325,14 +359,14 @@ export function App() {
               </Button>
             )}
             {provider ? (
-              <button type="button" onClick={() => disconnect(provider)} title="Disconnect" className="cursor-pointer">
+              <button type="button" onClick={() => disconnect(provider)} title="Disconnect" data-tour="connect" className="cursor-pointer">
                 <Pill dot="ok">
                   <span className="sm:hidden">{PROVIDER_NAME[provider]}</span>
                   <span className="max-sm:hidden">{PROVIDER_NAME[provider]} connected</span>
                 </Pill>
               </button>
             ) : (
-              <Button size="sm" onClick={() => setConnectOpen(true)} className="max-sm:hidden">
+              <Button size="sm" onClick={() => setConnectOpen(true)} data-tour="connect" className="max-sm:hidden">
                 Connect AI
               </Button>
             )}
@@ -460,9 +494,16 @@ export function App() {
               checks={checks}
               onCheck={check}
               trustedOnly={trustedOnly}
+              signedIn={Boolean(account)}
+              onSignIn={() => setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }))}
+              onOpenTrips={(id) => {
+                setFocusTrip(id);
+                setMode("trips");
+              }}
             />
           </section>
         </div>
+        {account && mode === "trips" && <Trips focus={focusTrip} onPlan={() => setMode("ai")} checks={checks} onCheck={check} trustedOnly={trustedOnly} />}
       </main>
 
       <footer className="border-t border-hairline">
@@ -499,7 +540,32 @@ export function App() {
           setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }));
         }}
       />
-      <ConnectAI open={connectOpen} onClose={() => setConnectOpen(false)} onConnected={() => refreshAi()} signedIn={Boolean(account)} />
+      <Onboarding
+        key={`onboarding-${onboarding.key}`}
+        open={onboarding.open}
+        initial={prefs}
+        aiConnected={Boolean(provider)}
+        onSave={savePreferences}
+        onConnectAi={() => {
+          tourAfterConnect.current = true;
+          setOnboarding((o) => ({ ...o, open: false }));
+          setConnectOpen(true);
+        }}
+        onDone={() => {
+          setOnboarding((o) => ({ ...o, open: false }));
+          setTouring(true);
+        }}
+      />
+      {touring && <Tour steps={tourSteps(() => setMode("ai"))} onDone={() => setTouring(false)} />}
+      <ConnectAI
+        open={connectOpen}
+        onClose={() => {
+          setConnectOpen(false);
+          if (tourAfterConnect.current) {
+            tourAfterConnect.current = false;
+            setTouring(true);
+          }
+        }} onConnected={() => refreshAi()} signedIn={Boolean(account)} />
     </>
   );
 }

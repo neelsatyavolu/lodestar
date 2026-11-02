@@ -5,10 +5,10 @@ import { AirportField } from "./airport-field";
 import { Dialog, Field } from "./dialog";
 import { Button, Toggle } from "./ui";
 
-const CABIN_LABEL: Record<Cabin, string> = { ECONOMY: "Economy", PREMIUM_ECONOMY: "Premium economy", BUSINESS: "Business", FIRST: "First" };
-const STOP_LABEL: Record<MaxStops, string> = { ANY: "Any", "0": "Nonstop only", "1": "1 stop or fewer", "2": "2 stops or fewer" };
+export const CABIN_LABEL: Record<Cabin, string> = { ECONOMY: "Economy", PREMIUM_ECONOMY: "Premium economy", BUSINESS: "Business", FIRST: "First" };
+export const STOP_LABEL: Record<MaxStops, string> = { ANY: "Any", "0": "Nonstop only", "1": "1 stop or fewer", "2": "2 stops or fewer" };
 
-const selectClass = "h-10 w-full cursor-pointer rounded-md border border-hairline-strong bg-deep px-3 text-[14px] text-ink outline-none max-sm:h-12";
+export const selectClass = "h-10 w-full cursor-pointer rounded-md border border-hairline-strong bg-deep px-3 text-[14px] text-ink outline-none max-sm:h-12";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

@@ -91,7 +91,7 @@ export function AirportField({
     <div className="relative min-w-0 flex-1">
       <label className={`block text-[11px] text-ash ${bare ? "pb-1.5" : "px-3 pt-2.5"}`}>{label}</label>
       <div
-        className={`flex min-h-10 flex-wrap items-center gap-1.5 ${bare ? "rounded-md border border-hairline-strong bg-deep px-2 py-1" : "px-3 pb-2"}`}
+        className={`flex min-h-10 flex-wrap items-center gap-1.5 ${bare ? "rounded-md border border-hairline-strong bg-deep px-2 py-1 has-[input:focus]:border-accent" : "px-3 pb-2"}`}
         onClick={() => input.current?.focus()}
       >
         {value.map((code) => (
@@ -114,7 +114,7 @@ export function AirportField({
           onKeyDown={onKey}
           placeholder={value.length ? (value.length < MAX_CODES ? "Add airport" : "") : placeholder}
           disabled={value.length >= MAX_CODES}
-          className="min-w-20 flex-1 bg-transparent py-1 text-[15px] text-ink placeholder:text-stone outline-none"
+          className={`min-w-20 flex-1 bg-transparent py-1 text-[15px] text-ink placeholder:text-stone outline-none ${bare ? "focus-visible:shadow-none!" : ""}`}
           role="combobox"
           aria-expanded={open && items.length > 0}
           aria-controls={listId}
@@ -123,7 +123,13 @@ export function AirportField({
         />
       </div>
       {open && items.length > 0 && (
-        <ul id={listId} role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-auto rounded-lg border border-hairline-strong bg-elevated p-1 sm:min-w-80">
+        <ul
+          id={listId}
+          role="listbox"
+          // Inside a dialog the list sits in the flow, so the dialog's scroll area can't clip it.
+          ref={bare ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+          className={`overflow-auto rounded-lg border border-hairline-strong bg-elevated p-1 ${bare ? "mt-1 max-h-56" : "absolute left-0 right-0 top-full z-30 mt-1 max-h-80 sm:min-w-80"}`}
+        >
           {items.map((s, i) => (
             <li
               key={s.code}
