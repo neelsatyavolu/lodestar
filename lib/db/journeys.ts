@@ -168,6 +168,14 @@ export async function deleteItem(q: Queryable, userId: string, id: string): Prom
   return (await q.query("DELETE FROM journey_items WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId])).length > 0;
 }
 
+/** Pins items to the map: merges place id and coordinates into their details. */
+export async function setItemLocations(q: Queryable, userId: string, located: { id: string; placeId?: string; lat: number; lng: number }[], now: number): Promise<void> {
+  for (const l of located) {
+    const patch = { lat: l.lat, lng: l.lng, locatedAt: now, ...(l.placeId ? { placeId: l.placeId } : {}) };
+    await q.query("UPDATE journey_items SET details = details || $3::jsonb WHERE id = $1 AND user_id = $2", [l.id, userId, JSON.stringify(patch)]);
+  }
+}
+
 /** Clears a trip's earlier suggestions of one kind before a fresh set replaces them. */
 export async function deleteSuggestions(q: Queryable, userId: string, journeyId: string, kind: Kind): Promise<void> {
   await q.query("DELETE FROM journey_items WHERE user_id = $1 AND journey_id = $2 AND kind = $3 AND status = 'suggested'", [userId, journeyId, kind]);

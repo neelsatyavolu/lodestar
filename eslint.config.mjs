@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "fares/**",
     "coverage/**",
+    // Copied from maplibre-gl at dev/build time (scripts/copy-maplibre-worker.mjs).
+    "public/maplibre-gl-worker.mjs",
   ]),
 ]);
 

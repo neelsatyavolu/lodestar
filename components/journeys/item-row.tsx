@@ -23,7 +23,7 @@ function subtitle(i: Item): string {
   return parts.filter(Boolean).join(" · ");
 }
 
-export function ItemRow({ item, onChanged, onRemoved }: { item: Item; onChanged: (i: Item) => void; onRemoved: () => void }) {
+export function ItemRow({ item, onChanged, onRemoved, onOpen, selected = false }: { item: Item; onChanged: (i: Item) => void; onRemoved: () => void; onOpen?: () => void; selected?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const Icon = item.kind === "transport" && /pickup|car/i.test(item.title) ? CarFront : ICON[item.kind];
@@ -57,12 +57,21 @@ export function ItemRow({ item, onChanged, onRemoved }: { item: Item; onChanged:
 
   const link = item.details.url;
   return (
-    <li className={`group flex gap-3 rounded-lg px-3 py-3 ${suggested ? "border border-dashed border-hairline-strong" : "border border-transparent hover:bg-elevated"}`}>
+    <li
+      onClick={onOpen}
+      className={`group flex gap-3 rounded-lg px-3 py-3 ${onOpen ? "cursor-pointer" : ""} ${selected ? "border border-hairline-hover bg-elevated" : suggested ? "border border-dashed border-hairline-strong" : "border border-transparent hover:bg-elevated"}`}
+    >
       <span className="w-12 shrink-0 pt-0.5 font-mono text-[12px] text-ash">{item.startTime ?? ""}</span>
       <Icon size={16} className={`mt-0.5 shrink-0 ${suggested ? "text-accent" : "text-charcoal"}`} aria-hidden />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className={`text-[14px] ${cancelled ? "text-ash line-through" : "text-ink"}`}>{item.title}</span>
+          {onOpen ? (
+            <button type="button" onClick={(e) => (e.stopPropagation(), onOpen())} className={`cursor-pointer text-left text-[14px] hover:underline ${cancelled ? "text-ash line-through" : "text-ink"}`}>
+              {item.title}
+            </button>
+          ) : (
+            <span className={`text-[14px] ${cancelled ? "text-ash line-through" : "text-ink"}`}>{item.title}</span>
+          )}
           {item.status === "booked" && <Pill dot="ok">Booked</Pill>}
           {cancelled && <Pill dot="danger">Cancelled</Pill>}
           {suggested && <Pill tone="accent">Idea</Pill>}
@@ -73,7 +82,7 @@ export function ItemRow({ item, onChanged, onRemoved }: { item: Item; onChanged:
         {item.details.price !== undefined && item.kind === "stay" && suggested && <p className="mt-1 text-[13px] text-body">From ${item.details.price} a night on today&apos;s search{item.details.rating ? ` · rated ${item.details.rating}` : ""}</p>}
         {item.details.note && <p className="mt-1 whitespace-pre-line text-[13px] text-body">{item.details.note}</p>}
         {error && <p className="mt-1 text-[12px] text-danger">{error}</p>}
-        <div className="mt-2 flex flex-wrap items-center gap-2 empty:hidden">
+        <div className="mt-2 flex flex-wrap items-center gap-2 empty:hidden" onClick={(e) => e.stopPropagation()}>
           {suggested && (
             <>
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => patch({ status: "planned" })}>
@@ -92,7 +101,7 @@ export function ItemRow({ item, onChanged, onRemoved }: { item: Item; onChanged:
         </div>
       </div>
       {!suggested && (
-        <div className="flex shrink-0 items-start gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-start gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           {!cancelled && item.status === "booked" && (
             <button type="button" disabled={busy} onClick={() => patch({ status: "cancelled" })} title="Mark cancelled" aria-label={`Mark ${item.title} cancelled`} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
               <X size={14} />

@@ -3,6 +3,7 @@ import { api, post } from "@/lib/client";
 import type { Journey, Kind } from "@/lib/journeys/types";
 import { Dialog, Field, inputClass } from "../dialog";
 import { Button, Toggle } from "../ui";
+import { DateField, DateRangeField } from "./date-field";
 import { errorText } from "./shared";
 
 // Small forms: start or edit a trip, add something to one.
@@ -60,13 +61,18 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
         <Field label="Where to">
           <input autoFocus value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Lisbon" className={inputClass} maxLength={80} />
         </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="From">
-            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className={inputClass} />
-          </Field>
-          <Field label="To">
-            <input type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} className={inputClass} />
-          </Field>
+        <div>
+          <span className="mb-1.5 block text-[12px] text-charcoal">Dates</span>
+          <DateRangeField
+            inline
+            label="Trip dates"
+            start={start || null}
+            end={end || null}
+            onChange={(a, b) => {
+              setStart(a ?? "");
+              setEnd(b ?? "");
+            }}
+          />
         </div>
         <Field label="Name (optional)" hint={journey ? undefined : "Left blank, it's named after the place and month."}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={destination ? `${destination} trip` : "Name"} className={inputClass} maxLength={160} />
@@ -148,15 +154,28 @@ export function AddItemDialog({ open, onClose, journey, onAdded }: { open: boole
         <Field label={kind === "flight" ? "Flight" : "Name"}>
           <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === "flight" ? "UA 837 · SFO → NRT" : kind === "dining" ? "Cervejaria Ramiro" : kind === "stay" ? "Memmo Alfama" : "Tile museum"} className={inputClass} maxLength={160} />
         </Field>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label={kind === "stay" ? "Check-in" : "Date"}>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-          </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
           {kind === "stay" ? (
-            <Field label="Check-out">
-              <input type="date" value={endDate} min={date || undefined} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
-            </Field>
+            <div className="sm:col-span-2">
+              <span className="mb-1.5 block text-[12px] text-charcoal">Check-in and check-out</span>
+              <DateRangeField
+                inline
+                label="Check-in and check-out"
+                start={date || null}
+                end={endDate || null}
+                onChange={(a, b) => {
+                  setDate(a ?? "");
+                  setEndDate(b ?? "");
+                }}
+              />
+            </div>
           ) : (
+            <div className="sm:col-span-2">
+              <span className="mb-1.5 block text-[12px] text-charcoal">Date</span>
+              <DateField inline label="Date" value={date || null} onChange={setDate} />
+            </div>
+          )}
+          {kind !== "stay" && (
             <Field label="Time (optional)">
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputClass} />
             </Field>

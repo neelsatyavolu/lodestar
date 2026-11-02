@@ -48,3 +48,5 @@ __pycache__/
 .wrangler/
 .playwright-mcp/
 .data/
+# Copied from node_modules by scripts/copy-maplibre-worker.mjs
+/public/maplibre-gl-worker.mjs

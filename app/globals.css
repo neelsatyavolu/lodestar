@@ -135,6 +135,8 @@
 
 html {
   background: var(--canvas);
+  /* The trip page's map spans 100vw, which includes a classic scrollbar's width. clip (not hidden) keeps sticky working. */
+  overflow-x: clip;
 }
 
 body {

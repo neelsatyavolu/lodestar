@@ -25,6 +25,9 @@ export const LIMITS = {
   pair: [10, 15 * MINUTE],
   // Per connection or forwarding address: a stuck sender can't fill the table.
   inboundMail: [200, 24 * 60 * MINUTE],
+  // Search-as-you-type and the details panel; Google bills per call.
+  places: [300, 15 * MINUTE],
+  placesDaily: [3000, 24 * 60 * MINUTE],
 } as const;
 
 /** False once `key` has used up the named limit. */

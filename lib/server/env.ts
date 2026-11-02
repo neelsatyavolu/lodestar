@@ -15,6 +15,8 @@ const schema = z.object({
   // Forwarded confirmations: mail to <token>@INBOUND_DOMAIN reaches Trips through Resend Inbound.
   INBOUND_DOMAIN: z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/i, "INBOUND_DOMAIN must be a domain").optional(),
   RESEND_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
+  // Google Places (New) + Routes. Without it Trips uses OpenStreetMap search and shows no ratings or drive times.
+  GOOGLE_PLACES_KEY: z.string().min(20).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -32,6 +34,7 @@ export function env(): Env {
     CRON_SECRET: process.env.CRON_SECRET || undefined,
     INBOUND_DOMAIN: process.env.INBOUND_DOMAIN || undefined,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET || undefined,
+    GOOGLE_PLACES_KEY: process.env.GOOGLE_PLACES_KEY || undefined,
   });
   if (!parsed.success) throw new Error(`Server misconfigured: ${parsed.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
   cached = parsed.data;

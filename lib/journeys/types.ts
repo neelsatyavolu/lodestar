@@ -38,6 +38,12 @@ export const DetailsSchema = z
     note: z.string().max(2000).optional(),
     guests: z.number().int().min(1).max(30).optional(),
     provider: z.string().max(80).optional(),
+    /** "g:<Google place id>" or "osm:<id>": opens the details panel. */
+    placeId: z.string().max(300).optional(),
+    lat: z.number().min(-90).max(90).optional(),
+    lng: z.number().min(-180).max(180).optional(),
+    /** When the location was looked up; Google allows keeping coordinates 30 days. */
+    locatedAt: z.number().int().optional(),
   })
   .strict();
 export type Details = z.infer<typeof DetailsSchema>;

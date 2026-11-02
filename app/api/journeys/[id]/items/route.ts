@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { fail, handle, ok, readJson } from "@/lib/api";
 import { getDb } from "@/lib/db/client";
-import { countItems, getJourney, MAX_ITEMS, upsertItem, widenJourney } from "@/lib/db/journeys";
+import { countItems, getJourney, journeysForKeys, MAX_ITEMS, upsertItem, widenJourney } from "@/lib/db/journeys";
 import { dedupeKey } from "@/lib/journeys/group";
 import { NewItemSchema } from "@/lib/journeys/input";
 import { ipKey } from "@/lib/server/auth";
@@ -19,7 +19,13 @@ export function POST(req: Request, ctx: TripCtx) {
     if (!(await getJourney(db, who.userId, who.id))) return fail("That trip doesn't exist.", 404);
     if ((await countItems(db, who.userId)) >= MAX_ITEMS) return fail("This account has too many items. Delete some old trips first.", 409);
     const id = await db.transaction(async (tx) => {
-      const stored = await upsertItem(tx, who.userId, { id: randomUUID(), journeyId: who.id, source: "manual", dedupeKey: dedupeKey(item), item, now: Date.now() });
+      // Typed by hand, it may only merge with the same booking in this trip, never pull one out of another trip.
+      let key = dedupeKey(item);
+      if (key) {
+        const owner = (await journeysForKeys(tx, who.userId, [key])).get(key);
+        if (owner !== undefined && owner !== who.id) key = null;
+      }
+      const stored = await upsertItem(tx, who.userId, { id: randomUUID(), journeyId: who.id, source: "manual", dedupeKey: key, item, now: Date.now() });
       await widenJourney(tx, who.userId, who.id, item.startDate, item.endDate ?? item.startDate);
       return stored;
     });
