@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Contrail
 
-## Getting Started
+**Live: [contrail.xanom.co](https://contrail.xanom.co)** · MIT licensed
 
-First, run the development server:
+Flight search that finds lower fares and shows who is selling them. Live prices come from Google Flights. Every search also tries nearby airports, three days either side, and two one-way tickets. Each itinerary can be checked seller by seller, and agencies we haven't vetted are hidden by default. The AI canvas uses your own ChatGPT or Grok subscription to plan several searches at once and pick the best options from the live results.
+
+## Run it
+
+You need Node 20+, pnpm and Python 3.11+.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+python3 -m venv fares/.venv
+fares/.venv/bin/pip install -r fares/requirements-dev.txt
+fares/.venv/bin/playwright install chromium
+
+printf 'CONTRAIL_SECRET=%s\nFARES_URL=http://127.0.0.1:8787\n' "$(openssl rand -hex 32)" > .env.local
+
+pnpm dev:fares   # fares service on 127.0.0.1:8787
+pnpm dev         # web app on localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Piece | Where | What it does |
+|---|---|---|
+| Fares service | `fares/` | FastAPI wrapper around [fli](https://github.com/punitarani/fli), which calls Google Flights' own data endpoints. `/flights` and `/dates` search; `/booking` opens Google's public booking page for one itinerary in headless Chromium and reads the sellers, fare tiers (bags, changes, refunds) and Google's price insight. |
+| Search | `lib/search.ts` | Adds nearby airports, runs the round trip and the two one-ways in parallel, ranks results (best, cheapest, fastest) and computes the hacks. |
+| Hacks | `lib/hacks.ts` | Nearby airport, shift dates, two one-ways, nonstop for a little more, no-frills airline warning. Each compares against the cheapest fare between exactly the airports you asked for, and only shows when it saves $15 or more. |
+| Seller trust | `lib/sellers.ts`, `lib/verify.ts` | Airline direct, trusted agency (Expedia Group, Booking Holdings, Trip.com Group brands, card travel portals) or not vetted. Not-vetted sellers are hidden unless you ask. |
+| Logos | `app/api/logo/*` | Google's airline logos, then Kiwi's (with its placeholder image rejected), then a drawn monogram, so a logo never shows broken. Seller icons come from Google's and DuckDuckGo's icon services; the seller's own site is never contacted. |
+| AI canvas | `lib/ai/canvas.ts`, `app/api/ai/canvas` | The model turns your request into up to five searches, the server runs them on live fares, then the model picks and explains options. It can only cite options by reference, so every price shown is a real search result. |
+| AI sign-in | `lib/ai/session.ts` | ChatGPT or Grok OAuth through `@neelsatyavolu/shared-ai-auth`. Tokens are AES-GCM sealed into httpOnly cookies scoped to `/api/ai` and bound to an anonymous device id. The server stores nothing. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Booking links open the exact itinerary on Google Flights, where you continue to the seller you picked. Contrail never sells tickets.
 
-## Learn More
+## Deploys
 
-To learn more about Next.js, take a look at the following resources:
+Pushes to `main` deploy automatically:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- The web app deploys through Vercel's GitHub integration.
+- The fares service (`fares/`) deploys to Cloudflare Containers through `.github/workflows/deploy-fares.yml` when files under `fares/` change. It needs the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Production needs `CONTRAIL_SECRET` (seals AI session cookies), `FARES_URL` and `FARES_TOKEN` on the web app, and the same `FARES_TOKEN` as a Worker secret (`wrangler secret put FARES_TOKEN`).
 
-## Deploy on Vercel
+## Tests
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm test             # unit tests (vitest)
+pnpm test:coverage
+pnpm test:fares       # fares service tests (pytest)
+CONTRAIL_LIVE=1 pnpm test:fares   # also hits Google Flights live
+pnpm smoke            # live AI canvas run; needs both dev servers and a Codex CLI sign-in in ~/.codex/auth.json
+pnpm typecheck && pnpm lint
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limits
+
+- Google Flights has no public API. fli and the booking-page reader can break when Google changes its pages; pin and update `flights` in `fares/requirements.txt`, and the captured pages in `fares/tests/fixtures` show what the parser expects.
+- The date calendar can take 20 seconds or more on Google's side, so the web app loads it separately after the flight results.
+- Prices are in USD for a US point of sale.
+- The rate limiter is in memory, which is fine for one instance. Use a shared store before running several.
+- Hidden-city ticketing is left out on purpose: airlines can cancel the rest of the trip or close the account.
+
+## Credits
+
+- [fli](https://github.com/punitarani/fli) (MIT) for Google Flights search.
+- Airport data from [OurAirports](https://ourairports.com/data/) (public domain), rebuilt with `pnpm build:airports`.
+- Airline logos are served from Google's and Kiwi.com's public logo images; they belong to their airlines.
+
+## License
+
+[MIT](LICENSE)

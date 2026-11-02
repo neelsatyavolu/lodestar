@@ -1,0 +1,146 @@
+import "server-only";
+import { airport, distanceKm, expandCode, nearbyAirports } from "./airports";
+import { FaresError, searchDates, searchFlights, type FlightsParams } from "./fares";
+import { flexHack, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning, type Hack, type Ranked } from "./hacks";
+import type { DayPrice, Itinerary, SearchQuery } from "./types";
+
+const MAX_AIRPORTS = 6;
+const FLEX_DAYS = 3;
+
+export type SearchResult = {
+  airports: { from: string[]; to: string[]; nearbyFrom: string[]; nearbyTo: string[] };
+  /** Cheapest fare between exactly the requested airports, for comparing hacks. */
+  baseline: number | null;
+  itineraries: Itinerary[];
+  labels: Ranked;
+  hacks: Hack[];
+  calendar: DayPrice[];
+  oneWays: { out: Itinerary[]; back: Itinerary[] } | null;
+  warnings: string[];
+};
+
+export function resolveCodes(codes: string[]): string[] {
+  const out = [...new Set(codes.flatMap((c) => {
+    const expanded = expandCode(c);
+    if (!expanded.length) throw new FaresError(`We don't know the airport ${c}.`, 400);
+    return expanded;
+  }))];
+  return out.slice(0, MAX_AIRPORTS);
+}
+
+function addDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function minKm(code: string, anchors: string[]): number | null {
+  const a = airport(code);
+  const xs = anchors.map(airport).filter((x) => x !== undefined);
+  if (!a || !xs.length) return null;
+  return Math.min(...xs.map((x) => distanceKm(x, a)));
+}
+
+function settledValue<T>(r: PromiseSettledResult<T> | undefined, label: string, warnings: string[]): T | null {
+  if (!r) return null;
+  if (r.status === "fulfilled") return r.value;
+  warnings.push(`${label}: ${r.reason instanceof Error ? r.reason.message : "failed"}`);
+  return null;
+}
+
+function validated(q: SearchQuery): { from: string[]; to: string[] } {
+  const from = resolveCodes(q.from);
+  const to = resolveCodes(q.to);
+  if (from.some((c) => to.includes(c))) throw new FaresError("From and to are the same place.", 400);
+  // "Today" is UTC on the server; allow one day back so evening searches in the Americas still work.
+  if (q.depart < addDays(today(), -1)) throw new FaresError("That departure date has passed.", 400);
+  return { from, to };
+}
+
+function withDeadline<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new FaresError(`${what} took too long`, 504)), ms);
+  });
+  return Promise.race([p, deadline]).finally(() => clearTimeout(timer));
+}
+
+/** Lowest fare per departure day, three days either side, same trip length. Google can be slow here. */
+export async function runCalendar(q: SearchQuery, signal?: AbortSignal): Promise<DayPrice[]> {
+  const { from, to } = validated(q);
+  const start = [addDays(q.depart, -FLEX_DAYS), addDays(today(), 1)].sort().at(-1)!;
+  const tripDays = q.return ? Math.round((Date.parse(q.return) - Date.parse(q.depart)) / 86_400_000) : null;
+  // Google's calendar has no same-day round trips; a one-way calendar would not compare.
+  if (tripDays === 0) return [];
+  return searchDates(
+    { origins: from, destinations: to, start, end: addDays(q.depart, FLEX_DAYS), tripDays, cabin: q.cabin, maxStops: q.stops, adults: q.adults, children: q.children },
+    signal,
+  );
+}
+
+/**
+ * Live fares plus hacks. The date calendar is slow and optional: the web app
+ * fetches it separately (runCalendar); callers that want it inline pass
+ * `calendarMs` and get whatever arrives within that time.
+ */
+export async function runSearch(q: SearchQuery, signal?: AbortSignal, opts: { calendarMs?: number } = {}): Promise<SearchResult> {
+  const { from, to } = validated(q);
+
+  // On short trips (SFO→SJC, LHR→STN) the two sides share neighbours; an airport
+  // may only sit on one side or Google rejects the search.
+  const nearbyTo = q.nearby ? nearbyAirports(to).map((a) => a.code).filter((c) => !from.includes(c)) : [];
+  const nearbyFrom = q.nearby ? nearbyAirports(from).map((a) => a.code).filter((c) => !to.includes(c) && !nearbyTo.includes(c)) : [];
+  const allFrom = [...from, ...nearbyFrom].slice(0, MAX_AIRPORTS);
+  const allTo = [...to, ...nearbyTo].slice(0, MAX_AIRPORTS);
+
+  const base: Omit<FlightsParams, "origins" | "destinations" | "depart"> = {
+    cabin: q.cabin,
+    maxStops: q.stops,
+    adults: q.adults,
+    children: q.children,
+    bags: q.bags,
+  };
+
+  const main = searchFlights({ ...base, origins: allFrom, destinations: allTo, depart: q.depart, returnDate: q.return }, signal);
+  const dates = q.flexible && opts.calendarMs ? withDeadline(runCalendar(q, signal), opts.calendarMs, "Flexible dates") : null;
+  const split = q.return && q.split
+    ? [
+        searchFlights({ ...base, origins: allFrom, destinations: allTo, depart: q.depart }, signal),
+        searchFlights({ ...base, origins: allTo, destinations: allFrom, depart: q.return }, signal),
+      ]
+    : null;
+
+  const [mainR, datesR, outR, backR] = await Promise.allSettled([main, dates ?? Promise.resolve(null), ...(split ?? [])]);
+  if (mainR.status === "rejected") throw mainR.reason;
+  const warnings: string[] = [];
+  const itineraries = mainR.value;
+  const calendar = settledValue(datesR, "Flexible dates", warnings) ?? [];
+  const out = settledValue(outR, "One-way outbound", warnings);
+  const back = settledValue(backR, "One-way return", warnings);
+
+  const { ordered, labels } = rank(itineraries);
+  const baseline = itineraries.filter((it) => matchesRequest(it, from, to)).reduce<number | null>((m, it) => (m === null || it.price < m ? it.price : m), null);
+  const hacks = [
+    nearbyHack(itineraries, from, to, (c) => minKm(c, nearbyFrom.includes(c) ? from : to)),
+    // The calendar ignores bag fees, so only fall back to a bag-inclusive baseline when there are no bags.
+    flexHack(calendar, q.depart, q.return, q.bags ? null : baseline),
+    out && back ? splitHack(itineraries, out, back) : null,
+    nonstopHack(itineraries),
+    ulccWarning(itineraries),
+  ].filter((h): h is Hack => h !== null);
+
+  return {
+    airports: { from, to, nearbyFrom, nearbyTo },
+    baseline,
+    itineraries: ordered,
+    labels,
+    hacks: hacks.sort((a, b) => b.saving - a.saving),
+    calendar,
+    oneWays: out && back ? { out, back } : null,
+    warnings,
+  };
+}

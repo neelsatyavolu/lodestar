@@ -1,0 +1,7 @@
+fares/
+test/
+coverage/
+.env*
+.playwright-mcp/
+*.smoke.ts
+vitest.smoke.config.mts

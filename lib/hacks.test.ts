@@ -1,0 +1,140 @@
+import { describe, expect, it } from "vitest";
+import { bestScore, flexHack, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning } from "./hacks";
+import { itin, leg, route, slice } from "./test-fixtures";
+
+describe("matchesRequest", () => {
+  it("checks both directions of a round trip", () => {
+    const rt = itin(300, [route("SFO", "JFK"), route("JFK", "SFO")]);
+    expect(matchesRequest(rt, ["SFO"], ["JFK"])).toBe(true);
+    const openJaw = itin(300, [route("SFO", "JFK"), route("EWR", "SFO")]);
+    expect(matchesRequest(openJaw, ["SFO"], ["JFK"])).toBe(false);
+  });
+});
+
+describe("rank", () => {
+  it("labels cheapest, fastest and best", () => {
+    const cheapSlow = itin(200, [slice({ legs: [leg({ minutes: 300 }), leg({ from: "ORD", minutes: 300 })], stops: 1 })], "cheap");
+    const fastPricey = itin(400, [slice({ legs: [leg({ minutes: 330 })] })], "fast");
+    const balanced = itin(230, [slice({ legs: [leg({ minutes: 340 })] })], "balanced");
+    const { ordered, labels } = rank([cheapSlow, fastPricey, balanced]);
+    expect(labels.cheapest).toBe("cheap");
+    expect(labels.fastest).toBe("fast");
+    expect(labels.best).toBe("balanced");
+    expect(ordered[0].id).toBe("balanced");
+  });
+
+  it("handles empty input", () => {
+    expect(rank([])).toEqual({ ordered: [], labels: {} });
+  });
+
+  it("penalises self-transfers", () => {
+    const normal = itin(300, [slice()]);
+    const self = itin(300, [slice({ self_transfer: true })]);
+    expect(bestScore(self, 330)).toBeGreaterThan(bestScore(normal, 330));
+  });
+});
+
+describe("nearbyHack", () => {
+  const km = () => 18;
+  it("suggests a nearby airport when it saves enough", () => {
+    const items = [itin(300, [route("SFO", "JFK")]), itin(240, [route("OAK", "JFK")], "oak")];
+    const hack = nearbyHack(items, ["SFO"], ["JFK"], km);
+    expect(hack?.saving).toBe(60);
+    expect(hack?.itineraryIds).toEqual(["oak"]);
+    expect(hack?.title).toContain("OAK");
+    expect(hack?.detail).toContain("18 km");
+  });
+
+  it("stays quiet for tiny savings", () => {
+    const items = [itin(300, [route("SFO", "JFK")]), itin(295, [route("OAK", "JFK")])];
+    expect(nearbyHack(items, ["SFO"], ["JFK"], km)).toBeNull();
+  });
+
+  it("stays quiet without a fare from the requested airports", () => {
+    expect(nearbyHack([itin(240, [route("OAK", "EWR")])], ["SFO"], ["JFK"], () => null)).toBeNull();
+  });
+
+  it("notices a different airport on the way back only", () => {
+    const items = [itin(400, [route("SFO", "JFK"), route("JFK", "SFO")]), itin(300, [route("SFO", "JFK"), route("EWR", "SFO")])];
+    expect(nearbyHack(items, ["SFO"], ["JFK"], () => 15)?.title).toBe("Use EWR instead");
+  });
+
+  it("names both airports when both ends change", () => {
+    const items = [itin(300, [route("SFO", "JFK")]), itin(200, [route("OAK", "EWR")])];
+    const hack = nearbyHack(items, ["SFO"], ["JFK"], () => null);
+    expect(hack?.title).toContain("OAK and EWR");
+    expect(hack?.detail).toContain("OAK; EWR");
+  });
+});
+
+describe("flexHack", () => {
+  const days = [
+    { depart: "2026-12-08", return: "2026-12-13", price: 250 },
+    { depart: "2026-12-10", return: "2026-12-15", price: 320 },
+    { depart: "2026-12-11", return: "2026-12-16", price: 310 },
+  ];
+  it("finds the cheaper nearby date and the matching return", () => {
+    const hack = flexHack(days, "2026-12-10", "2026-12-15", 320);
+    expect(hack?.saving).toBe(70);
+    expect(hack?.apply).toEqual({ depart: "2026-12-08", return: "2026-12-13" });
+    expect(hack?.title).toBe("Leave 2 days earlier");
+  });
+
+  it("shifts the return itself for one-way calendars", () => {
+    const oneWay = days.map((d) => ({ ...d, return: null }));
+    expect(flexHack(oneWay, "2026-12-10", null, 320)?.apply).toEqual({ depart: "2026-12-08", return: null });
+  });
+
+  it("uses the baseline when the chosen date is missing", () => {
+    expect(flexHack([days[0]], "2026-12-10", null, 300)?.saving).toBe(50);
+    expect(flexHack([days[0]], "2026-12-10", null, null)).toBeNull();
+  });
+
+  it("returns null when the chosen date is already cheapest", () => {
+    expect(flexHack([{ depart: "2026-12-10", return: null, price: 100 }, days[2]], "2026-12-10", null, 100)).toBeNull();
+    expect(flexHack([], "2026-12-10", null, 100)).toBeNull();
+  });
+
+  it("says later when the cheaper day is after", () => {
+    const later = [
+      { depart: "2026-12-10", return: null, price: 300 },
+      { depart: "2026-12-11", return: null, price: 200 },
+    ];
+    expect(flexHack(later, "2026-12-10", null, 300)?.title).toBe("Go 1 day later");
+  });
+});
+
+describe("splitHack", () => {
+  it("prefers two one-ways when cheaper", () => {
+    const rt = [itin(400, [route("SFO", "JFK"), route("JFK", "SFO")])];
+    const out = [itin(150, [route("SFO", "JFK")], "o")];
+    const back = [itin(170, [route("JFK", "SFO", { airline: { code: "B6", name: "JetBlue" } })], "b")];
+    const hack = splitHack(rt, out, back);
+    expect(hack?.saving).toBe(80);
+    expect(hack?.itineraryIds).toEqual(["o", "b"]);
+    expect(hack?.caution).toBeTruthy();
+  });
+
+  it("stays quiet when the round trip is cheaper", () => {
+    expect(splitHack([itin(300)], [itin(200)], [itin(200)])).toBeNull();
+    expect(splitHack([itin(300)], [], [itin(200)])).toBeNull();
+  });
+});
+
+describe("nonstopHack and ulccWarning", () => {
+  it("offers a nonstop when it costs a little more and saves time", () => {
+    const connecting = itin(200, [slice({ legs: [leg({ minutes: 300 }), leg({ from: "ORD", minutes: 200 })], stops: 1 })]);
+    const nonstop = itin(240, [slice({ legs: [leg({ minutes: 330 })] })], "ns");
+    const hack = nonstopHack([connecting, nonstop]);
+    expect(hack?.saving).toBe(-40);
+    expect(hack?.itineraryIds).toEqual(["ns"]);
+    expect(nonstopHack([nonstop])).toBeNull();
+  });
+
+  it("flags no-frills airlines", () => {
+    const spirit = itin(99, [route("SFO", "JFK", { airline: { code: "NK", name: "Spirit" } })]);
+    expect(ulccWarning([spirit])?.kind).toBe("ulcc");
+    expect(ulccWarning([itin(200)])).toBeNull();
+    expect(ulccWarning([])).toBeNull();
+  });
+});

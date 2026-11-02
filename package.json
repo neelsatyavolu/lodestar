@@ -4,23 +4,36 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:fares": "cd fares && .venv/bin/uvicorn contrail_fares.app:app --host 127.0.0.1 --port 8787",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:fares": "cd fares && .venv/bin/python -m pytest -q",
+    "typecheck": "next typegen && tsc --noEmit",
+    "build:airports": "node scripts/build-airports.mjs",
+    "smoke": "vitest run --config vitest.smoke.config.mts"
   },
   "dependencies": {
+    "@neelsatyavolu/shared-ai-auth": "github:neelsatyavolu/shared-ai-auth#bce03a005bee",
+    "lucide-react": "^1.66.0",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4"
   }
 }
