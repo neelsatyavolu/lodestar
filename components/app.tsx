@@ -20,6 +20,7 @@ import { Onboarding } from "./onboarding";
 import { Tour, type TourStep } from "./tour";
 import { Stays } from "./stays";
 import { Trips } from "./trips";
+import { Journeys } from "./journeys/journeys";
 import { DateStrip, HackCards } from "./hacks";
 import { ItineraryCard, allAirlines, type SellerCheck } from "./itinerary-card";
 import { Results } from "./results";
@@ -34,7 +35,7 @@ function tourSteps(showPlan: () => void): TourStep[] {
     { target: '[data-tour="ai"]', title: "Plan", body: "Start here. Plan finds flights from a plain sentence instead of a form.", before: showPlan },
     { target: '[data-tour="plan-box"]', title: "Say the trip", body: "Type where and roughly when, like “Chennai Dec 7 to 20, nonstop if it's close”. Plan runs several live searches with your preferences and shortlists the best options. Reply to change anything." },
     { target: '[data-tour="search"]', title: "Search", body: "Prefer a form? Search shows live fares and also tries nearby airports, a few days either side, and two one-way tickets." },
-    { target: '[data-tour="trips"]', title: "Trips", body: "Save a Plan shortlist here. Lodestar checks the fare daily and emails you when it drops, hits your target, or on the day you want to book." },
+    { target: '[data-tour="trips"]', title: "Trips", body: "All your trips, day by day. Forward a confirmation or connect Flint and it files itself. Saved Plan shortlists are watched here too, with an email when the fare drops." },
     { target: '[data-tour="prefs"]', title: "Your preferences", body: "Everything you just set lives here. Change it any time." },
     { target: '[data-tour="account"]', title: "Your account", body: "Click your name for preferences, your AI connection and sign out." },
   ];
@@ -125,6 +126,9 @@ export function App() {
   const [mode, setMode] = useState<Mode>("search");
   // The saved trip to show in Trips, from an alert email's link or a fresh save.
   const [focusTrip, setFocusTrip] = useState<string | null>(null);
+  // Set by Flint's pairing page link (/?connect=flint): opens Trips with the Connect Flint steps.
+  const [pairFlint, setPairFlint] = useState(false);
+  const pairAfterSignIn = useRef(false);
   const [form, setForm] = useState<FormState>(defaultForm);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searched, setSearched] = useState<FormState | null>(null);
@@ -233,6 +237,16 @@ export function App() {
           setFocusTrip(trip);
           setMode("trips");
         }
+        if (new URLSearchParams(window.location.search).get("connect") === "flint") {
+          window.history.replaceState(null, "", window.location.pathname);
+          if (res.user) {
+            setMode("trips");
+            setPairFlint(true);
+          } else {
+            pairAfterSignIn.current = true;
+            setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }));
+          }
+        }
         if (res.preferences) adoptPreferences(res.preferences, !fromUrl);
       })
       .catch(() => {})
@@ -265,6 +279,12 @@ export function App() {
     setAccount(a);
     adoptPreferences(p, true);
     refreshAi();
+    if (pairAfterSignIn.current) {
+      pairAfterSignIn.current = false;
+      setMode("trips");
+      setPairFlint(true);
+      return;
+    }
     // A new account answers a few questions, connects its AI, then gets a short tour.
     if (created) setOnboarding((o) => ({ open: true, key: o.key + 1 }));
   };
@@ -312,6 +332,8 @@ export function App() {
   const hacks = result ? [...result.hacks, ...(dateHack ? [dateHack] : [])].sort((a, b) => b.saving - a.saving) : [];
   const split = result?.hacks.find((h) => h.kind === "split");
   const splitPair = split && result?.oneWays ? [result.oneWays.out.find((i) => i.id === split.itineraryIds[0]), result.oneWays.back.find((i) => i.id === split.itineraryIds[1])].filter((i): i is Itinerary => Boolean(i)) : [];
+
+  const onPairShown = useCallback(() => setPairFlint(false), []);
 
   const disconnect = async (p: Provider) => {
     await post(`/api/ai/${p}/logout`, {}).catch(() => {});
@@ -507,7 +529,15 @@ export function App() {
             />
           </section>
         </div>
-        {account && mode === "trips" && <Trips focus={focusTrip} onPlan={() => setMode("ai")} checks={checks} onCheck={check} trustedOnly={trustedOnly} />}
+        {account && mode === "trips" && (
+          <Journeys
+            provider={provider}
+            onConnectAi={() => setConnectOpen(true)}
+            pairFlint={pairFlint}
+            onPairShown={onPairShown}
+            watching={<Trips embedded focus={focusTrip} onPlan={() => setMode("ai")} checks={checks} onCheck={check} trustedOnly={trustedOnly} />}
+          />
+        )}
       </main>
 
       <footer className="border-t border-hairline">

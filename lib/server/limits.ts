@@ -17,6 +17,14 @@ export const LIMITS = {
   trips: [60, 15 * MINUTE],
   // Trip alerts share Resend's daily allowance with reset emails, so they get less than half.
   tripAlertsDaily: [40, 24 * 60 * MINUTE],
+  journeys: [120, 15 * MINUTE],
+  // Each AI call spends the traveller's own subscription; keep runaway loops short.
+  journeysAi: [30, 15 * MINUTE],
+  wanderlog: [10, 15 * MINUTE],
+  pairCode: [10, 15 * MINUTE],
+  pair: [10, 15 * MINUTE],
+  // Per connection or forwarding address: a stuck sender can't fill the table.
+  inboundMail: [200, 24 * 60 * MINUTE],
 } as const;
 
 /** False once `key` has used up the named limit. */

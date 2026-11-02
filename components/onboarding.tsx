@@ -4,6 +4,7 @@ import type { Cabin, MaxStops } from "@/lib/types";
 import { AirportField } from "./airport-field";
 import { Dialog, Field } from "./dialog";
 import { CABIN_LABEL, STOP_LABEL, selectClass } from "./preferences-dialog";
+import { DiningFields, DoingFields } from "./tastes";
 import { Button, Toggle } from "./ui";
 
 // First run after sign-up: one or two questions per page, every page
@@ -107,6 +108,16 @@ const PAGES: Page[] = [
         <Toggle checked={p.noBasicEconomy} onChange={(v) => set("noBasicEconomy", v)} label="Basic economy" />
       </div>
     ),
+  },
+  {
+    title: "How do you like to eat when you travel?",
+    hint: "Trips uses this when you ask for a dining plan. Pick a few, or skip.",
+    body: (p, set) => <DiningFields p={p} set={set} />,
+  },
+  {
+    title: "And the rest of the day?",
+    hint: "For activity ideas and hotel picks on your trips.",
+    body: (p, set) => <DoingFields p={p} set={set} />,
   },
 ];
 

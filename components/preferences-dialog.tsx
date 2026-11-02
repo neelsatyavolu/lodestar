@@ -3,6 +3,7 @@ import { ALLIANCES, ALLIANCE_LABEL, type Preferences } from "@/lib/preferences";
 import type { Cabin, MaxStops } from "@/lib/types";
 import { AirportField } from "./airport-field";
 import { Dialog, Field } from "./dialog";
+import { DiningFields, DoingFields } from "./tastes";
 import { Button, Toggle } from "./ui";
 
 export const CABIN_LABEL: Record<Cabin, string> = { ECONOMY: "Economy", PREMIUM_ECONOMY: "Premium economy", BUSINESS: "Business", FIRST: "First" };
@@ -178,6 +179,14 @@ export function PreferencesDialog({
             <Toggle checked={p.flexible} onChange={(v) => set("flexible", v)} label="±3 days" />
             <Toggle checked={p.split} onChange={(v) => set("split", v)} label="Two one-ways" />
           </div>
+        </Section>
+
+        <Section title="Food, for Trips' dining plans">
+          <DiningFields p={p} set={set} />
+        </Section>
+
+        <Section title="Things to do and hotels">
+          <DoingFields p={p} set={set} />
         </Section>
 
       </div>

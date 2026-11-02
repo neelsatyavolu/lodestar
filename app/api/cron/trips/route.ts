@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { connection } from "next/server";
 import { fail, ok } from "@/lib/api";
 import { getDb } from "@/lib/db/client";
+import { purgeStaleBodies } from "@/lib/db/inbound";
 import { bookingPage } from "@/lib/fares";
 import { runSearch } from "@/lib/search";
 import { env } from "@/lib/server/env";
@@ -46,6 +47,9 @@ export async function GET(req: Request) {
       batch: BATCH,
       deadline: started + STOP_AFTER_MS,
     });
+    // Forwarded mail nobody read in 30 days: drop the body (design: mail is kept only until read).
+    const purged = await purgeStaleBodies(await getDb(), started - 30 * 86_400_000);
+    if (purged) console.info(`[trips] dropped ${purged} unread forwarded emails`);
     console.info(`[trips] daily check: ${result.checked} checked, ${result.emailed} emailed, ${result.skipped} left for tomorrow`);
     return ok(result);
   } catch (err) {

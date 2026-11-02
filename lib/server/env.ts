@@ -12,6 +12,9 @@ const schema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   // Vercel Cron sends it as a bearer token; without it the daily trip check refuses to run.
   CRON_SECRET: z.string().min(16).optional(),
+  // Forwarded confirmations: mail to <token>@INBOUND_DOMAIN reaches Trips through Resend Inbound.
+  INBOUND_DOMAIN: z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/i, "INBOUND_DOMAIN must be a domain").optional(),
+  RESEND_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -27,6 +30,8 @@ export function env(): Env {
     APP_URL: process.env.APP_URL ?? (production ? undefined : "http://localhost:3000"),
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     CRON_SECRET: process.env.CRON_SECRET || undefined,
+    INBOUND_DOMAIN: process.env.INBOUND_DOMAIN || undefined,
+    RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET || undefined,
   });
   if (!parsed.success) throw new Error(`Server misconfigured: ${parsed.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
   cached = parsed.data;

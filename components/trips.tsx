@@ -24,7 +24,7 @@ const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ?
 /** Google's policy words, kept only when they're ones the booking API accepts. */
 const oneOf = <T extends string>(v: string | null, allowed: readonly T[]): T | null => (allowed.includes(v as T) ? (v as T) : null);
 
-export function Trips({ focus, onPlan, ...shared }: Shared & { focus: string | null; onPlan: () => void }) {
+export function Trips({ focus, onPlan, embedded = false, ...shared }: Shared & { focus: string | null; onPlan: () => void; embedded?: boolean }) {
   const [trips, setTrips] = useState<TripSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,11 +37,23 @@ export function Trips({ focus, onPlan, ...shared }: Shared & { focus: string | n
   const replace = (t: TripSummary) => setTrips((ts) => ts?.map((x) => (x.id === t.id ? t : x)) ?? ts);
   const remove = (id: string) => setTrips((ts) => ts?.filter((x) => x.id !== id) ?? ts);
 
+  // Inside the trip organizer, shortlists are one section that only shows once there is one.
+  if (embedded && !error && !trips?.length) return null;
+
   return (
-    <section className="pt-10 sm:pt-16">
-      <h1 className="font-display text-[clamp(32px,5vw,48px)] tracking-[-0.02em]">Trips</h1>
-      <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-body">Shortlists you saved from Plan. Lodestar checks their fares every day and emails you when an alert fires.</p>
-      <div className="mt-8 space-y-4">
+    <section className={embedded ? "" : "pt-10 sm:pt-16"}>
+      {embedded ? (
+        <>
+          <h2 className="text-[13px] font-medium text-ink">Watching fares</h2>
+          <p className="mt-1 text-[13px] text-mute">Shortlists saved from Plan. Lodestar checks their fares daily and emails you when an alert fires.</p>
+        </>
+      ) : (
+        <>
+          <h1 className="font-display text-[clamp(32px,5vw,48px)] tracking-[-0.02em]">Trips</h1>
+          <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-body">Shortlists you saved from Plan. Lodestar checks their fares every day and emails you when an alert fires.</p>
+        </>
+      )}
+      <div className={embedded ? "mt-3 space-y-4" : "mt-8 space-y-4"}>
         {error && <p className="text-[13px] text-danger">{error}</p>}
         {!trips && !error && <p className="text-[13px] text-mute">Loading…</p>}
         {trips?.length === 0 && (
