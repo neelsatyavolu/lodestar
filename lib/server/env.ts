@@ -10,6 +10,8 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   APP_URL: z.url(),
   RESEND_API_KEY: z.string().min(1).optional(),
+  // Vercel Cron sends it as a bearer token; without it the daily trip check refuses to run.
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -24,6 +26,7 @@ export function env(): Env {
     DATABASE_URL: process.env.DATABASE_URL ?? (production ? undefined : "pglite://.data/lodestar"),
     APP_URL: process.env.APP_URL ?? (production ? undefined : "http://localhost:3000"),
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
+    CRON_SECRET: process.env.CRON_SECRET || undefined,
   });
   if (!parsed.success) throw new Error(`Server misconfigured: ${parsed.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
   cached = parsed.data;

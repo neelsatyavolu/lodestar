@@ -124,8 +124,9 @@ Rules:
 - Prefer airline-direct style itineraries over self-transfers; call out self-transfers, overnight layovers, very short connections (under 60 min) and long ones (over 4 h).
 - Treat a few dollars as noise. Comfort and reliability matter.
 - Keep each "why" under 40 words. Plain, specific, no hype.
+- The headline is under 12 words. Refs like S1-2 are internal: use them only in picks[].ref, never in the headline, summary, why, tradeoff or tips. Name the airline, price or date instead.
 Reply with JSON only:
-{"headline": "one line answer", "summary": "two sentences max", "picks": [{"ref": "S1-2", "title": "short", "why": "...", "tradeoff": "... or null", "tag": "best|cheapest|fastest|comfort|hack|alternative"}], "tips": ["practical tip"], "followups": ["a short follow-up the traveller might ask"]}`;
+{"headline": "short answer, under 12 words", "summary": "two sentences max", "picks": [{"ref": "S1-2", "title": "short", "why": "...", "tradeoff": "... or null", "tag": "best|cheapest|fastest|comfort|hack|alternative"}], "tips": ["practical tip"], "followups": ["a short follow-up the traveller might ask"]}`;
 
 function hhmm(iso: string): string {
   return iso.slice(11, 16);

@@ -1,7 +1,7 @@
-import { ArrowUp, Check, CircleAlert, LoaderCircle } from "lucide-react";
+import { ArrowUp, Bookmark, Check, CircleAlert, LoaderCircle } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { Canvas, Plan, TripDefaults } from "@/lib/ai/canvas";
-import { readNdjson } from "@/lib/client";
+import { ApiError, post, readNdjson } from "@/lib/client";
 import { day, money } from "@/lib/format";
 import type { Hack } from "@/lib/hacks";
 import type { Itinerary } from "@/lib/types";
@@ -11,7 +11,7 @@ import { ItineraryCard, type SellerCheck } from "./itinerary-card";
 import { Button, Pill } from "./ui";
 
 type SearchState = { state: "waiting" | "running" | "done" | "error"; count?: number; cheapest?: number | null; error?: string };
-type Board = {
+export type Board = {
   prompt: string;
   status: string | null;
   plan: Plan | null;
@@ -21,6 +21,8 @@ type Board = {
   hacks: (Hack & { search: string })[];
   error: string | null;
   running: boolean;
+  /** Set once this shortlist is saved to Trips. */
+  savedId?: string;
 };
 
 const EXAMPLES = [
@@ -48,6 +50,9 @@ export function AiCanvas({
   defaults,
   onSaveHome,
   intro,
+  signedIn,
+  onSignIn,
+  onOpenTrips,
 }: {
   provider: Provider | null;
   models: { id: string; label: string }[];
@@ -63,6 +68,10 @@ export function AiCanvas({
   onSaveHome: (codes: string[]) => Promise<string | null>;
   /** Shown until the first message; the conversation replaces it. */
   intro: ReactNode;
+  signedIn: boolean;
+  onSignIn: () => void;
+  /** Shows the saved trip in Trips. */
+  onOpenTrips: (id: string) => void;
 }) {
   const [prompt, setPrompt] = useState("");
   const [turns, setTurns] = useState<Board[]>([]);
@@ -152,6 +161,26 @@ export function AiCanvas({
     return problem;
   };
 
+  // Saves a finished shortlist with its searches, so Trips can re-check the fare daily.
+  const saveTrip = async (index: number): Promise<string | null> => {
+    const b = turns[index];
+    if (!b?.plan || !b.canvas) return "Nothing to save yet.";
+    const fares = b.searches.map((s) => s.cheapest).filter((c): c is number => typeof c === "number" && c > 0);
+    const price = fares.length ? Math.min(...fares) : Math.min(...Object.values(b.options).map((o) => o.itinerary.price));
+    try {
+      const { id } = await post<{ id: string }>("/api/trips", {
+        snapshot: { prompt: b.prompt, plan: b.plan, canvas: b.canvas, options: b.options, hacks: b.hacks, searches: b.searches },
+        searches: b.plan.searches,
+        filters,
+        price,
+      });
+      setTurns((ts) => ts.map((t, i) => (i === index ? { ...t, savedId: id } : t)));
+      return null;
+    } catch (err) {
+      return err instanceof ApiError ? err.message : "Couldn't save the trip.";
+    }
+  };
+
   const connectedList = (Object.keys(connected) as Provider[]).filter((p) => connected[p]);
 
   return (
@@ -162,7 +191,15 @@ export function AiCanvas({
         const latest = i === turns.length - 1;
         return (
           <div key={i} id={`turn-${i}`} className={`scroll-mt-24 ${i > 0 ? "border-t border-hairline pt-8" : ""}`}>
-            <BoardView board={t} latest={latest} checks={checks} onCheck={onCheck} trustedOnly={trustedOnly} onFollowup={(f) => run(f)} />
+            <BoardView
+              board={t}
+              latest={latest}
+              checks={checks}
+              onCheck={onCheck}
+              trustedOnly={trustedOnly}
+              onFollowup={(f) => run(f)}
+              save={!t.running && t.canvas && t.canvas.picks.length > 0 ? <SaveTrip savedId={t.savedId} signedIn={signedIn} onSignIn={onSignIn} onSave={() => saveTrip(i)} onOpen={onOpenTrips} /> : null}
+            />
             {latest && t.plan?.needsOrigin && !t.running && !defaults.homeAirports.length && <OriginAsk onSave={saveHome} />}
           </div>
         );
@@ -173,6 +210,7 @@ export function AiCanvas({
           e.preventDefault();
           run(prompt);
         }}
+        data-tour="plan-box"
         className="rounded-xl border border-hairline-strong bg-card has-[textarea:focus]:border-accent"
       >
         <textarea
@@ -249,6 +287,43 @@ export function AiCanvas({
   );
 }
 
+function SaveTrip({ savedId, signedIn, onSignIn, onSave, onOpen }: { savedId?: string; signedIn: boolean; onSignIn: () => void; onSave: () => Promise<string | null>; onOpen: (id: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (savedId)
+    return (
+      <p className="inline-flex items-center gap-2 text-[13px] text-mute">
+        <Check size={14} className="text-ink" /> Saved. We&apos;ll email you if the price drops.{" "}
+        <button type="button" onClick={() => onOpen(savedId)} className="cursor-pointer text-accent hover:underline">
+          Set alerts
+        </button>
+      </p>
+    );
+  if (!signedIn)
+    return (
+      <Button size="sm" variant="outline" onClick={onSignIn}>
+        <Bookmark size={14} /> Sign in to save this trip
+      </Button>
+    );
+  return (
+    <span className="inline-flex flex-wrap items-center gap-3">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(await onSave());
+          setBusy(false);
+        }}
+      >
+        <Bookmark size={14} /> {busy ? "Saving…" : "Save trip and get alerts"}
+      </Button>
+      {error && <span className="text-[13px] text-danger">{error}</span>}
+    </span>
+  );
+}
+
 function OriginAsk({ onSave }: { onSave: (codes: string[]) => Promise<string | null> }) {
   const [codes, setCodes] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -269,7 +344,7 @@ function OriginAsk({ onSave }: { onSave: (codes: string[]) => Promise<string | n
   );
 }
 
-function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollowup }: { board: Board; latest: boolean; checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean; onFollowup: (f: string) => void }) {
+export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollowup, save = null }: { board: Board; latest: boolean; save?: ReactNode; checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean; onFollowup: (f: string) => void }) {
   const { plan, canvas } = board;
   return (
     <div className="space-y-8">
@@ -316,8 +391,9 @@ function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollowup }: 
       {canvas && (
         <section aria-label="AI picks" className="rise space-y-6 pt-4">
           <div>
-            <h2 className={canvas.picks.length ? "font-display text-[clamp(40px,5vw,56px)] text-ink" : "text-[22px] leading-snug text-ink"}>{canvas.headline}</h2>
+            <h2 className={canvas.picks.length ? "font-display text-[clamp(28px,3.2vw,36px)] leading-tight text-ink" : "text-[22px] leading-snug text-ink"}>{canvas.headline}</h2>
             {canvas.summary && <p className="mt-3 max-w-3xl text-[16px] leading-relaxed text-body">{canvas.summary}</p>}
+            {save && <div className="mt-4">{save}</div>}
           </div>
           <div className="space-y-4">
             {canvas.picks.map((p) => {

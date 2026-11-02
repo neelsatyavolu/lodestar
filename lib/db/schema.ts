@@ -36,6 +36,27 @@ const STATEMENTS = [
     updated_at timestamptz NOT NULL,
     PRIMARY KEY (user_id, provider)
   )`,
+  // Plan shortlists saved by the traveller, with the searches a daily check re-runs for alerts.
+  `CREATE TABLE IF NOT EXISTS saved_trips (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    title text NOT NULL,
+    prompt text NOT NULL,
+    queries jsonb NOT NULL,
+    snapshot jsonb NOT NULL,
+    first_depart date NOT NULL,
+    saved_price numeric NOT NULL,
+    alert_price numeric NOT NULL,
+    last_price numeric,
+    checked_at timestamptz,
+    alert_drop boolean NOT NULL DEFAULT true,
+    target_price numeric,
+    target_hit boolean NOT NULL DEFAULT false,
+    remind_on date,
+    reminded boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS saved_trips_user ON saved_trips (user_id, created_at DESC)`,
 ];
 
 export async function migrate(db: Queryable): Promise<void> {

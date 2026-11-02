@@ -14,6 +14,9 @@ export const LIMITS = {
   forgotSentDaily: [40, 24 * 60 * MINUTE],
   reset: [10, 15 * MINUTE],
   preferences: [120, 15 * MINUTE],
+  trips: [60, 15 * MINUTE],
+  // Trip alerts share Resend's daily allowance with reset emails, so they get less than half.
+  tripAlertsDaily: [40, 24 * 60 * MINUTE],
 } as const;
 
 /** False once `key` has used up the named limit. */
