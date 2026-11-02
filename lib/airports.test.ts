@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { airport, distanceKm, expandCode, nearbyAirports, searchAirports } from "./airports";
+import { airport, distanceKm, expandCode, nearbyAirports, positioningAirports, searchAirports } from "./airports";
 
 describe("airports", () => {
   it("looks up by code", () => {
@@ -36,5 +36,14 @@ describe("airports", () => {
     expect(searchAirports("londo")[0].code).toBe("LON");
     expect(searchAirports("zürich").some((s) => s.code === "ZRH")).toBe(true);
     expect(searchAirports("  ")).toEqual([]);
+  });
+});
+
+describe("positioningAirports", () => {
+  it("finds large airports a drive away, not the nearby ones", () => {
+    const codes = positioningAirports(["SBA"]).map((a) => a.code);
+    expect(codes).toContain("LAX");
+    expect(positioningAirports(["SFO"]).map((a) => a.code)).not.toContain("OAK");
+    expect(positioningAirports(["QQQ"])).toEqual([]);
   });
 });

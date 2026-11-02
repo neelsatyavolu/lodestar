@@ -122,3 +122,47 @@ describe("applyAvoidances", () => {
     expect(searchFlights.mock.calls[0][0]).toMatchObject({ alliances: ["ONEWORLD"], excludeAirlines: ["NK"], excludeBasic: true });
   });
 });
+
+describe("automatic hack searches", () => {
+  beforeEach(() => {
+    searchFlights.mockReset();
+    searchDates.mockReset();
+  });
+
+  it("runs cabin, trip-length and group checks for a round trip with two adults", async () => {
+    searchFlights.mockImplementation(async (p: { cabin?: string; adults?: number; returnDate?: string | null; depart: string }) => {
+      if (p.cabin === "PREMIUM_ECONOMY") return [itin(760, [route("SFO", "JFK"), route("JFK", "SFO")], "pe")];
+      if (p.adults === 1) return [itin(300, [route("SFO", "JFK"), route("JFK", "SFO")], "one")];
+      return [itin(700, [route("SFO", "JFK"), route("JFK", "SFO")], "main")];
+    });
+    const q = SearchQuerySchema.parse({ from: ["SFO"], to: ["JFK"], depart: future(30), return: future(35), adults: 2, nearby: false, split: false });
+    const result = await runSearch(q);
+    const calls = searchFlights.mock.calls.map(([p]) => p);
+    expect(calls.some((p) => p.cabin === "PREMIUM_ECONOMY")).toBe(true);
+    expect(calls.some((p) => p.returnDate === future(34))).toBe(true);
+    expect(calls.some((p) => p.returnDate === future(36))).toBe(true);
+    expect(calls.some((p) => p.adults === 1)).toBe(true);
+    expect(calls.filter((p) => p.expand === 2).length).toBeGreaterThanOrEqual(4);
+    const kinds = result.hacks.map((h) => h.kind);
+    expect(kinds).toEqual(expect.arrayContaining(["cabin", "group"]));
+  });
+
+  it("checks a round trip for one-way searches", async () => {
+    searchFlights.mockImplementation(async (p: { returnDate?: string | null }) =>
+      p.returnDate ? [itin(250, [route("SFO", "JFK"), route("JFK", "SFO")], "rt")] : [itin(400, [route("SFO", "JFK")], "ow")],
+    );
+    const result = await runSearch(SearchQuerySchema.parse({ from: ["SFO"], to: ["JFK"], depart: future(30), nearby: false }));
+    expect(result.hacks.find((h) => h.kind === "throwaway")?.saving).toBe(150);
+  });
+
+  it("does not wait on a hung extra search", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    searchFlights.mockImplementation((p: { expand?: number }) => (p.expand === 2 ? new Promise(() => {}) : Promise.resolve([itin(300)])));
+    const pending = runSearch(SearchQuerySchema.parse({ from: ["SFO"], to: ["JFK"], depart: future(30), nearby: false }));
+    await vi.advanceTimersByTimeAsync(10_500);
+    const result = await pending;
+    vi.useRealTimers();
+    expect(result.itineraries).toHaveLength(1);
+    expect(result.warnings).toEqual([]);
+  });
+});

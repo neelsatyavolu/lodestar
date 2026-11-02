@@ -1,5 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { allOn, bestScore, flexHack, isRedEye, matchesRequest, nearbyHack, nonstopHack, rank, splitHack, ulccWarning } from "./hacks";
+import {
+  allOn,
+  bestScore,
+  cabinHack,
+  flexHack,
+  groupHack,
+  isRedEye,
+  lengthHack,
+  matchesRequest,
+  nearbyHack,
+  nextCabin,
+  nonstopHack,
+  positionHack,
+  rank,
+  splitHack,
+  stopoverHack,
+  throwawayHack,
+  timingHack,
+  ulccWarning,
+} from "./hacks";
 import { itin, leg, route, slice } from "./test-fixtures";
 
 describe("matchesRequest", () => {
@@ -157,5 +176,68 @@ describe("preferences in ranking", () => {
     expect(rank([united, american]).labels.best).toBe("aa");
     expect(rank([united, american], new Set(["UA"])).labels.best).toBe("ua");
     expect(allOn(united, new Set())).toBe(false);
+  });
+});
+
+describe("extra-search hacks", () => {
+  const nonstop = (price: number, id: string, over = {}) => itin(price, [route("SFO", "JFK", over)], id);
+
+  it("offers the next cabin when the gap is small", () => {
+    const hack = cabinHack([nonstop(300, "y")], [nonstop(360, "pe")], "ECONOMY");
+    expect(hack?.title).toBe("Premium economy for $60 more");
+    expect(hack?.apply).toEqual({ cabin: "PREMIUM_ECONOMY" });
+    expect(cabinHack([nonstop(300, "y")], [nonstop(900, "j")], "ECONOMY")).toBeNull();
+    expect(cabinHack([nonstop(300, "f")], [nonstop(310, "x")], "FIRST")).toBeNull();
+    expect(nextCabin("BUSINESS")).toBe("FIRST");
+  });
+
+  it("suggests driving to a bigger airport only for real savings", () => {
+    const hub = itin(200, [route("SMF", "JFK")], "smf");
+    expect(positionHack(300, [hub], () => 140)?.title).toBe("Start from SMF");
+    expect(positionHack(300, [hub], () => 140)?.apply).toEqual({ from: ["SMF"] });
+    expect(positionHack(250, [hub], () => 140)).toBeNull();
+    expect(positionHack(null, [hub], () => 140)).toBeNull();
+  });
+
+  it("finds a cheaper return day", () => {
+    const hack = lengthHack(400, [{ ret: "2026-12-14", items: [itin(390)] }, { ret: "2026-12-16", items: [itin(320, undefined, "later")] }], "2026-12-15");
+    expect(hack?.title).toBe("Come back a day later");
+    expect(hack?.apply).toEqual({ return: "2026-12-16" });
+    expect(lengthHack(400, [{ ret: "2026-12-16", items: [] }], "2026-12-15")).toBeNull();
+  });
+
+  it("splits a group when single seats are cheaper", () => {
+    const hack = groupHack([itin(900)], [itin(380)], 2);
+    expect(hack?.saving).toBe(140);
+    expect(hack?.apply).toEqual({ adults: 1 });
+    expect(groupHack([itin(740)], [itin(370)], 2)).toBeNull();
+    expect(groupHack([itin(900)], [itin(300)], 1)).toBeNull();
+  });
+
+  it("notices when a round trip undercuts the one-way", () => {
+    const hack = throwawayHack([itin(450)], [itin(300, [route("SFO", "JFK"), route("JFK", "SFO")])], "2026-12-17");
+    expect(hack?.saving).toBe(150);
+    expect(hack?.caution).toMatch(/Never skip an outbound/);
+    expect(throwawayHack([itin(300)], [itin(290)], "2026-12-17")).toBeNull();
+  });
+});
+
+describe("result-only hacks", () => {
+  it("prices the overnight flight against the cheapest daytime one", () => {
+    const red = itin(200, [route("LAX", "JFK", { depart: "2026-12-10T23:00:00", arrive: "2026-12-11T07:30:00" })], "red");
+    const day = itin(260, [route("LAX", "JFK", { depart: "2026-12-10T09:00:00", arrive: "2026-12-10T17:30:00" })], "day");
+    expect(timingHack([red, day])?.saving).toBe(60);
+    expect(timingHack([day])).toBeNull();
+    expect(timingHack([red])).toBeNull();
+  });
+
+  it("spots a connection that qualifies for a stopover program", () => {
+    const viaKef = itin(450, [slice({ legs: [leg({ from: "BOS", to: "KEF", airline: { code: "FI", name: "Icelandair" } }), leg({ from: "KEF", to: "CDG", airline: { code: "FI", name: "Icelandair" } })], stops: 1 })]);
+    const hack = stopoverHack([viaKef]);
+    expect(hack?.title).toBe("Turn the Reykjavik connection into a stay");
+    expect(hack?.detail).toMatch(/up to 7 nights/);
+    const otherAirline = itin(450, [slice({ legs: [leg({ from: "BOS", to: "KEF", airline: { code: "PL", name: "PLAY" } }), leg({ from: "KEF", to: "CDG" })], stops: 1 })]);
+    expect(stopoverHack([otherAirline])).toBeNull();
+    expect(stopoverHack([itin(300)])).toBeNull();
   });
 });

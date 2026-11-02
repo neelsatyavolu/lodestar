@@ -99,3 +99,18 @@ export function searchAirports(query: string, limit = 8): AirportSuggestion[] {
 
   return [...metros, ...scored].slice(0, limit);
 }
+
+/**
+ * Large airports a drive away (beyond the nearby radius, within `maxKm`):
+ * candidates for starting the trip somewhere with more and cheaper flights.
+ */
+export function positioningAirports(codes: string[], minKm = 120, maxKm = 300, limit = 2): (Airport & { km: number })[] {
+  const anchors = codes.map(airport).filter((a): a is Airport => Boolean(a));
+  if (!anchors.length) return [];
+  const taken = new Set(codes);
+  return AIRPORTS.filter((a) => a.size >= 3 && !taken.has(a.code) && !NOT_FOR_AIRLINES.has(a.code))
+    .map((a) => ({ ...a, km: Math.min(...anchors.map((x) => distanceKm(x, a))) }))
+    .filter((a) => a.km > minKm && a.km <= maxKm)
+    .sort((a, b) => a.km - b.km)
+    .slice(0, limit);
+}

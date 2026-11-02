@@ -1,10 +1,36 @@
-import { CalendarDays, MapPin, Plane, Split, TriangleAlert } from "lucide-react";
+import { Armchair, CalendarDays, CalendarRange, Car, Hotel, MapPin, Moon, Plane, Repeat, Split, TriangleAlert, Users } from "lucide-react";
 import type { Hack, HackKind } from "@/lib/hacks";
 import { day, money } from "@/lib/format";
 import type { DayPrice } from "@/lib/types";
 
-const ICON: Record<HackKind, typeof Plane> = { nearby: MapPin, flex: CalendarDays, split: Split, nonstop: Plane, ulcc: TriangleAlert };
-const ACTION: Record<HackKind, string> = { nearby: "Show flight", flex: "Search these dates", split: "Show both tickets", nonstop: "Show flight", ulcc: "Show flight" };
+const ICON: Record<HackKind, typeof Plane> = {
+  nearby: MapPin,
+  flex: CalendarDays,
+  split: Split,
+  nonstop: Plane,
+  ulcc: TriangleAlert,
+  cabin: Armchair,
+  position: Car,
+  length: CalendarRange,
+  group: Users,
+  throwaway: Repeat,
+  timing: Moon,
+  stopover: Hotel,
+};
+const ACTION: Record<HackKind, string> = {
+  nearby: "Show flight",
+  flex: "Search these dates",
+  split: "Show both tickets",
+  nonstop: "Show flight",
+  ulcc: "Show flight",
+  cabin: "Search that cabin",
+  position: "Search from there",
+  length: "Search these dates",
+  group: "Search one seat",
+  throwaway: "Search the round trip",
+  timing: "Show flight",
+  stopover: "Show flight",
+};
 
 export function HackCards({ hacks, onAction }: { hacks: Hack[]; onAction: (h: Hack) => void }) {
   if (!hacks.length) return null;

@@ -250,8 +250,18 @@ export function App() {
   };
 
   const onHack = (h: Hack) => {
-    if (h.kind === "flex" && h.apply) {
-      const next = { ...form, depart: h.apply.depart ?? form.depart, return: h.apply.return ?? form.return };
+    if (h.apply) {
+      // The hack names the search changes that reproduce it; run that search.
+      const base = searched ?? form;
+      const a = h.apply;
+      const next: FormState = {
+        ...base,
+        from: a.from ?? base.from,
+        depart: a.depart ?? base.depart,
+        cabin: a.cabin ?? base.cabin,
+        adults: a.adults ?? base.adults,
+        ...(a.return !== undefined ? { return: a.return, roundTrip: a.return !== null ? true : base.roundTrip } : {}),
+      };
       setForm(next);
       search(next);
     } else if (h.kind === "split") {

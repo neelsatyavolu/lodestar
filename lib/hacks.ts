@@ -1,4 +1,5 @@
-import { ULTRA_LOW_COST } from "./airlines";
+import { ULTRA_LOW_COST, airlineName } from "./airlines";
+import { stopoverFor } from "./stopovers";
 import type { DayPrice, Itinerary, SearchQueryInput } from "./types";
 
 // Travel hacks computed from real search results. Each one compares against a
@@ -7,7 +8,7 @@ import type { DayPrice, Itinerary, SearchQueryInput } from "./types";
 
 export const MIN_SAVING = 15;
 
-export type HackKind = "nearby" | "flex" | "split" | "nonstop" | "ulcc";
+export type HackKind = "nearby" | "flex" | "split" | "nonstop" | "ulcc" | "cabin" | "position" | "length" | "group" | "throwaway" | "timing" | "stopover";
 
 export type Hack = {
   kind: HackKind;
@@ -211,4 +212,163 @@ export function ulccWarning(items: Itinerary[]): Hack | null {
     price: low.price,
     itineraryIds: [low.id],
   };
+}
+
+// ---- Hacks that need an extra search (run alongside the main one) ----
+
+const NEXT_CABIN: Record<string, "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST" | undefined> = {
+  ECONOMY: "PREMIUM_ECONOMY",
+  PREMIUM_ECONOMY: "BUSINESS",
+  BUSINESS: "FIRST",
+};
+const CABIN_NAME: Record<string, string> = { PREMIUM_ECONOMY: "Premium economy", BUSINESS: "Business", FIRST: "First" };
+
+export function nextCabin(cabin: string): "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST" | null {
+  return NEXT_CABIN[cabin] ?? null;
+}
+
+/** The next cabin up, when it costs at most a quarter more (or $60, whichever is larger). */
+export function cabinHack(base: Itinerary[], upgraded: Itinerary[], cabin: string): Hack | null {
+  const low = cheapest(base);
+  const up = cheapest(upgraded);
+  const next = nextCabin(cabin);
+  if (!low || !up || !next) return null;
+  const extra = up.price - low.price;
+  if (extra > Math.max(60, low.price * 0.25)) return null;
+  return {
+    kind: "cabin",
+    title: extra <= 0 ? `${CABIN_NAME[next]} costs the same` : `${CABIN_NAME[next]} for $${Math.round(extra)} more`,
+    detail: `The cheapest ${CABIN_NAME[next].toLowerCase()} fare is ${extra <= 0 ? "no more than" : `only ${Math.round((extra / low.price) * 100)}% above`} the cheapest in your cabin.`,
+    saving: -Math.max(0, Math.round(extra)),
+    price: up.price,
+    itineraryIds: [up.id],
+    apply: { cabin: next },
+  };
+}
+
+/** Driving to a bigger airport further away, when the saving covers the trip. */
+export function positionHack(baseline: number | null, hubItins: Itinerary[], kmFor: (code: string) => number | null): Hack | null {
+  const alt = cheapest(hubItins);
+  if (!alt || baseline === null) return null;
+  const saving = baseline - alt.price;
+  if (saving < 60) return null;
+  const code = endpoints(alt).from;
+  const km = kmFor(code);
+  return {
+    kind: "position",
+    title: `Start from ${code}`,
+    detail: `Flights from ${code}${km ? `, about ${Math.round(km)} km away,` : ""} are $${Math.round(saving)} less than from your airports.`,
+    saving: Math.round(saving),
+    price: alt.price,
+    itineraryIds: [alt.id],
+    apply: { from: [code] },
+    caution: "Worth it only if getting there is easy: count fuel, parking or a train ticket.",
+  };
+}
+
+/** Coming back a day earlier or later, for round trips. */
+export function lengthHack(baseline: number | null, options: { ret: string; items: Itinerary[] }[], currentReturn: string): Hack | null {
+  if (baseline === null) return null;
+  const best = options
+    .map((o) => ({ ...o, low: cheapest(o.items) }))
+    .filter((o): o is { ret: string; items: Itinerary[]; low: Itinerary } => Boolean(o.low))
+    .sort((a, b) => a.low.price - b.low.price)[0];
+  if (!best) return null;
+  const saving = baseline - best.low.price;
+  if (saving < MIN_SAVING) return null;
+  const later = best.ret > currentReturn;
+  return {
+    kind: "length",
+    title: `Come back a day ${later ? "later" : "earlier"}`,
+    detail: `Returning ${shortDate(best.ret)} instead of ${shortDate(currentReturn)} is $${Math.round(saving)} less.`,
+    saving: Math.round(saving),
+    price: best.low.price,
+    itineraryIds: [best.low.id],
+    apply: { return: best.ret },
+  };
+}
+
+/**
+ * Airlines price a group at the fare bucket that has seats for everyone. When
+ * one seat is cheaper, booking travellers one at a time can cost less.
+ */
+export function groupHack(group: Itinerary[], single: Itinerary[], adults: number): Hack | null {
+  const together = cheapest(group);
+  const one = cheapest(single);
+  if (!together || !one || adults < 2) return null;
+  const separate = one.price * adults;
+  const saving = together.price - separate;
+  if (saving < MIN_SAVING * adults) return null;
+  return {
+    kind: "group",
+    title: `Book the ${adults} tickets one at a time`,
+    detail: `One seat is $${Math.round(one.price)}, so ${adults} separate bookings come to $${Math.round(separate)} against $${Math.round(together.price)} together.`,
+    saving: Math.round(saving),
+    price: separate,
+    itineraryIds: [one.id],
+    apply: { adults: 1 },
+    caution: "Separate bookings are separate records: link them with the airline so you can sit together, and check seats are still there for everyone.",
+  };
+}
+
+/** A round trip sometimes costs less than the one-way. */
+export function throwawayHack(oneWay: Itinerary[], roundTrips: Itinerary[], returnDate: string): Hack | null {
+  const ow = cheapest(oneWay);
+  const rt = cheapest(roundTrips);
+  if (!ow || !rt) return null;
+  const saving = ow.price - rt.price;
+  if (saving < 30) return null;
+  return {
+    kind: "throwaway",
+    title: "A round trip is cheaper than one way",
+    detail: `A round trip returning ${shortDate(returnDate)} is $${Math.round(saving)} less than the one-way. Useful if you might come back anyway.`,
+    saving: Math.round(saving),
+    price: rt.price,
+    itineraryIds: [rt.id],
+    apply: { return: returnDate },
+    caution: "Skipping the return is against most airlines' rules and can cost miles or status. Never skip an outbound or connecting flight: the rest of the ticket gets cancelled.",
+  };
+}
+
+// ---- Hacks read straight from the results ----
+
+/** What an overnight or very early flight saves over the cheapest daytime one. */
+export function timingHack(items: Itinerary[]): Hack | null {
+  const low = cheapest(items);
+  if (!low || !isRedEye(low)) return null;
+  const day = cheapest(items.filter((it) => !isRedEye(it)));
+  const saving = day ? day.price - low.price : 0;
+  if (!day || saving < MIN_SAVING) return null;
+  return {
+    kind: "timing",
+    title: `Flying overnight saves $${Math.round(saving)}`,
+    detail: `The cheapest fare leaves late at night or before 5am. The cheapest daytime departure is $${Math.round(day.price)}.`,
+    saving: Math.round(saving),
+    price: low.price,
+    itineraryIds: [low.id],
+    caution: "Turn on Avoid red-eyes in preferences if you'd rather not see these first.",
+  };
+}
+
+/** A connection through an airline hub with a stopover program can become a free stay. */
+export function stopoverHack(items: Itinerary[]): Hack | null {
+  for (const it of [...items].sort((a, b) => a.price - b.price).slice(0, 8)) {
+    for (const s of it.slices) {
+      for (let i = 0; i < s.legs.length - 1; i++) {
+        const leg = s.legs[i];
+        const program = stopoverFor(leg.airline.code, leg.to);
+        if (!program) continue;
+        return {
+          kind: "stopover",
+          title: `Turn the ${program.city} connection into a stay`,
+          detail: `${airlineName(leg.airline.code, program.name)} offers ${program.offer}. This $${Math.round(it.price)} itinerary already connects there.`,
+          saving: 0,
+          price: it.price,
+          itineraryIds: [it.id],
+          caution: `${program.rules} Confirm with the airline when booking.`,
+        };
+      }
+    }
+  }
+  return null;
 }
