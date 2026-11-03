@@ -2,11 +2,12 @@ import { Car, ExternalLink } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { day } from "@/lib/format";
-import { byItinerary, dayStops } from "@/lib/journeys/locate";
+import { byItinerary, dayStops, searchCenter } from "@/lib/journeys/locate";
 import type { Item, JourneyWithItems } from "@/lib/journeys/types";
-import { directionsUrl, legLabel, type LatLng, type Leg } from "@/lib/places/types";
+import { directionsUrl, legLabel, type Leg } from "@/lib/places/types";
 import { AddPlace } from "./add-place";
 import { ItemRow } from "./item-row";
+import { dayColor, pinsOf } from "./pins";
 import { stayOn } from "./shared";
 
 // One day of a trip: where you sleep, the stops in order with the drive
@@ -19,7 +20,6 @@ type Props = {
   date: string;
   active: boolean;
   selectedId: string | null;
-  near: LatLng | null;
   onFocusDay: () => void;
   onOpen: (id: string) => void;
   onReplace: (i: Item) => void;
@@ -45,7 +45,7 @@ function useLegs(journeyId: string, date: string, stops: Item[]) {
   return legs.key === key ? legs.byFrom : new Map<string, Leg | null>();
 }
 
-export function DaySection({ journey, date, active, selectedId, near, onFocusDay, onOpen, onReplace, onDrop, onAdded }: Props) {
+export function DaySection({ journey, date, active, selectedId, onFocusDay, onOpen, onReplace, onDrop, onAdded }: Props) {
   const items = journey.items.filter((i) => i.startDate === date && !(i.kind === "stay" && i.status === "suggested"));
   const firm = items.filter((i) => i.status !== "suggested").sort(byItinerary);
   const ideas = items.filter((i) => i.status === "suggested").sort(byItinerary);
@@ -56,11 +56,15 @@ export function DaySection({ journey, date, active, selectedId, near, onFocusDay
   const inTrip = journey.startDate && date >= journey.startDate && date <= (journey.endDate ?? journey.startDate);
   const dayNumber = journey.startDate ? Math.round((Date.parse(date) - Date.parse(journey.startDate)) / 86_400_000) + 1 : null;
 
-  const row = (i: Item) => <ItemRow key={i.id} item={i} selected={i.id === selectedId} onOpen={() => onOpen(i.id)} onChanged={onReplace} onRemoved={() => onDrop(i.id)} />;
+  const pins = new Map(pinsOf(journey.items).map((p) => [p.item.id, p]));
+  const color = dayColor(journey.items, date);
+  const near = searchCenter(journey.items, date);
+  const row = (i: Item) => <ItemRow key={i.id} item={i} pin={pins.get(i.id)} selected={i.id === selectedId} onOpen={() => onOpen(i.id)} onChanged={onReplace} onRemoved={() => onDrop(i.id)} />;
 
   return (
     <li id={`day-${date}`} className="scroll-mt-20">
       <button type="button" onClick={onFocusDay} className={`flex w-full cursor-pointer items-baseline gap-3 border-b pb-2 text-left ${active ? "border-hairline-hover" : "border-hairline"}`}>
+        <span className="size-2.5 shrink-0 self-center rounded-full" style={{ background: color.fill }} aria-hidden />
         <h2 className={`text-[15px] font-medium ${active ? "text-ink" : "text-charcoal"}`}>{day(date)}</h2>
         {inTrip && dayNumber && <span className="text-[12px] text-ash">Day {dayNumber}</span>}
         {sleeping && <span className="ml-auto truncate text-[12px] text-mute">Staying at {sleeping.title}</span>}

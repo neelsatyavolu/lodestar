@@ -142,20 +142,31 @@ export async function upsertItem(q: Queryable, userId: string, n: NewItem): Prom
   return row.id;
 }
 
-export type ItemPatch = Partial<Pick<Item, "status" | "journeyId" | "title" | "startDate" | "startTime" | "endDate" | "endTime" | "place" | "confirmation">> & { note?: string | null };
+export type ItemPatch = Partial<Pick<Item, "status" | "journeyId" | "title" | "startDate" | "startTime" | "endDate" | "endTime" | "place" | "confirmation">> & {
+  note?: string | null;
+  location?: { placeId: string; lat: number; lng: number; address: string | null };
+};
 
 export async function updateItem(q: Queryable, userId: string, id: string, patch: ItemPatch, now: number): Promise<Item | null> {
-  const cols: Record<Exclude<keyof ItemPatch, "note">, string> = {
+  const cols: Record<Exclude<keyof ItemPatch, "note" | "location">, string> = {
     status: "status", journeyId: "journey_id", title: "title", startDate: "start_date", startTime: "start_time", endDate: "end_date", endTime: "end_time", place: "place", confirmation: "confirmation",
   };
   const keys = (Object.keys(cols) as (keyof typeof cols)[]).filter((k) => patch[k] !== undefined);
   const params: unknown[] = [id, userId, ...keys.map((k) => patch[k])];
   const sets = keys.map((k, i) => `${cols[k]} = $${i + 3}`);
-  if (patch.note === null) sets.push(`details = details - 'note'`);
+  // Note and pin both change `details`, which one UPDATE may assign only once.
+  let details = "details";
+  if (patch.note === null) details = `(${details} - 'note')`;
   else if (patch.note !== undefined) {
     params.push(patch.note);
-    sets.push(`details = details || jsonb_build_object('note', $${params.length}::text)`);
+    details = `(${details} || jsonb_build_object('note', $${params.length}::text))`;
   }
+  if (patch.location) {
+    const { address, ...pin } = patch.location;
+    params.push(JSON.stringify({ ...pin, locatedAt: now, ...(address ? { address } : {}) }));
+    details = `(${details} - 'locateFailedAt') || $${params.length}::jsonb`;
+  }
+  if (details !== "details") sets.push(`details = ${details}`);
   params.push(toTs(now));
   sets.push(`updated_at = $${params.length}`);
   // A trip it moves into must be the same account's.
@@ -168,12 +179,13 @@ export async function deleteItem(q: Queryable, userId: string, id: string): Prom
   return (await q.query("DELETE FROM journey_items WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId])).length > 0;
 }
 
-/** Pins items to the map: merges place id and coordinates into their details. */
-export async function setItemLocations(q: Queryable, userId: string, located: { id: string; placeId?: string; lat: number; lng: number }[], now: number): Promise<void> {
+/** Pins items to the map: merges place id and coordinates into their details. `failed` items are marked so they're retried later, not every visit. */
+export async function setItemLocations(q: Queryable, userId: string, located: { id: string; placeId?: string; lat: number; lng: number }[], failed: string[], now: number): Promise<void> {
   for (const l of located) {
     const patch = { lat: l.lat, lng: l.lng, locatedAt: now, ...(l.placeId ? { placeId: l.placeId } : {}) };
-    await q.query("UPDATE journey_items SET details = details || $3::jsonb WHERE id = $1 AND user_id = $2", [l.id, userId, JSON.stringify(patch)]);
+    await q.query("UPDATE journey_items SET details = (details - 'locateFailedAt') || $3::jsonb WHERE id = $1 AND user_id = $2", [l.id, userId, JSON.stringify(patch)]);
   }
+  if (failed.length) await q.query("UPDATE journey_items SET details = details || jsonb_build_object('locateFailedAt', $3::bigint) WHERE id = ANY($1::uuid[]) AND user_id = $2", [failed, userId, now]);
 }
 
 /** Clears a trip's earlier suggestions of one kind before a fresh set replaces them. */

@@ -1,10 +1,11 @@
-import { Clock, ExternalLink, Globe, MapPin, Phone, Star, Trash2, X } from "lucide-react";
+import { Clock, ExternalLink, Globe, MapPin, MapPinOff, Phone, Star, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import type { Item } from "@/lib/journeys/types";
-import { mapsSearchUrl, type PlaceDetails } from "@/lib/places/types";
+import { mapsSearchUrl, type LatLng, type PlaceDetails, type Suggestion } from "@/lib/places/types";
 import { Button, Pill, Spinner } from "../ui";
 import { DateField } from "./date-field";
+import { PlaceSearch } from "./place-search";
 import { errorText } from "./shared";
 
 // Everything about one stop: Google's view of the place (photo, rating, price,
@@ -89,8 +90,32 @@ function GooglePart({ place }: { place: PlaceDetails }) {
   );
 }
 
-/** `bare`: inside a sheet that already shows the name and a close button. */
-export function PlacePanel({ item, onClose, onChanged, onRemoved, bare = false }: { item: Item; onClose: () => void; onChanged: (i: Item) => void; onRemoved: () => void; bare?: boolean }) {
+/** Pins an item to a place picked from search: for one whose place wasn't found, or a wrong pin. */
+function PinPicker({ item, near, onPinned, onCancel }: { item: Item; near: LatLng | null; onPinned: (i: Item) => void; onCancel?: () => void }) {
+  const pin = async (s: Suggestion, place: PlaceDetails | null) => {
+    const location = place?.location ?? s.location;
+    if (!location) throw new Error("That place has no location. Try another.");
+    const address = (place?.address ?? s.address)?.slice(0, 240) ?? null;
+    const { item: next } = await api<{ item: Item }>(`/api/journeys/items/${item.id}`, { method: "PATCH", body: JSON.stringify({ location: { placeId: s.id, lat: location.lat, lng: location.lng, address } }) });
+    onPinned(next);
+  };
+  return (
+    <div className="space-y-2">
+      <PlaceSearch near={near} label={`Find ${item.title} on the map`} placeholder="Search for the place" initial={item.title} autoFocus={Boolean(onCancel)} onPick={pin} />
+      {onCancel && (
+        <button type="button" onClick={onCancel} className="cursor-pointer text-[12px] text-mute hover:text-ink">
+          Keep the current pin
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** `bare`: inside a sheet that already shows the name and a close button. `near`: where to search when pinning it. */
+export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = false }: { item: Item; near: LatLng | null; onClose: () => void; onChanged: (i: Item) => void; onRemoved: () => void; bare?: boolean }) {
+  const [repin, setRepin] = useState(false);
+  const pinned = item.details.lat !== undefined;
+  const canPin = item.kind !== "note" && item.kind !== "flight";
   const { place, loading, error } = usePlace(item.details.placeId);
   const [note, setNote] = useState(item.details.note ?? "");
   const [busy, setBusy] = useState(false);
@@ -142,6 +167,15 @@ export function PlacePanel({ item, onClose, onChanged, onRemoved, bare = false }
       )}
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
         {bare && <p className="text-[12px] text-mute">{status}</p>}
+        {canPin && !pinned && (
+          <div className="space-y-2 rounded-lg border border-dashed border-hairline-strong p-3">
+            <p className="flex items-center gap-2 text-[13px] text-body">
+              <MapPinOff size={14} className="shrink-0 text-ash" aria-hidden /> Not on the map yet. Pick the place to pin it.
+            </p>
+            <PinPicker item={item} near={near} onPinned={onChanged} />
+          </div>
+        )}
+        {canPin && pinned && repin && <PinPicker item={item} near={near} onPinned={(i) => (setRepin(false), onChanged(i))} onCancel={() => setRepin(false)} />}
         {loading && <Spinner />}
         {error && <p className="text-[12px] text-mute">{error}</p>}
         {place ? (
@@ -182,6 +216,11 @@ export function PlacePanel({ item, onClose, onChanged, onRemoved, bare = false }
             maxLength={2000}
             className="w-full resize-y rounded-md border border-hairline-strong bg-deep px-3 py-2 text-[13px] text-ink outline-none placeholder:text-stone focus:border-accent"
           />
+          {canPin && pinned && !repin && (
+            <button type="button" onClick={() => setRepin(true)} className="cursor-pointer text-[12px] text-mute hover:text-ink">
+              Wrong place on the map? Change it
+            </button>
+          )}
           {saveError && <p className="text-[12px] text-danger">{saveError}</p>}
           <div className="flex flex-wrap items-center gap-2">
             {suggested && (

@@ -3,12 +3,13 @@ import { getDb } from "@/lib/db/client";
 import { getJourney } from "@/lib/db/journeys";
 import { dayStops } from "@/lib/journeys/locate";
 import { IsoDate } from "@/lib/journeys/types";
+import { osrmLegs } from "@/lib/places/osrm";
 import type { Leg } from "@/lib/places/types";
 import { google, placesUser } from "@/lib/server/places";
 import { tripOwner, type TripCtx } from "@/lib/server/trip-owner";
 
 // Drives between the same two points barely change; keep them a while to save Routes calls.
-const cache = new Map<string, { at: number; leg: Leg | null }>();
+const cache = new Map<string, { at: number; leg: Leg | null; legs?: (Leg | null)[] }>();
 const CACHE_MS = 6 * 3_600_000;
 const MAX_LEGS = 12;
 
@@ -20,7 +21,6 @@ export function GET(req: Request, ctx: TripCtx) {
     const date = IsoDate.safeParse(new URL(req.url).searchParams.get("date"));
     if (!date.success) return fail("Pick a day.", 400);
     const g = google();
-    if (!g) return ok({ legs: [] });
     const journey = await getJourney(await getDb(), who.userId, who.id);
     if (!journey) return fail("That trip doesn't exist.", 404);
     const stops = dayStops(journey.items, date.data);
@@ -28,6 +28,7 @@ export function GET(req: Request, ctx: TripCtx) {
     const gate = await placesUser();
     if (gate instanceof Response) return gate;
     const now = Date.now();
+    if (!g) return ok({ legs: await freeLegs(stops.slice(0, MAX_LEGS + 1), now) });
     const pairs = stops.slice(0, MAX_LEGS + 1).slice(1).map((to, i) => ({ from: stops[i], to }));
     const legs = await Promise.all(
       pairs.map(async ({ from, to }) => {
@@ -43,4 +44,14 @@ export function GET(req: Request, ctx: TripCtx) {
     if (cache.size > 5000) cache.clear();
     return ok({ legs });
   });
+}
+
+/** Without a Google key: OpenStreetMap routing, one request for the whole day. */
+async function freeLegs(stops: { id: string; details: { lat?: number; lng?: number } }[], now: number) {
+  const points = stops.map((s) => ({ lat: s.details.lat!, lng: s.details.lng! }));
+  const key = `osrm:${points.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join(";")}`;
+  const hit = cache.get(key);
+  const legs = hit && now - hit.at < CACHE_MS ? (hit.legs ?? []) : await osrmLegs(points);
+  if (!hit || now - hit.at >= CACHE_MS) cache.set(key, { at: now, leg: null, legs });
+  return legs.map((leg, i) => ({ from: stops[i].id, to: stops[i + 1].id, leg }));
 }

@@ -5,7 +5,7 @@ import { createPgliteDb, type Db } from "./client";
 import {
   deleteLink, deleteMail, ensureInboxToken, insertLink, insertMail, insertPairCode, linkSecret, listLinks, mailNeedingAttention, pendingMail, purgeStaleBodies, setInboxToken, takePairCode, touchLink, userForInbox, inboxToken,
 } from "./inbound";
-import { deleteJourney, deleteSuggestions, getJourney, listJourneys, updateItem, updateJourney, upsertItem, upsertJourney } from "./journeys";
+import { deleteJourney, deleteSuggestions, getJourney, listJourneys, setItemLocations, updateItem, updateJourney, upsertItem, upsertJourney } from "./journeys";
 import { migrate } from "./schema";
 import { insertUser } from "./users";
 
@@ -96,6 +96,17 @@ describe("trips and items", () => {
     expect((await updateItem(db, ada, unfiled[0].id, { note: null }, 3000))?.details).toEqual({});
     expect((await getJourney(db, ada, id))?.items).toHaveLength(1);
     expect(await getJourney(db, bob, id)).toBeNull();
+  });
+
+  it("marks a place it couldn't find, then pins it to the one picked, note and all", async () => {
+    const id = await upsertJourney(db, ada, { id: "20000000-0000-4000-8000-000000000003", title: "Lisbon", destination: "Lisbon", startDate: "2027-05-01", endDate: "2027-05-04", source: "manual", now: 1000 });
+    await fileItems(db, ada, [DraftItemSchema.parse({ kind: "activity", status: "planned", title: "Sintra day trip", startDate: "2027-05-02" })], "manual", 1000);
+    const [item] = (await getJourney(db, ada, id))!.items;
+    await setItemLocations(db, ada, [], [item.id], 5000);
+    expect((await getJourney(db, ada, id))!.items[0].details).toEqual({ locateFailedAt: 5000 });
+    const pinned = await updateItem(db, ada, item.id, { note: "Pena first", location: { placeId: "osm:N1", lat: 38.8, lng: -9.38, address: "Sintra, Portugal" } }, 6000);
+    expect(pinned?.details).toEqual({ note: "Pena first", placeId: "osm:N1", lat: 38.8, lng: -9.38, address: "Sintra, Portugal", locatedAt: 6000 });
+    expect(await updateItem(db, bob, item.id, { location: { placeId: "osm:N2", lat: 0, lng: 0, address: null } }, 7000)).toBeNull();
   });
 
   it("re-imports by external key, edits, clears suggestions and deletes", async () => {

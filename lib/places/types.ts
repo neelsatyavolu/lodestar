@@ -12,6 +12,8 @@ export type Suggestion = {
   id: string;
   name: string;
   secondary: string;
+  /** "Airport", "Mexican restaurant": what the place is, when known. */
+  category: string | null;
   kind: PlaceKind;
   location: LatLng | null;
   address: string | null;
@@ -50,6 +52,16 @@ export function kindOf(types: string[]): PlaceKind {
   if (STAY.test(joined)) return "stay";
   if (DINING.test(joined)) return "dining";
   return "activity";
+}
+
+const GENERIC = new Set(["point_of_interest", "establishment", "food", "store", "geocode", "political", "premise", "street_address"]);
+
+/** Google's first specific type as words: "mexican_restaurant" → "Mexican restaurant". */
+export function categoryOf(types: string[]): string | null {
+  const t = types.find((x) => !GENERIC.has(x));
+  if (!t) return null;
+  const words = t.replace(/_/g, " ");
+  return words === "lodging" ? "Hotel" : words === "locality" ? "City" : words[0].toUpperCase() + words.slice(1);
 }
 
 export const mapsSearchUrl = (query: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query.trim())}`;

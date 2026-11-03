@@ -38,6 +38,13 @@ export const ItemPatchSchema = z
     place: z.string().trim().max(160).nullable(),
     confirmation: z.string().trim().max(40).nullable(),
     note: z.string().trim().max(2000).nullable(),
+    /** The place picked in the details panel: pins the item to it. */
+    location: z.object({
+      placeId: z.string().max(300).regex(/^(g|osm):[\w:.-]+$/),
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+      address: z.string().trim().max(240).nullable(),
+    }),
   })
   .partial();
 

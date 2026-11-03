@@ -44,6 +44,8 @@ export const DetailsSchema = z
     lng: z.number().min(-180).max(180).optional(),
     /** When the location was looked up; Google allows keeping coordinates 30 days. */
     locatedAt: z.number().int().optional(),
+    /** When a lookup last found nothing trustworthy; tried again a week later. */
+    locateFailedAt: z.number().int().optional(),
   })
   .strict();
 export type Details = z.infer<typeof DetailsSchema>;

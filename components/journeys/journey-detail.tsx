@@ -1,7 +1,7 @@
 import { ArrowLeft, BedDouble, Building2, Map as MapIcon, Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, post } from "@/lib/client";
-import { centerOf, lookupsFor } from "@/lib/journeys/locate";
+import { lookupsFor, searchCenter } from "@/lib/journeys/locate";
 import type { Item, JourneyWithItems } from "@/lib/journeys/types";
 import type { Provider } from "../connect-ai";
 import { Dialog } from "../dialog";
@@ -28,6 +28,7 @@ type Props = {
 };
 
 const WIDE = "(min-width: 1024px)";
+const LOCATE_ROUNDS = 6;
 
 export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChanged, onDeleted }: Props) {
   const [suggesting, setSuggesting] = useState<"dining" | "hotels" | null>(null);
@@ -43,7 +44,6 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   const when = countdown(journey);
   const hasDates = Boolean(journey.startDate);
   const selected = journey.items.find((i) => i.id === selectedId) ?? null;
-  const near = centerOf(journey.items);
 
   useEffect(() => {
     const mq = window.matchMedia(WIDE);
@@ -61,13 +61,19 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
     onChanged(() => next);
   }, [journey.id, onChanged]);
 
-  // Pin bookings that came from email or an import, once per visit.
+  // Pin bookings that came from email or an import, once per visit: a call pins a dozen,
+  // so keep calling while some are left and the last call settled some.
   useEffect(() => {
     if (located.current || !lookupsFor(journey, Date.now()).length) return;
     located.current = true;
-    post<{ journey: JourneyWithItems }>(`/api/journeys/${journey.id}/locate`, {})
-      .then(({ journey: next }) => onChanged(() => next))
-      .catch(() => {});
+    (async () => {
+      for (let round = 0; round < LOCATE_ROUNDS; round++) {
+        const r = await post<{ journey: JourneyWithItems; settled: number; remaining: number }>(`/api/journeys/${journey.id}/locate`, {});
+        onChanged(() => r.journey);
+        // Search down or slow: nothing settled, so another call now would only repeat it.
+        if (!r.remaining || !r.settled) break;
+      }
+    })().catch(() => {});
   }, [journey, onChanged]);
 
   const suggest = async (kind: "dining" | "hotels") => {
@@ -116,7 +122,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   const hotelIdeas = journey.items.filter((i) => i.kind === "stay" && i.status === "suggested");
 
   const panel = selected && (
-    <PlacePanel key={selected.id} item={selected} bare={!wide} onClose={() => setSelectedId(null)} onChanged={replace} onRemoved={() => drop(selected.id)} />
+    <PlacePanel key={selected.id} item={selected} near={searchCenter(journey.items, selected.startDate)} bare={!wide} onClose={() => setSelectedId(null)} onChanged={replace} onRemoved={() => drop(selected.id)} />
   );
 
   return (
@@ -193,7 +199,6 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
                   date={d}
                   active={d === activeDay}
                   selectedId={selectedId}
-                  near={near}
                   onFocusDay={() => setActiveDay(d)}
                   onOpen={open}
                   onReplace={replace}

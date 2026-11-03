@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api } from "@/lib/client";
 import type { Item, Kind } from "@/lib/journeys/types";
 import { Button, Pill } from "../ui";
+import type { Pin } from "./pins";
 import { errorText } from "./shared";
 
 // One flight, stay, reservation or plan. Suggestions are drawn dashed with
@@ -23,7 +24,8 @@ function subtitle(i: Item): string {
   return parts.filter(Boolean).join(" · ");
 }
 
-export function ItemRow({ item, onChanged, onRemoved, onOpen, selected = false }: { item: Item; onChanged: (i: Item) => void; onRemoved: () => void; onOpen?: () => void; selected?: boolean }) {
+/** `pin`: the item's numbered, day-coloured map pin, drawn in place of its icon. */
+export function ItemRow({ item, pin, onChanged, onRemoved, onOpen, selected = false }: { item: Item; pin?: Pin; onChanged: (i: Item) => void; onRemoved: () => void; onOpen?: () => void; selected?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const Icon = item.kind === "transport" && /pickup|car/i.test(item.title) ? CarFront : ICON[item.kind];
@@ -62,7 +64,17 @@ export function ItemRow({ item, onChanged, onRemoved, onOpen, selected = false }
       className={`group flex gap-3 rounded-lg px-3 py-3 ${onOpen ? "cursor-pointer" : ""} ${selected ? "border border-hairline-hover bg-elevated" : suggested ? "border border-dashed border-hairline-strong" : "border border-transparent hover:bg-elevated"}`}
     >
       <span className="w-12 shrink-0 pt-0.5 font-mono text-[12px] text-ash">{item.startTime ?? ""}</span>
-      <Icon size={16} className={`mt-0.5 shrink-0 ${suggested ? "text-accent" : "text-charcoal"}`} aria-hidden />
+      {pin ? (
+        <span
+          className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+          style={suggested ? { border: `1.5px dashed ${pin.color.fill}`, color: pin.color.fill } : { background: pin.color.fill, color: pin.color.ink }}
+          title="On the map"
+        >
+          {item.kind === "stay" || item.kind === "flight" ? <Icon size={12} aria-hidden /> : pin.n}
+        </span>
+      ) : (
+        <Icon size={16} className={`mt-0.5 shrink-0 ${suggested ? "text-accent" : "text-charcoal"}`} aria-hidden />
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {onOpen ? (

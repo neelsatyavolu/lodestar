@@ -1,4 +1,4 @@
-import { kindOf, mapsSearchUrl, type LatLng, type Leg, type PlaceDetails, type Suggestion } from "./types";
+import { categoryOf, kindOf, mapsSearchUrl, type LatLng, type Leg, type PlaceDetails, type Suggestion } from "./types";
 
 // Google Places API (New) and Routes API over plain HTTP. Every call names the
 // fields it needs (Google bills by field), times out, and is validated loosely:
@@ -71,6 +71,7 @@ export function googleClient(key: string, fetcher: typeof fetch = fetch) {
             id: `g:${str(p.placeId)}`,
             name: str(o(f.mainText).text) ?? str(o(p.text).text) ?? "Place",
             secondary: str(o(f.secondaryText).text) ?? "",
+            category: categoryOf(Array.isArray(p.types) ? (p.types as string[]) : []),
             kind: kindOf(Array.isArray(p.types) ? (p.types as string[]) : []),
             location: null,
             address: null,
