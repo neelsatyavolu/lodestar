@@ -12,6 +12,7 @@ import { Dialog } from "./dialog";
 import type { SellerCheck } from "./itinerary-card";
 import type { Fare } from "./sellers-panel";
 import { Button, Toggle } from "./ui";
+import { askConfirm } from "./confirm";
 
 // Saved Plan shortlists, each with its email alerts: price drops, a target
 // fare and a book-by reminder. A daily check re-runs the trip's searches.
@@ -118,7 +119,7 @@ function TripCard({ trip, focused, onChange, onDelete, ...shared }: Shared & { t
   };
 
   const del = async () => {
-    if (!window.confirm(`Delete ${trip.title}? Its alerts stop too.`)) return;
+    if (!(await askConfirm(`Delete ${trip.title}?`, "Delete", "Its alerts stop too."))) return;
     try {
       await api(`/api/trips/${trip.id}`, { method: "DELETE" });
       onDelete();

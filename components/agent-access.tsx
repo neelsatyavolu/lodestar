@@ -4,6 +4,7 @@ import { api, ApiError, post } from "@/lib/client";
 import type { Grant } from "@/lib/db/agent-auth";
 import { Dialog, inputClass } from "./dialog";
 import { Button, Spinner } from "./ui";
+import { askConfirm } from "./confirm";
 
 // Agents: connect Claude, ChatGPT, Codex or any MCP client to Lodestar Trips.
 // Apps sign in with OAuth and show up here to disconnect; CLIs that can't do
@@ -79,7 +80,7 @@ export function AgentAccess({ open, onClose }: { open: boolean; onClose: () => v
   };
 
   const revoke = async (g: Grant) => {
-    if (!window.confirm(g.kind === "oauth" ? `Disconnect ${g.name}? It will stop working on your trips.` : `Delete the token “${g.name}”? Anything using it stops working.`)) return;
+    if (!(await (g.kind === "oauth" ? askConfirm(`Disconnect ${g.name}?`, "Disconnect", "It will stop working on your trips.") : askConfirm(`Delete the token “${g.name}”?`, "Delete token", "Anything using it stops working.")))) return;
     try {
       await api(`/api/agents/${g.id}`, { method: "DELETE" });
       setGrants((all) => all.filter((x) => x.id !== g.id));

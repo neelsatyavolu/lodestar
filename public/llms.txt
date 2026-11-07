@@ -1,0 +1,31 @@
+# Lodestar
+
+> Flight and hotel search with live prices, and Trips: a trip planner with an itinerary, things to book, bookings, a budget, a checklist and notes. These notes are for AI agents working on a traveller's behalf.
+
+## Changing trips: use the MCP server
+
+Work through the MCP server rather than clicking around the page when you can. It's faster and you can't misclick.
+
+- Server: /api/mcp (Streamable HTTP). Sign in with OAuth; clients find it through /.well-known/oauth-protected-resource/api/mcp.
+- No OAuth? The traveller can make a personal token on the site (robot icon in the header, "Agents"). Send it as `Authorization: Bearer lsp_...`.
+- Tools: list_trips, get_trip, create_trip, update_trip, delete_trip, add_items, update_item, remove_item, add_tasks, update_task, remove_task, set_note, remove_note, add_cost, update_cost, remove_cost.
+
+## Driving the page (computer use or a browser agent)
+
+The traveller has to be signed in. A trip link opened while signed out shows the sign-in form first, then comes back to the trip.
+
+- A trip: /?trip=<trip id>
+- A tab: add &tab=itinerary, book, bookings, budget or checklist. Leave it out for Overview.
+- A stop's details: add &item=<item id>
+- The window title names the open stop, the trip and the tab, for example "Penca · Thanksgiving at Dove Mountain · Itinerary · Lodestar".
+
+On the page:
+
+- Every control has a text name. Icon buttons name what they act on, for example "Actions for Penca", "Remove Renew passports" or "Actions for Saturday, November 21".
+- Nothing appears only on hover. Row actions are always on screen.
+- Removing or deleting asks in a dialog on the page, with Cancel and a named button (Remove, Delete trip). There are no browser pop-ups.
+- Dates are picked from a calendar. Each day is a button named with its full date, for example "Saturday, November 21, 2026".
+
+## Adding bookings by email
+
+Forward confirmations to the traveller's private address (Trips, then "Add trips by email"). Flights, hotels and anything with reservation markup are filed straight away. So are Resy, OpenTable and Yelp tables. A table that's already in the itinerary, on the same day under the same name, becomes that booking instead of a second stop.

@@ -1,5 +1,6 @@
-// The trip page's tabs, kept in the address (?trip=<id>&tab=book) so a reload
-// or a shared link lands where you were.
+// The trip page's tabs, kept in the address (?trip=<id>&tab=book&item=<id>)
+// so a reload, a shared link or an agent driving the browser lands where you
+// were, with the open stop's details showing.
 
 export const TABS = [
   { id: "overview", label: "Overview" },
@@ -13,21 +14,23 @@ export type Tab = (typeof TABS)[number]["id"];
 
 const isTab = (v: string | null): v is Tab => TABS.some((t) => t.id === v);
 
-/** The trip and tab in the address, if any. */
-export function readLocation(): { trip: string | null; tab: Tab | null } {
-  if (typeof window === "undefined") return { trip: null, tab: null };
+/** The trip, tab and open item in the address, if any. */
+export function readLocation(): { trip: string | null; tab: Tab | null; item: string | null } {
+  if (typeof window === "undefined") return { trip: null, tab: null, item: null };
   const q = new URLSearchParams(window.location.search);
   const tab = q.get("tab");
-  return { trip: q.get("trip"), tab: isTab(tab) ? tab : null };
+  return { trip: q.get("trip"), tab: isTab(tab) ? tab : null, item: q.get("item") };
 }
 
-/** Writes the open trip and tab to the address without a navigation; null clears both. */
-export function writeLocation(trip: string | null, tab: Tab | null): void {
+/** Writes the open trip, tab and item to the address without a navigation; null clears them. */
+export function writeLocation(trip: string | null, tab: Tab | null, item: string | null = null): void {
   const url = new URL(window.location.href);
   if (trip) url.searchParams.set("trip", trip);
   else url.searchParams.delete("trip");
   if (trip && tab && tab !== "overview") url.searchParams.set("tab", tab);
   else url.searchParams.delete("tab");
+  if (trip && item) url.searchParams.set("item", item);
+  else url.searchParams.delete("item");
   window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 

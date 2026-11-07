@@ -55,6 +55,8 @@ type Props = {
   /** Right of the title, before the menu: a count, a drive time. */
   aside?: ReactNode;
   menu?: MenuItem[];
+  /** The menu button's name, so an agent or screen reader can tell one section's menu from another's. */
+  menuLabel?: string;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -62,7 +64,7 @@ type Props = {
   size?: "lg" | "md";
 };
 
-export function Collapsible({ title, sub, aside, menu, open, onToggle, children, id, size = "lg" }: Props) {
+export function Collapsible({ title, sub, aside, menu, menuLabel = "More actions", open, onToggle, children, id, size = "lg" }: Props) {
   const panel = useId();
   return (
     <section id={id} className="scroll-mt-32">
@@ -75,7 +77,7 @@ export function Collapsible({ title, sub, aside, menu, open, onToggle, children,
           </span>
         </button>
         {aside && <div className="shrink-0 pt-1.5">{aside}</div>}
-        {menu && menu.length > 0 && <MoreMenu items={menu} label="More actions" />}
+        {menu && menu.length > 0 && <MoreMenu items={menu} label={menuLabel} />}
       </div>
       <div id={panel} hidden={!open} className="mt-3">
         {open && children}

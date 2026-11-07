@@ -8,6 +8,7 @@ import { MoreMenu, type MenuItem } from "./collapsible";
 import { photoUrl, useInView, usePlace } from "./place-cache";
 import type { Pin } from "./pins";
 import { deadline, errorText, patchItem, shortDate, time12, timeRange } from "./shared";
+import { askConfirm } from "../confirm";
 
 // The itinerary's building blocks: a stop (numbered pin, name, time, note,
 // photo), a free-text note, the night's stay, and the drive to the next stop.
@@ -67,7 +68,7 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
     }
   };
   const remove = async () => {
-    if (!suggested && !window.confirm(`Remove ${item.title}?`)) return;
+    if (!suggested && !(await askConfirm(`Remove ${item.title}?`, "Remove"))) return;
     setBusy(true);
     try {
       await api(`/api/journeys/items/${item.id}`, { method: "DELETE" });
@@ -128,7 +129,7 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
         <img src={photoUrl(photo, 320)} alt="" loading="lazy" className="hidden aspect-[4/3] w-28 shrink-0 self-start rounded-lg bg-elevated object-cover outline outline-1 -outline-offset-1 outline-hairline-strong sm:block" />
       )}
       {!suggested && (
-        <div onClick={(e) => e.stopPropagation()} className="-mr-1.5 -mt-1 shrink-0 self-start opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div onClick={(e) => e.stopPropagation()} className="-mr-1.5 -mt-1 shrink-0 self-start">
           <MoreMenu items={menu} label={`Actions for ${item.title}`} />
         </div>
       )}
@@ -152,7 +153,7 @@ export function NoteCard({ item, onOpen, onRemoved }: { item: Item; onOpen: () =
           await api(`/api/journeys/items/${item.id}`, { method: "DELETE" }).then(onRemoved, () => {});
         }}
         aria-label="Remove note"
-        className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+        className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger"
       >
         <Trash2 size={14} />
       </button>

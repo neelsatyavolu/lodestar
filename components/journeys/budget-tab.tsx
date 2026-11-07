@@ -155,7 +155,7 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
                   </span>
                 </span>
                 <span className={`tnum shrink-0 text-[14px] ${c.paid ? "text-body" : "text-mute"}`}>{c.paid ? "" : "~"}{amount(c.amount, c.currency)}</span>
-                <button type="button" onClick={() => remove(c)} aria-label={`Remove ${c.label}`} className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100">
+                <button type="button" onClick={() => remove(c)} aria-label={`Remove ${c.label}`} className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
                   <Trash2 size={14} />
                 </button>
               </li>

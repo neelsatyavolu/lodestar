@@ -14,6 +14,7 @@ import { Bot, SlidersHorizontal } from "lucide-react";
 import { AccountDialog, type Account } from "./account-dialog";
 import { AgentAccess } from "./agent-access";
 import { AiCanvas } from "./ai-canvas";
+import { ConfirmHost } from "./confirm";
 import { ConnectAI, PROVIDER_NAME, type Provider } from "./connect-ai";
 import { GitHubLink, GitHubMark, REPO_URL } from "./github-link";
 import { PreferencesDialog } from "./preferences-dialog";
@@ -241,6 +242,10 @@ export function App() {
         if (res.user && trip) {
           setFocusTrip(trip);
           setMode("trips");
+        } else if (trip) {
+          // A trip link opened signed out: sign in, then come back to it.
+          afterSignIn.current = safeReturnPath(`${window.location.pathname}${window.location.search}`, window.location.origin);
+          setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }));
         }
         if (new URLSearchParams(window.location.search).get("connect") === "flint") {
           window.history.replaceState(null, "", window.location.pathname);
@@ -574,6 +579,7 @@ export function App() {
       </footer>
 
       <AgentAccess open={agentsOpen} onClose={() => setAgentsOpen(false)} />
+      <ConfirmHost />
       <AccountDialog
         key={`account-${accountDialog.key}`}
         open={accountDialog.open}
