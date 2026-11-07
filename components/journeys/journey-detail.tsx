@@ -1,49 +1,68 @@
-import { ArrowLeft, BedDouble, Building2, Map as MapIcon, Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, post } from "@/lib/client";
-import { lookupsFor, searchCenter } from "@/lib/journeys/locate";
-import type { Item, JourneyWithItems } from "@/lib/journeys/types";
+import { byItinerary, lookupsFor, searchCenter } from "@/lib/journeys/locate";
+import { toBook } from "@/lib/journeys/plan";
+import type { Item, TripDetail } from "@/lib/journeys/types";
 import type { Provider } from "../connect-ai";
 import { Dialog } from "../dialog";
-import { Button, Spinner } from "../ui";
-import { DaySection } from "./day-section";
+import { useGenerate } from "./ai-draft";
+import { BookingsTab } from "./bookings-tab";
+import { BudgetTab } from "./budget-tab";
+import { ChecklistTab } from "./checklist-tab";
+import { DraftProgress, useDraftRun } from "./draft-run";
 import { AddItemDialog, JourneyDialog } from "./forms";
-import { ItemRow } from "./item-row";
+import { ItineraryTab } from "./itinerary-tab";
+import { OverviewTab, type AddPreset } from "./overview-tab";
 import { PlacePanel } from "./place-panel";
-import { countdown, dateRange, daysOf, errorText, today } from "./shared";
+import type { DraftRequest } from "./quick-start";
+import { ShareDialog } from "./share-dialog";
+import { daysOf, errorText, fullTrip, today, type PlanTrip } from "./shared";
+import { readLocation, TabBar, writeLocation, type Tab } from "./tabs";
+import { ToBookTab } from "./to-book-tab";
+import { TripCover } from "./trip-cover";
 import { TripMap } from "./trip-map";
 
-// One trip: the itinerary on the left, day by day, and on wide screens a map
-// on the right that stays in view. Opening a stop shows its details over the
-// map (a sheet on phones).
+// One trip: a header with the destination's photo, tabs for each part of the
+// plan, and on wide screens a map on the right that stays in view. Opening a
+// stop shows its details over the map (a sheet on phones).
 
 type Props = {
-  journey: JourneyWithItems;
+  journey: PlanTrip;
   provider: Provider | null;
   onConnectAi: () => void;
   onBack: () => void;
   /** Applied to the latest copy, so two quick actions never undo each other. */
-  onChanged: (update: (j: JourneyWithItems) => JourneyWithItems) => void;
+  onChanged: (update: (j: PlanTrip) => PlanTrip) => void;
   onDeleted: () => void;
+  /** Set right after the quick start asked for a draft: runs once the trip has loaded. */
+  autoDraft: DraftRequest | null;
 };
 
 const WIDE = "(min-width: 1024px)";
 const LOCATE_ROUNDS = 6;
 
-export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChanged, onDeleted }: Props) {
+export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChanged, onDeleted, autoDraft }: Props) {
+  const trip = fullTrip(journey);
+  const tripId = journey.id;
+  const loaded = journey.tasks !== undefined;
+  const [tab, setTab] = useState<Tab>(() => readLocation().tab ?? (autoDraft ? "itinerary" : "overview"));
   const [suggesting, setSuggesting] = useState<"dining" | "hotels" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<"edit" | "add" | null>(null);
+  const [dialog, setDialog] = useState<"edit" | "add" | "share" | null>(null);
+  const [preset, setPreset] = useState<AddPreset | undefined>(undefined);
   const [formKey, setFormKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const days = daysOf(journey);
+  const days = daysOf(trip);
   const [activeDay, setActiveDay] = useState<string | null>(() => days.find((d) => d >= today()) ?? days[0] ?? null);
   const [mobileMap, setMobileMap] = useState(false);
   const [wide, setWide] = useState(true);
   const located = useRef(false);
-  const when = countdown(journey);
-  const hasDates = Boolean(journey.startDate);
-  const selected = journey.items.find((i) => i.id === selectedId) ?? null;
+  const selected = trip.items.find((i) => i.id === selectedId) ?? null;
+
+  const change = useCallback((update: (t: TripDetail) => TripDetail) => onChanged((j) => update(fullTrip(j))), [onChanged]);
+  const setTrip = useCallback((t: TripDetail) => onChanged(() => t), [onChanged]);
+  const gen = useGenerate(tripId, provider, onConnectAi, setTrip);
+  const draft = useDraftRun(gen, autoDraft, loaded);
 
   useEffect(() => {
     const mq = window.matchMedia(WIDE);
@@ -56,33 +75,45 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
     };
   }, []);
 
+  useEffect(() => writeLocation(tripId, tab), [tripId, tab]);
+
   const reload = useCallback(async () => {
-    const { journey: next } = await api<{ journey: JourneyWithItems }>(`/api/journeys/${journey.id}`);
-    onChanged(() => next);
-  }, [journey.id, onChanged]);
+    const { journey: next } = await api<{ journey: TripDetail }>(`/api/journeys/${tripId}`);
+    setTrip(next);
+  }, [tripId, setTrip]);
+
+  // The list holds items only; the checklist, notes and costs come with the full trip.
+  // Keyed on the trip alone: `reload` changes whenever the parent re-renders.
+  const reloadNow = useRef(reload);
+  useEffect(() => {
+    reloadNow.current = reload;
+  }, [reload]);
+  useEffect(() => {
+    reloadNow.current().catch((err) => setError(errorText(err, "Couldn't load the whole trip.")));
+  }, [tripId]);
 
   // Pin bookings that came from email or an import, once per visit: a call pins a dozen,
   // so keep calling while some are left and the last call settled some.
   useEffect(() => {
-    if (located.current || !lookupsFor(journey, Date.now()).length) return;
+    if (located.current || !loaded || !lookupsFor(journey, Date.now()).length) return;
     located.current = true;
     (async () => {
       for (let round = 0; round < LOCATE_ROUNDS; round++) {
-        const r = await post<{ journey: JourneyWithItems; settled: number; remaining: number }>(`/api/journeys/${journey.id}/locate`, {});
-        onChanged(() => r.journey);
+        const r = await post<{ journey: TripDetail; settled: number; remaining: number }>(`/api/journeys/${tripId}/locate`, {});
+        change((t) => ({ ...t, items: r.journey.items }));
         // Search down or slow: nothing settled, so another call now would only repeat it.
         if (!r.remaining || !r.settled) break;
       }
     })().catch(() => {});
-  }, [journey, onChanged]);
+  }, [journey, tripId, loaded, change]);
 
   const suggest = async (kind: "dining" | "hotels") => {
     if (!provider) return onConnectAi();
     setSuggesting(kind);
     setError(null);
     try {
-      const { journey: next } = await post<{ journey: JourneyWithItems }>(`/api/journeys/${journey.id}/suggest`, { provider, kind });
-      onChanged(() => next);
+      const { journey: next } = await post<{ journey: TripDetail }>(`/api/journeys/${trip.id}/suggest`, { provider, kind });
+      change((t) => ({ ...t, items: next.items }));
     } catch (err) {
       setError(errorText(err, "The suggestions didn't come through. Try again."));
     } finally {
@@ -91,130 +122,105 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   };
 
   const del = async () => {
-    if (!window.confirm(`Delete ${journey.title} and everything in it?`)) return;
+    if (!window.confirm(`Delete ${trip.title} and everything in it?`)) return;
     try {
-      await api(`/api/journeys/${journey.id}`, { method: "DELETE" });
+      await api(`/api/journeys/${trip.id}`, { method: "DELETE" });
+      writeLocation(null, null);
       onDeleted();
     } catch (err) {
       setError(errorText(err, "Couldn't delete the trip."));
     }
   };
 
-  const replace = (it: Item) => onChanged((j) => ({ ...j, items: j.items.map((x) => (x.id === it.id ? it : x)) }));
+  const replace = (it: Item) => change((t) => ({ ...t, items: t.items.map((x) => (x.id === it.id ? it : x)) }));
   const drop = (id: string) => {
     if (id === selectedId) setSelectedId(null);
-    onChanged((j) => ({ ...j, items: j.items.filter((x) => x.id !== id) }));
+    change((t) => ({ ...t, items: t.items.filter((x) => x.id !== id) }));
   };
-  const openForm = (d: "edit" | "add") => {
+  const openDialog = (d: "edit" | "add" | "share", p?: AddPreset) => {
     setFormKey((k) => k + 1);
+    setPreset(p);
     setDialog(d);
   };
   const open = (id: string) => {
-    const item = journey.items.find((i) => i.id === id);
+    const item = trip.items.find((i) => i.id === id);
     setSelectedId(id);
     if (item) setActiveDay(item.startDate);
+    if (!wide) setMobileMap(false);
   };
   const fromMap = (id: string) => {
     open(id);
-    document.getElementById(`day-${journey.items.find((i) => i.id === id)?.startDate}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (tab === "itinerary") document.getElementById(`day-${trip.items.find((i) => i.id === id)?.startDate}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const reloadOrError = () => reload().catch((err) => setError(errorText(err, "Couldn't reload the trip.")));
-  const hotelIdeas = journey.items.filter((i) => i.kind === "stay" && i.status === "suggested");
+  const goTab = (t: Tab) => {
+    setTab(t);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Step through the selected stop's day, as Wanderlog's "1 of 3".
+  const dayList = selected ? trip.items.filter((i) => i.startDate === selected.startDate && i.kind !== "note" && i.status !== "cancelled" && i.status !== "suggested").sort(byItinerary) : [];
+  const at = selected ? dayList.findIndex((i) => i.id === selected.id) : -1;
+  const pager = at >= 0 && dayList.length > 1 ? { index: at, total: dayList.length, go: (k: number) => open(dayList[(k + dayList.length) % dayList.length].id) } : undefined;
 
   const panel = selected && (
-    <PlacePanel key={selected.id} item={selected} near={searchCenter(journey.items, selected.startDate)} bare={!wide} onClose={() => setSelectedId(null)} onChanged={replace} onRemoved={() => drop(selected.id)} />
+    <PlacePanel key={selected.id} item={selected} near={searchCenter(trip.items, selected.startDate)} bare={!wide} pager={pager} onClose={() => setSelectedId(null)} onChanged={replace} onRemoved={() => drop(selected.id)} />
   );
 
+  const open_ = toBook(trip.items).length;
+  const done = trip.tasks.filter((t) => t.done).length;
+  const counts: Partial<Record<Tab, string>> = { ...(open_ ? { book: String(open_) } : {}), ...(trip.tasks.length ? { checklist: `${done}/${trip.tasks.length}` } : {}) };
+
   return (
-    // Wide screens break out of the page column: itinerary left, map right.
-    <section className="pt-8 sm:pt-12 lg:relative lg:left-1/2 lg:-ml-[50vw] lg:w-screen lg:pt-0">
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,44%)]">
-        <div className="w-full lg:ml-auto lg:max-w-[760px] lg:px-8 lg:pb-24 lg:pt-12">
-          <button type="button" onClick={onBack} className="inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink">
-            <ArrowLeft size={14} /> All trips
-          </button>
-          <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="font-display text-[clamp(30px,5vw,48px)] leading-tight tracking-[-0.02em]">{journey.title}</h1>
-              <p className="mt-2 text-[15px] text-body">
-                {[journey.destination, dateRange(journey.startDate, journey.endDate)].filter(Boolean).join(" · ")}
-                {when && <span className="text-accent"> · {when}</span>}
-              </p>
-            </div>
-            <div className="flex gap-1">
-              <Button size="sm" variant="quiet" onClick={() => openForm("edit")} aria-label="Edit trip">
-                <Pencil size={14} /> Edit
-              </Button>
-              <Button size="sm" variant="quiet" onClick={del} aria-label="Delete trip">
-                <Trash2 size={14} />
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-2 border-y border-hairline py-3">
-            <Button size="sm" variant="ghost" onClick={() => openForm("add")}>
-              <Plus size={14} /> Add booking
-            </Button>
-            <Button size="sm" variant="ghost" disabled={!hasDates || suggesting !== null} onClick={() => suggest("dining")} title={hasDates ? "Lunch and dinner ideas for each day, from your food preferences" : "Add dates first"}>
-              {suggesting === "dining" ? <Spinner /> : <UtensilsCrossed size={14} />} Plan dining
-            </Button>
-            <Button size="sm" variant="ghost" disabled={!hasDates || !journey.destination || suggesting !== null} onClick={() => suggest("hotels")} title={hasDates ? "Live hotel prices, picked for what you care about" : "Add dates first"}>
-              {suggesting === "hotels" ? <Spinner /> : <Building2 size={14} />} Find hotels
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setMobileMap(true)} className="lg:hidden">
-              <MapIcon size={14} /> Map
-            </Button>
-            <span className="text-[12px] text-ash max-sm:w-full">
-              {suggesting === "dining" ? "Planning meals around your days…" : suggesting === "hotels" ? "Searching live hotel prices…" : provider ? "Ideas use your saved food and hotel preferences." : "Connect ChatGPT or Grok for dining and hotel ideas."}
-            </span>
-          </div>
-          {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
-
-          {hotelIdeas.length > 0 && (
-            <div className="mt-6">
-              <h2 className="mb-2 flex items-center gap-2 text-[13px] font-medium text-ink">
-                <BedDouble size={14} className="text-accent" /> Hotel ideas
-              </h2>
-              <ul className="space-y-1">
-                {hotelIdeas.map((i) => (
-                  <ItemRow key={i.id} item={i} selected={i.id === selectedId} onOpen={() => open(i.id)} onChanged={replace} onRemoved={() => drop(i.id)} />
-                ))}
-              </ul>
+    // Wide screens break out of the page column: plan left, map right.
+    <section className="pt-6 sm:pt-10 lg:relative lg:left-1/2 lg:-ml-[50vw] lg:w-screen lg:pt-0">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,42%)]">
+        <div className="w-full lg:ml-auto lg:max-w-[780px] lg:px-8 lg:pb-24 lg:pt-8">
+          <TripCover journey={trip} onBack={() => (writeLocation(null, null), onBack())} onEdit={() => openDialog("edit")} onShare={() => openDialog("share")} onDelete={del} />
+          {draft.state && (
+            <div className="mt-5">
+              <DraftProgress run={draft} gen={gen} />
             </div>
           )}
-
-          {days.length === 0 ? (
-            <div className="mt-8 rounded-lg border border-hairline-strong bg-card p-6 text-[14px] text-mute">
-              Give the trip dates to plan it day by day.{" "}
-              <button type="button" onClick={() => openForm("edit")} className="cursor-pointer text-accent hover:underline">
-                Add dates
-              </button>
-            </div>
-          ) : (
-            <ol className="mt-6 space-y-8">
-              {days.map((d) => (
-                <DaySection
-                  key={d}
-                  journey={journey}
-                  date={d}
-                  active={d === activeDay}
-                  selectedId={selectedId}
-                  onFocusDay={() => setActiveDay(d)}
-                  onOpen={open}
-                  onReplace={replace}
-                  onDrop={drop}
-                  onAdded={reloadOrError}
-                />
-              ))}
-            </ol>
-          )}
-          {journey.items.some((i) => i.kind === "dining" && i.status === "suggested") && <p className="mt-6 text-[12px] text-ash">Dining ideas come from the AI&apos;s knowledge, not live listings. Check hours and book ahead before you go.</p>}
+          <div className="mt-6">
+            <TabBar tab={tab} onChange={goTab} counts={counts} />
+          </div>
+          {error && <p className="mt-4 text-[13px] text-danger">{error}</p>}
+          <div className="mt-6">
+            {tab === "overview" && (
+              <OverviewTab trip={trip} gen={gen} selectedId={selectedId} onOpenItem={open} onTab={goTab} onAdd={(p) => openDialog("add", p)} onNotes={(u) => change((t) => ({ ...t, notes: u(t.notes) }))} onReplace={replace} onDrop={drop} />
+            )}
+            {tab === "itinerary" && (
+              <ItineraryTab
+                trip={trip}
+                days={days}
+                gen={gen}
+                activeDay={activeDay}
+                selectedId={selectedId}
+                suggesting={suggesting}
+                onSuggest={suggest}
+                onFocusDay={setActiveDay}
+                onOpen={open}
+                onReplace={replace}
+                onDrop={drop}
+                onAdded={reloadOrError}
+                onAddBooking={() => openDialog("add")}
+                onEdit={() => openDialog("edit")}
+                onMap={() => setMobileMap(true)}
+              />
+            )}
+            {tab === "book" && <ToBookTab trip={trip} gen={gen} onOpenItem={open} onReplace={replace} />}
+            {tab === "bookings" && <BookingsTab trip={trip} onOpenItem={open} onAdd={() => openDialog("add")} />}
+            {tab === "budget" && <BudgetTab trip={trip} gen={gen} onOpenItem={open} onCosts={(u) => change((t) => ({ ...t, costs: u(t.costs) }))} />}
+            {tab === "checklist" && <ChecklistTab trip={trip} gen={gen} onTasks={(u) => change((t) => ({ ...t, tasks: u(t.tasks) }))} />}
+          </div>
+          {gen.notice && !gen.running && <p className="mt-6 text-[12px] text-mute">{gen.notice}</p>}
         </div>
 
         {wide && (
           <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] border-l border-hairline lg:block">
-            <TripMap items={journey.items} selectedId={selectedId} day={activeDay} onSelect={fromMap} panelOpen={Boolean(panel)} />
-            {panel && <div className="absolute inset-x-3 bottom-3 z-10 max-h-[62%] overflow-hidden rounded-xl border border-hairline-strong bg-card">{panel}</div>}
+            <TripMap items={trip.items} selectedId={selectedId} day={tab === "itinerary" ? activeDay : null} onSelect={fromMap} panelOpen={Boolean(panel)} />
+            {panel && <div className="absolute inset-x-3 bottom-3 z-10 max-h-[66%] overflow-hidden rounded-xl border border-hairline-strong bg-card">{panel}</div>}
           </aside>
         )}
       </div>
@@ -226,22 +232,15 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
           </Dialog>
           <Dialog open={mobileMap} onClose={() => setMobileMap(false)} title="Map" width={900}>
             <div className="h-[70dvh]">
-              <TripMap
-                items={journey.items}
-                selectedId={selectedId}
-                day={activeDay}
-                onSelect={(id) => {
-                  setMobileMap(false);
-                  open(id);
-                }}
-              />
+              <TripMap items={trip.items} selectedId={selectedId} day={activeDay} onSelect={open} />
             </div>
           </Dialog>
         </>
       )}
 
-      <JourneyDialog key={`edit-${formKey}`} open={dialog === "edit"} onClose={() => setDialog(null)} journey={journey} onSaved={() => reload().then(() => setDialog(null)).catch((err) => setError(errorText(err, "Couldn't reload the trip.")))} />
-      <AddItemDialog key={`add-${formKey}`} open={dialog === "add"} onClose={() => setDialog(null)} journey={journey} onAdded={() => reload().then(() => setDialog(null)).catch((err) => setError(errorText(err, "Couldn't reload the trip.")))} />
+      <JourneyDialog key={`edit-${formKey}`} open={dialog === "edit"} onClose={() => setDialog(null)} journey={trip} onSaved={() => reload().then(() => setDialog(null)).catch((err) => setError(errorText(err, "Couldn't reload the trip.")))} />
+      <AddItemDialog key={`add-${formKey}`} open={dialog === "add"} onClose={() => setDialog(null)} journey={trip} preset={preset} onAdded={() => reload().then(() => setDialog(null)).catch((err) => setError(errorText(err, "Couldn't reload the trip.")))} />
+      <ShareDialog open={dialog === "share"} onClose={() => setDialog(null)} journeyId={trip.id} token={trip.shareToken} onToken={(shareToken) => change((t) => ({ ...t, shareToken }))} />
     </section>
   );
 }

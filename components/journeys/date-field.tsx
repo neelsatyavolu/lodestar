@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { addMonths, dayOfMonth, longLabel, monthGrid, monthLabel, monthStart, nightsBetween, shortLabel, type Iso } from "@/lib/calendar";
 import { Button } from "../ui";
 
@@ -11,14 +11,14 @@ const today = () => new Date().toLocaleDateString("en-CA");
 
 type Range = { start: Iso | null; end: Iso | null };
 
-function Calendar({ value, range, inline, onPick, onDone }: { value: Range; range: boolean; inline: boolean; onPick: (day: Iso) => void; onDone: () => void }) {
+function Calendar({ value, range, inline, alignEnd = false, onPick, onDone }: { value: Range; range: boolean; inline: boolean; alignEnd?: boolean; onPick: (day: Iso) => void; onDone: () => void }) {
   const [view, setView] = useState<Iso>(monthStart(value.start ?? today()));
   const [hover, setHover] = useState<Iso | null>(null);
   const now = today();
   // While choosing the end, preview up to the hovered day.
   const end = value.end ?? (range && value.start && hover && hover > value.start ? hover : null);
   return (
-    <div className={inline ? "mt-2 rounded-lg border border-hairline-strong bg-deep p-3" : "rise absolute left-0 top-full z-40 mt-2 w-[min(620px,calc(100vw-32px))] rounded-xl border border-hairline-strong bg-card p-4 max-sm:left-1/2 max-sm:-translate-x-1/2"}>
+    <div className={inline ? "mt-2 rounded-lg border border-hairline-strong bg-deep p-3" : `rise absolute top-full z-40 mt-2 rounded-xl border border-hairline-strong bg-card p-4 ${alignEnd ? "right-0 w-[min(320px,calc(100vw-32px))]" : "left-0 w-[min(620px,calc(100vw-32px))] max-sm:left-1/2 max-sm:-translate-x-1/2"}`}>
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[12px] text-charcoal">{range ? (value.start && !value.end ? "Now pick the last day" : "Pick the first day") : "Pick a day"}</span>
         <div className="flex gap-1">
@@ -32,7 +32,7 @@ function Calendar({ value, range, inline, onPick, onDone }: { value: Range; rang
       </div>
       <div className="flex gap-6" onMouseLeave={() => setHover(null)}>
         {[view, addMonths(view, 1)].map((month, i) => (
-          <div key={month} className={`min-w-0 flex-1 ${i === 1 ? "max-sm:hidden" : ""}`}>
+          <div key={month} className={`min-w-0 flex-1 ${i === 1 ? (alignEnd ? "hidden" : "max-sm:hidden") : ""}`}>
             <div className="mb-2 text-center text-sm font-medium text-ink">{monthLabel(month)}</div>
             <div className="grid grid-cols-7 text-center text-[11px] text-ash">
               {WEEKDAYS.map((w, k) => (
@@ -97,21 +97,27 @@ function usePopover() {
 
 const fieldClass = "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-hairline-strong bg-deep px-3 text-left text-[14px] text-ink hover:border-hairline-hover max-sm:h-12";
 
-/** One date. */
-/** `inline` opens the calendar in place (inside dialogs, where a popover would be clipped). */
-export function DateField({ value, onChange, placeholder = "Pick a day", label, inline = false }: { value: Iso | null; onChange: (d: Iso) => void; placeholder?: string; label: string; inline?: boolean }) {
+const compactClass = "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] text-charcoal hover:bg-hover hover:text-ink";
+
+/**
+ * One date. `inline` opens the calendar in place (inside dialogs, where a
+ * popover would be clipped). `compact` is a small text button for toolbars,
+ * its one-month calendar opening to the left; `icon` replaces the calendar icon.
+ */
+export function DateField({ value, onChange, placeholder = "Pick a day", label, inline = false, compact = false, icon }: { value: Iso | null; onChange: (d: Iso) => void; placeholder?: string; label: string; inline?: boolean; compact?: boolean; icon?: ReactNode }) {
   const { open, setOpen, root } = usePopover();
   return (
     <div ref={root} className="relative">
-      <button type="button" aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)} className={fieldClass}>
-        <CalendarDays size={14} className="shrink-0 text-ash" />
-        <span className={value ? "tnum" : "text-stone"}>{value ? shortLabel(value) : placeholder}</span>
+      <button type="button" aria-label={value ? `${label}: ${shortLabel(value)}` : label} aria-expanded={open} onClick={() => setOpen(!open)} className={compact ? compactClass : fieldClass}>
+        {icon ?? <CalendarDays size={14} className="shrink-0 text-ash" />}
+        {compact ? <span>{value ? `${label} ${shortLabel(value)}` : label}</span> : <span className={value ? "tnum" : "text-stone"}>{value ? shortLabel(value) : placeholder}</span>}
       </button>
       {open && (
         <Calendar
           value={{ start: value, end: null }}
           range={false}
           inline={inline}
+          alignEnd={compact}
           onPick={(d) => {
             onChange(d);
             setOpen(false);

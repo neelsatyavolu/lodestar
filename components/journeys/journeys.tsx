@@ -1,14 +1,16 @@
-import { Download, Mail, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, Download, Mail, Plus, Trash2, Users } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { api, post } from "@/lib/client";
-import type { Item, JourneyWithItems } from "@/lib/journeys/types";
+import { toBook } from "@/lib/journeys/plan";
+import type { Item } from "@/lib/journeys/types";
 import type { Provider } from "../connect-ai";
 import { Button, Spinner } from "../ui";
 import { EmailDialog, FlintDialog, WanderlogDialog } from "./connect-dialogs";
-import { JourneyDialog } from "./forms";
 import { ItemRow } from "./item-row";
 import { JourneyDetail } from "./journey-detail";
-import { countdown, dateRange, errorText, isPast, tally, type Overview } from "./shared";
+import { NewTripDialog, type DraftRequest } from "./quick-start";
+import { countdown, dateRange, deadline, errorText, isPast, shortDate, tally, time12, travellers, type Overview, type PlanTrip } from "./shared";
+import { readLocation } from "./tabs";
 
 // Trips: every trip, past and upcoming, built mostly from confirmations that
 // arrive by forwarding or through Flint. Plan shortlists with fare alerts sit
@@ -19,7 +21,9 @@ type DialogName = "new" | "email" | "flint" | "wanderlog" | null;
 export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watching }: { provider: Provider | null; onConnectAi: () => void; pairFlint: boolean; onPairShown: () => void; watching: ReactNode }) {
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // A reload with ?trip=<id> in the address lands back on that trip.
+  const [openId, setOpenId] = useState<string | null>(() => readLocation().trip);
+  const [autoDraft, setAutoDraft] = useState<{ id: string; draft: DraftRequest } | null>(null);
   // Arriving from Flint's pairing link opens straight to the Connect Flint steps.
   const [dialog, setDialog] = useState<DialogName>(pairFlint ? "flint" : null);
   const [arrivedFromFlint] = useState(pairFlint);
@@ -86,16 +90,17 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
     return () => clearTimeout(t);
   }, [provider, waiting.length, readWaiting]);
 
-  const updateJourney = (id: string, update: (j: JourneyWithItems) => JourneyWithItems) =>
-    setData((d) => (d ? { ...d, journeys: d.journeys.map((x) => (x.id === id ? update(x) : x)) } : d));
+  const updateJourney = useCallback((id: string, update: (j: PlanTrip) => PlanTrip) => setData((d) => (d ? { ...d, journeys: d.journeys.map((x) => (x.id === id ? update(x) : x)) } : d)), []);
   const opened = data?.journeys.find((j) => j.id === openId) ?? null;
 
   if (opened)
     return (
       <JourneyDetail
+        key={opened.id}
         journey={opened}
         provider={provider}
         onConnectAi={onConnectAi}
+        autoDraft={autoDraft?.id === opened.id ? autoDraft.draft : null}
         onBack={() => setOpenId(null)}
         onChanged={(update) => updateJourney(opened.id, update)}
         onDeleted={() => {
@@ -132,11 +137,11 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[clamp(32px,5vw,48px)] tracking-[-0.02em]">Trips</h1>
-          <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-body">Every trip in one place, day by day. Forward a confirmation or connect Flint and it files itself.</p>
+          <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-body">Plan any trip day by day, with what to book, a checklist and a budget. Forward a confirmation or connect Flint and bookings file themselves.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={() => show("new")}>
-            <Plus size={14} /> New trip
+            <Plus size={14} /> Plan a trip
           </Button>
           <Button variant="ghost" onClick={() => show("email")}>
             <Mail size={14} /> Add by email
@@ -273,12 +278,15 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
         )}
       </div>
 
-      <JourneyDialog
+      <NewTripDialog
         key={`new-${dialogKey}`}
         open={dialog === "new"}
         onClose={() => setDialog(null)}
-        onSaved={(id) => {
+        provider={provider}
+        onConnectAi={onConnectAi}
+        onCreated={(id, draft) => {
           setDialog(null);
+          if (draft) setAutoDraft({ id, draft });
           load().then(() => setOpenId(id));
         }}
       />
@@ -298,22 +306,37 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
   );
 }
 
-function JourneyCard({ journey, onOpen }: { journey: JourneyWithItems; onOpen: () => void }) {
+function JourneyCard({ journey, onOpen }: { journey: PlanTrip; onOpen: () => void }) {
   const when = countdown(journey);
   const next = journey.items.find((i) => (i.status === "booked" || i.status === "planned") && i.startDate >= new Date().toLocaleDateString("en-CA"));
+  const open = toBook(journey.items);
+  const due = deadline(open[0]?.details.bookBy);
   return (
     <li>
-      <button type="button" onClick={onOpen} className="flex h-full w-full cursor-pointer flex-col rounded-lg border border-hairline-strong bg-card p-5 text-left hover:border-hairline-hover">
+      <button type="button" onClick={onOpen} className="flex h-full w-full cursor-pointer flex-col rounded-xl border border-hairline-strong bg-card p-5 text-left transition-colors duration-150 hover:border-hairline-hover">
         <div className="flex w-full items-baseline justify-between gap-3">
           <h3 className="min-w-0 truncate text-[17px] font-medium text-ink">{journey.title}</h3>
           {when && <span className="shrink-0 text-[12px] text-accent">{when}</span>}
         </div>
-        <p className="mt-1 text-[13px] text-mute">{dateRange(journey.startDate, journey.endDate)}</p>
+        <p className="tnum mt-1 flex flex-wrap items-center gap-x-3 text-[13px] text-mute">
+          <span>{dateRange(journey.startDate, journey.endDate)}</span>
+          {journey.travelers && (
+            <span className="inline-flex items-center gap-1">
+              <Users size={12} aria-hidden /> {travellers(journey.travelers)}
+            </span>
+          )}
+        </p>
         <p className="mt-3 text-[13px] text-body">{tally(journey.items)}</p>
+        {open.length > 0 && (
+          <p className={`mt-1 inline-flex items-center gap-1.5 text-[12px] ${due?.tone === "danger" ? "text-danger" : due?.tone === "warn" ? "text-warn" : "text-mute"}`}>
+            <CalendarClock size={12} aria-hidden />
+            {open.length} to book{open[0].details.bookBy ? ` · next by ${shortDate(open[0].details.bookBy)}` : ""}
+          </p>
+        )}
         {next && (
           <p className="mt-1 truncate text-[12px] text-ash">
             Next: {next.title}
-            {next.startTime ? ` at ${next.startTime}` : ""}
+            {next.startTime ? ` at ${time12(next.startTime)}` : ""}
           </p>
         )}
       </button>

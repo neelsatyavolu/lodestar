@@ -37,7 +37,7 @@ export function AddPlace({ journeyId, date, near, onAdded }: { journeyId: string
 
   return (
     <div className="mt-2">
-      <PlaceSearch near={near} label={`Add a place on ${date}`} placeholder="Add a place" onNote={addNote} onPick={addPlace} />
+      <PlaceSearch near={near} label={`Add a place on ${date}`} placeholder="Search for a place, or type a note" autoFocus onNote={addNote} onPick={addPlace} />
     </div>
   );
 }

@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { api, post } from "@/lib/client";
-import type { Journey, Kind } from "@/lib/journeys/types";
+import type { Journey, Kind, TripType } from "@/lib/journeys/types";
 import { Dialog, Field, inputClass } from "../dialog";
 import { Button, Toggle } from "../ui";
 import { DateField, DateRangeField } from "./date-field";
+import { TravellersField, TripTypeField } from "./quick-start";
 import { errorText } from "./shared";
 
 // Small forms: start or edit a trip, add something to one.
 
-export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boolean; onClose: () => void; journey?: Journey; onSaved: (id: string) => void }) {
-  const [destination, setDestination] = useState(journey?.destination ?? "");
-  const [title, setTitle] = useState(journey?.title ?? "");
-  const [start, setStart] = useState(journey?.startDate ?? "");
-  const [end, setEnd] = useState(journey?.endDate ?? "");
+/** Edits a trip's name, place, dates, who's going and what kind of trip it is. */
+export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boolean; onClose: () => void; journey: Journey; onSaved: (id: string) => void }) {
+  const [destination, setDestination] = useState(journey.destination ?? "");
+  const [travelers, setTravelers] = useState<number | null>(journey.travelers);
+  const [type, setType] = useState<TripType | null>(journey.tripType);
+  const [title, setTitle] = useState(journey.title);
+  const [start, setStart] = useState(journey.startDate ?? "");
+  const [end, setEnd] = useState(journey.endDate ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,13 +24,11 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
     setBusy(true);
     setError(null);
     try {
-      if (journey) {
-        await api(`/api/journeys/${journey.id}`, { method: "PATCH", body: JSON.stringify({ title: title.trim() || journey.title, destination: destination.trim() || null, startDate: start || null, endDate: end || start || null }) });
-        onSaved(journey.id);
-      } else {
-        const { id } = await post<{ id: string }>("/api/journeys", { destination, startDate: start || null, endDate: end || null, ...(title.trim() ? { title: title.trim() } : {}) });
-        onSaved(id);
-      }
+      await api(`/api/journeys/${journey.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title: title.trim() || journey.title, destination: destination.trim() || null, startDate: start || null, endDate: end || start || null, travelers, tripType: type }),
+      });
+      onSaved(journey.id);
     } catch (err) {
       setError(errorText(err, "Couldn't save the trip."));
     } finally {
@@ -38,7 +40,7 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
     <Dialog
       open={open}
       onClose={onClose}
-      title={journey ? "Edit trip" : "New trip"}
+      title="Edit trip"
       footer={
         <div className="flex items-center justify-end gap-2">
           {error && <p className="mr-auto text-[13px] text-danger">{error}</p>}
@@ -46,7 +48,7 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
             Cancel
           </Button>
           <Button variant="primary" disabled={busy || !destination.trim()} onClick={save}>
-            {journey ? "Save" : "Create trip"}
+            Save
           </Button>
         </div>
       }
@@ -74,9 +76,17 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
             }}
           />
         </div>
-        <Field label="Name (optional)" hint={journey ? undefined : "Left blank, it's named after the place and month."}>
+        <Field label="Name">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={destination ? `${destination} trip` : "Name"} className={inputClass} maxLength={160} />
         </Field>
+        <div>
+          <span className="mb-1.5 block text-[12px] text-charcoal">Who&apos;s going</span>
+          <TravellersField value={travelers} onChange={setTravelers} />
+        </div>
+        <div>
+          <span className="mb-1.5 block text-[12px] text-charcoal">What kind of trip</span>
+          <TripTypeField value={type} onChange={setType} />
+        </div>
         <button type="submit" hidden />
       </form>
     </Dialog>
@@ -85,9 +95,10 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
 
 const KIND_LABEL: Record<Exclude<Kind, "note">, string> = { activity: "Something to do", dining: "Restaurant", stay: "Place to stay", flight: "Flight", transport: "Train, car or transfer" };
 
-export function AddItemDialog({ open, onClose, journey, onAdded }: { open: boolean; onClose: () => void; journey: Journey; onAdded: () => void }) {
-  const [kind, setKind] = useState<Exclude<Kind, "note">>("activity");
-  const [title, setTitle] = useState("");
+/** `preset` starts it on a kind (and a name, like "Rental car"). */
+export function AddItemDialog({ open, onClose, journey, onAdded, preset }: { open: boolean; onClose: () => void; journey: Journey; onAdded: () => void; preset?: { kind: Exclude<Kind, "note">; title?: string } }) {
+  const [kind, setKind] = useState<Exclude<Kind, "note">>(preset?.kind ?? "activity");
+  const [title, setTitle] = useState(preset?.title ?? "");
   const [date, setDate] = useState(journey.startDate ?? "");
   const [time, setTime] = useState("");
   const [endDate, setEndDate] = useState("");
