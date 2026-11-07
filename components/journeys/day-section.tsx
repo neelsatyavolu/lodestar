@@ -86,6 +86,7 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
       <Collapsible
         open={open}
         onToggle={() => (setOpen(!open), onFocusDay())}
+        menuLabel={`Actions for ${longDay(date)}`}
         title={
           <span className="flex items-center gap-2.5">
             <span className="size-2.5 shrink-0 rounded-full" style={{ background: color.fill }} aria-hidden />

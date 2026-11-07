@@ -8,6 +8,7 @@ import { DateField } from "./date-field";
 import { photoUrl, usePlace } from "./place-cache";
 import { PlaceSearch } from "./place-search";
 import { errorText, time12 } from "./shared";
+import { askConfirm } from "../confirm";
 
 // Everything about one stop: Google's view of the place (photo, rating, price,
 // hours, phone, site) above, and the trip's own facts (when, confirmation,
@@ -191,7 +192,7 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
   };
 
   const remove = async () => {
-    if (!suggested && !window.confirm(`Remove ${item.title} from the trip?`)) return;
+    if (!suggested && !(await askConfirm(`Remove ${item.title} from the trip?`, "Remove"))) return;
     try {
       await api(`/api/journeys/items/${item.id}`, { method: "DELETE" });
       onRemoved();

@@ -5,6 +5,7 @@ import type { Item, Kind } from "@/lib/journeys/types";
 import { Button, Pill } from "../ui";
 import type { Pin } from "./pins";
 import { errorText } from "./shared";
+import { askConfirm } from "../confirm";
 
 // One flight, stay, reservation or plan. Suggestions are drawn dashed with
 // Keep and Dismiss so they never read as bookings.
@@ -46,7 +47,7 @@ export function ItemRow({ item, pin, onChanged, onRemoved, onOpen, selected = fa
   };
 
   const remove = async () => {
-    if (!suggested && !window.confirm(`Remove ${item.title}?`)) return;
+    if (!suggested && !(await askConfirm(`Remove ${item.title}?`, "Remove"))) return;
     setBusy(true);
     try {
       await api(`/api/journeys/items/${item.id}`, { method: "DELETE" });
@@ -113,7 +114,7 @@ export function ItemRow({ item, pin, onChanged, onRemoved, onOpen, selected = fa
         </div>
       </div>
       {!suggested && (
-        <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-start gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-start gap-1">
           {!cancelled && item.status === "booked" && (
             <button type="button" disabled={busy} onClick={() => patch({ status: "cancelled" })} title="Mark cancelled" aria-label={`Mark ${item.title} cancelled`} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
               <X size={14} />

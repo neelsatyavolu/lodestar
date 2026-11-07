@@ -17,10 +17,11 @@ import { PlacePanel } from "./place-panel";
 import type { DraftRequest } from "./quick-start";
 import { ShareDialog } from "./share-dialog";
 import { daysOf, errorText, fullTrip, today, type PlanTrip } from "./shared";
-import { readLocation, TabBar, writeLocation, type Tab } from "./tabs";
+import { readLocation, TabBar, TABS, writeLocation, type Tab } from "./tabs";
 import { ToBookTab } from "./to-book-tab";
 import { TripCover } from "./trip-cover";
 import { TripMap } from "./trip-map";
+import { askConfirm } from "../confirm";
 
 // One trip: a header with the destination's photo, tabs for each part of the
 // plan, and on wide screens a map on the right that stays in view. Opening a
@@ -53,7 +54,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   const [dialog, setDialog] = useState<"edit" | "add" | "share" | null>(null);
   const [preset, setPreset] = useState<AddPreset | undefined>(undefined);
   const [formKey, setFormKey] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => readLocation().item);
   const days = daysOf(trip);
   const [activeDay, setActiveDay] = useState<string | null>(() => days.find((d) => d >= today()) ?? days[0] ?? null);
   const [mobileMap, setMobileMap] = useState(false);
@@ -77,7 +78,19 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
     };
   }, []);
 
-  useEffect(() => writeLocation(tripId, tab), [tripId, tab]);
+  // An item id in the address only counts once the trip has loaded and holds it.
+  const shownItem = selected?.id ?? (trip.items.length ? null : selectedId);
+  useEffect(() => writeLocation(tripId, tab, shownItem), [tripId, tab, shownItem]);
+
+  // The window title says where you are: what an agent reading tabs or screenshots checks first.
+  const tabLabel = TABS.find((t) => t.id === tab)?.label;
+  useEffect(() => {
+    const before = document.title;
+    document.title = [selected?.title, `${trip.title} · ${tabLabel}`, "Lodestar"].filter(Boolean).join(" · ");
+    return () => {
+      document.title = before;
+    };
+  }, [trip.title, tabLabel, selected?.title]);
 
   const reload = useCallback(async () => {
     const { journey: next } = await api<{ journey: TripDetail }>(`/api/journeys/${tripId}`);
@@ -124,7 +137,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   };
 
   const del = async () => {
-    if (!window.confirm(`Delete ${trip.title} and everything in it?`)) return;
+    if (!(await askConfirm(`Delete ${trip.title}?`, "Delete trip", "Everything in it goes too: the itinerary, checklist, notes and budget."))) return;
     try {
       await api(`/api/journeys/${trip.id}`, { method: "DELETE" });
       writeLocation(null, null);

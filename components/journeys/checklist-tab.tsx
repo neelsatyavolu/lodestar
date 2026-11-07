@@ -109,7 +109,7 @@ export function ChecklistTab({ trip, gen, onTasks }: { trip: TripDetail; gen: Ge
                       <span className={`min-w-0 flex-1 text-[14px] transition-colors duration-150 ${t.done ? "text-ash line-through" : "text-ink"}`}>{t.title}</span>
                       {t.due && <span className={`tnum shrink-0 text-[12px] ${due?.tone === "danger" ? "text-danger" : due?.tone === "warn" ? "text-warn" : "text-ash"}`}>by {shortDate(t.due)}</span>}
                     </label>
-                    <button type="button" onClick={() => remove(t)} aria-label={`Remove ${t.title}`} className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100">
+                    <button type="button" onClick={() => remove(t)} aria-label={`Remove ${t.title}`} className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
                       <Trash2 size={14} />
                     </button>
                   </li>

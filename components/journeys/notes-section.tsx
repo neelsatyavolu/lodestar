@@ -6,6 +6,7 @@ import { inputClass } from "../dialog";
 import { Button } from "../ui";
 import { AiButton, AiStatus, EmptyState, type Generator } from "./ai-draft";
 import { errorText } from "./shared";
+import { askConfirm } from "../confirm";
 
 // Titled notes in the Overview: "How the week works", "Dietary needs",
 // "Getting around". Written by hand, by the AI or by an agent.
@@ -75,7 +76,7 @@ export function NotesSection({ journeyId, notes, gen, onNotes, editing, setEditi
     setEditing(null);
   };
   const remove = async (n: Note) => {
-    if (!window.confirm(`Delete the note “${n.title}”?`)) return;
+    if (!(await askConfirm(`Delete the note “${n.title}”?`, "Delete note"))) return;
     try {
       await api(`/api/journeys/notes/${n.id}`, { method: "DELETE" });
       onNotes((ns) => ns.filter((x) => x.id !== n.id));
@@ -103,7 +104,7 @@ export function NotesSection({ journeyId, notes, gen, onNotes, editing, setEditi
           <article key={n.id} className="group rounded-xl border border-hairline-strong bg-card px-5 py-4">
             <div className="flex items-start justify-between gap-3">
               <h4 className="text-[15px] font-medium text-ink">{n.title}</h4>
-              <div className="-mr-2 -mt-1.5 flex shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              <div className="-mr-2 -mt-1.5 flex shrink-0">
                 <button type="button" onClick={() => setEditing(n.id)} aria-label={`Edit ${n.title}`} className="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
                   <Pencil size={14} />
                 </button>
