@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@modelcontextprotocol/server':
+        specifier: ^2
+        version: 2.4.0
       '@neelsatyavolu/shared-ai-auth':
         specifier: github:neelsatyavolu/shared-ai-auth#bce03a005bee
         version: https://codeload.github.com/neelsatyavolu/shared-ai-auth/tar.gz/bce03a005bee
@@ -23,6 +26,9 @@ importers:
       maplibre-gl:
         specifier: ^6.16.0
         version: 6.16.0
+      mcp-handler:
+        specifier: ^2.3.1
+        version: 2.3.1(@modelcontextprotocol/server@2.4.0)(next@16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
       next:
         specifier: 16.4.2
         version: 16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -416,6 +422,14 @@ packages:
 
   '@maplibre/vt-pbf@4.3.3':
     resolution: {integrity: sha512-dEe5XUd64RQbxNxy2OzIkJnwNDWjVmSXjCd0A7zLirm7QJ/WWbmtDFIkfsiM4yt1cplqzG6oSivRYeWx1SM1yg==}
+
+  '@modelcontextprotocol/core@2.4.0':
+    resolution: {integrity: sha512-z8QBKqdfXLPzkLQuG4xp8hrVEMm1PZ1IgxMN2sMbJiFiAKOWXnAzogXn2W4aqIBlP1ea6U5yiqVquvUNM1Cj6Q==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/server@2.4.0':
+    resolution: {integrity: sha512-rgR9yxSaAJ+bcsi/XroT/S2AfPiIWloXAnrdfYSCms9ivVju0ishu/wW0J21Ho6+ZOR1r7RyeRbjiRuF87ix5Q==}
+    engines: {node: '>=20'}
 
   '@neelsatyavolu/shared-ai-auth@https://codeload.github.com/neelsatyavolu/shared-ai-auth/tar.gz/bce03a005bee':
     resolution: {tarball: https://codeload.github.com/neelsatyavolu/shared-ai-auth/tar.gz/bce03a005bee}
@@ -1082,6 +1096,10 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
+  chalk@5.6.2:
+    resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
 
@@ -1091,6 +1109,10 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  commander@11.1.0:
+    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
+    engines: {node: '>=16'}
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -1914,6 +1936,17 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  mcp-handler@2.3.1:
+    resolution: {integrity: sha512-TkqWhx/r6W23uNcnxMwYfJ+i+pSNOMeN0eJE4j1B0CnXPC83R61YEsjFhCv/OOW6COe8u8h/uPDcdQCw5KiaOQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+    peerDependencies:
+      '@modelcontextprotocol/server': ^2.0.0
+      next: '>=13.0.0'
+    peerDependenciesMeta:
+      next:
+        optional: true
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -2956,6 +2989,15 @@ snapshots:
       '@types/geojson': 7946.0.16
       pbf: 5.1.2
 
+  '@modelcontextprotocol/core@2.4.0':
+    dependencies:
+      zod: 4.6.7
+
+  '@modelcontextprotocol/server@2.4.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.4.0
+      zod: 4.6.7
+
   '@neelsatyavolu/shared-ai-auth@https://codeload.github.com/neelsatyavolu/shared-ai-auth/tar.gz/bce03a005bee': {}
 
   '@next/env@16.4.2': {}
@@ -3558,6 +3600,8 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
+  chalk@5.6.2: {}
+
   client-only@0.0.1: {}
 
   color-convert@2.0.1:
@@ -3565,6 +3609,8 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  commander@11.1.0: {}
 
   concat-map@0.0.1: {}
 
@@ -4508,6 +4554,14 @@ snapshots:
       tinyqueue: 3.0.0
 
   math-intrinsics@1.1.0: {}
+
+  mcp-handler@2.3.1(@modelcontextprotocol/server@2.4.0)(next@16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)):
+    dependencies:
+      '@modelcontextprotocol/server': 2.4.0
+      chalk: 5.6.2
+      commander: 11.1.0
+    optionalDependencies:
+      next: 16.4.2(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
 
   merge-stream@2.0.0: {}
 
