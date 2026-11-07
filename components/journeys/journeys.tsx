@@ -24,6 +24,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
   // A reload with ?trip=<id> in the address lands back on that trip.
   const [openId, setOpenId] = useState<string | null>(() => readLocation().trip);
   const [autoDraft, setAutoDraft] = useState<{ id: string; draft: DraftRequest } | null>(null);
+  const clearAutoDraft = useCallback(() => setAutoDraft(null), []);
   // Arriving from Flint's pairing link opens straight to the Connect Flint steps.
   const [dialog, setDialog] = useState<DialogName>(pairFlint ? "flint" : null);
   const [arrivedFromFlint] = useState(pairFlint);
@@ -101,6 +102,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
         provider={provider}
         onConnectAi={onConnectAi}
         autoDraft={autoDraft?.id === opened.id ? autoDraft.draft : null}
+        onAutoDraftStarted={clearAutoDraft}
         onBack={() => setOpenId(null)}
         onChanged={(update) => updateJourney(opened.id, update)}
         onDeleted={() => {

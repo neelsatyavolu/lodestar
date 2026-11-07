@@ -36,12 +36,14 @@ type Props = {
   onDeleted: () => void;
   /** Set right after the quick start asked for a draft: runs once the trip has loaded. */
   autoDraft: DraftRequest | null;
+  /** Called when that draft starts, so the request is used up. */
+  onAutoDraftStarted: () => void;
 };
 
 const WIDE = "(min-width: 1024px)";
 const LOCATE_ROUNDS = 6;
 
-export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChanged, onDeleted, autoDraft }: Props) {
+export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChanged, onDeleted, autoDraft, onAutoDraftStarted }: Props) {
   const trip = fullTrip(journey);
   const tripId = journey.id;
   const loaded = journey.tasks !== undefined;
@@ -62,7 +64,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   const change = useCallback((update: (t: TripDetail) => TripDetail) => onChanged((j) => update(fullTrip(j))), [onChanged]);
   const setTrip = useCallback((t: TripDetail) => onChanged(() => t), [onChanged]);
   const gen = useGenerate(tripId, provider, onConnectAi, setTrip);
-  const draft = useDraftRun(gen, autoDraft, loaded);
+  const draft = useDraftRun(gen, autoDraft, loaded, onAutoDraftStarted);
 
   useEffect(() => {
     const mq = window.matchMedia(WIDE);

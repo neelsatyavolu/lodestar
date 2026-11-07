@@ -14,13 +14,19 @@ export type DraftState = { steps: Record<PlanPart, Step>; finished: boolean };
 
 const fresh = (): DraftState => ({ steps: Object.fromEntries(PARTS.map((p) => [p.part, "pending"])) as Record<PlanPart, Step>, finished: false });
 
-export function useDraftRun(gen: Generator, request: { wishes: string } | null, ready: boolean) {
+/**
+ * Runs the quick start's draft once. `onStart` lets the owner of the request
+ * drop it, so reopening the trip later never drafts it again.
+ */
+export function useDraftRun(gen: Generator, request: { wishes: string } | null, ready: boolean, onStart: () => void) {
   const [state, setState] = useState<DraftState | null>(null);
   const started = useRef(false);
   const genRef = useRef(gen);
+  const onStartRef = useRef(onStart);
   useEffect(() => {
     genRef.current = gen;
-  }, [gen]);
+    onStartRef.current = onStart;
+  }, [gen, onStart]);
 
   const step = useCallback(async (part: PlanPart, wishes: string) => {
     setState((s) => s && { ...s, steps: { ...s.steps, [part]: "running" } });
@@ -31,9 +37,12 @@ export function useDraftRun(gen: Generator, request: { wishes: string } | null, 
 
   useEffect(() => {
     if (!request || !ready || started.current) return;
-    started.current = true;
-    // Started from a timer so the effect itself sets no state.
+    // Started from a timer so the effect itself sets no state. Marked started
+    // inside it: a cleanup that cancels the timer (Strict Mode) leaves it unstarted.
     const t = setTimeout(async () => {
+      if (started.current) return;
+      started.current = true;
+      onStartRef.current();
       setState(fresh());
       for (const { part } of PARTS) await step(part, request.wishes);
       setState((s) => s && { ...s, finished: true });
