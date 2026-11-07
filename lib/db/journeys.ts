@@ -1,4 +1,5 @@
-import type { Details, DraftItem, Item, Journey, JourneyWithItems, Kind, Source, Status } from "../journeys/types";
+import type { Details, DraftItem, Item, Journey, JourneyWithItems, Kind, Source, Status, TripDetail, TripType } from "../journeys/types";
+import { listCosts, listNotes, listTasks } from "./plan";
 import type { Queryable, Row } from "./client";
 import { toTs } from "./time";
 
@@ -17,6 +18,9 @@ const toJourney = (r: Row): Journey => ({
   destination: (r.destination as string | null) ?? null,
   startDate: isoDate(r.start_date),
   endDate: isoDate(r.end_date),
+  travelers: r.travelers === null || r.travelers === undefined ? null : Number(r.travelers),
+  tripType: (r.trip_type as TripType | null) ?? null,
+  shareToken: (r.share_token as string | null) ?? null,
   source: r.source as Source,
   createdAt: ms(r.created_at),
 });
@@ -55,11 +59,34 @@ export async function journeyHeads(q: Queryable, userId: string): Promise<Journe
   return (await q.query("SELECT * FROM journeys WHERE user_id = $1", [userId])).map(toJourney);
 }
 
-export async function getJourney(q: Queryable, userId: string, id: string): Promise<JourneyWithItems | null> {
+/** One trip with its items, checklist, notes and budget lines. */
+export async function getJourney(q: Queryable, userId: string, id: string): Promise<TripDetail | null> {
   const [row] = await q.query("SELECT * FROM journeys WHERE id = $1 AND user_id = $2", [id, userId]);
   if (!row) return null;
-  const items = (await q.query(`SELECT * FROM journey_items WHERE journey_id = $1 AND user_id = $2 ${ITEM_ORDER}`, [id, userId])).map(toItem);
-  return { ...toJourney(row), items };
+  return detailOf(q, row);
+}
+
+async function detailOf(q: Queryable, row: Row): Promise<TripDetail> {
+  const j = toJourney(row);
+  const userId = row.user_id as string;
+  const [items, tasks, notes, costs] = await Promise.all([
+    q.query(`SELECT * FROM journey_items WHERE journey_id = $1 AND user_id = $2 ${ITEM_ORDER}`, [j.id, userId]).then((rows) => rows.map(toItem)),
+    listTasks(q, userId, j.id),
+    listNotes(q, userId, j.id),
+    listCosts(q, userId, j.id),
+  ]);
+  return { ...j, items, tasks, notes, costs };
+}
+
+/** The trip a share link opens, or null once sharing is off. */
+export async function sharedJourney(q: Queryable, token: string): Promise<TripDetail | null> {
+  const [row] = await q.query("SELECT * FROM journeys WHERE share_token = $1", [token]);
+  return row ? detailOf(q, row) : null;
+}
+
+/** Turns the share link on with a new token, or off. Returns the token, or null when off or the trip isn't theirs. */
+export async function setShareToken(q: Queryable, userId: string, id: string, token: string | null): Promise<boolean> {
+  return (await q.query("UPDATE journeys SET share_token = $3 WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId, token])).length > 0;
 }
 
 export async function countJourneys(q: Queryable, userId: string): Promise<number> {
@@ -72,25 +99,36 @@ export async function countItems(q: Queryable, userId: string): Promise<number> 
   return Number(row?.n ?? 0);
 }
 
-export type NewJourney = { id: string; title: string; destination: string | null; startDate: string | null; endDate: string | null; source: Source; externalKey?: string | null; now: number };
+export type NewJourney = {
+  id: string;
+  title: string;
+  destination: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  travelers?: number | null;
+  tripType?: TripType | null;
+  source: Source;
+  externalKey?: string | null;
+  now: number;
+};
 
 /** Creates a trip, or with an external key already imported, updates that one. Returns the trip's id. */
 export async function upsertJourney(q: Queryable, userId: string, j: NewJourney): Promise<string> {
   const [row] = await q.query<{ id: string }>(
-    `INSERT INTO journeys (id, user_id, title, destination, start_date, end_date, source, external_key, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+    `INSERT INTO journeys (id, user_id, title, destination, start_date, end_date, source, external_key, created_at, updated_at, travelers, trip_type)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, $11)
      ON CONFLICT (user_id, external_key) WHERE external_key IS NOT NULL
      DO UPDATE SET title = EXCLUDED.title, destination = EXCLUDED.destination, start_date = EXCLUDED.start_date, end_date = EXCLUDED.end_date, updated_at = EXCLUDED.updated_at
      RETURNING id`,
-    [j.id, userId, j.title, j.destination, j.startDate, j.endDate, j.source, j.externalKey ?? null, toTs(j.now)],
+    [j.id, userId, j.title, j.destination, j.startDate, j.endDate, j.source, j.externalKey ?? null, toTs(j.now), j.travelers ?? null, j.tripType ?? null],
   );
   return row.id;
 }
 
-export type JourneyPatch = Partial<Pick<Journey, "title" | "destination" | "startDate" | "endDate">>;
+export type JourneyPatch = Partial<Pick<Journey, "title" | "destination" | "startDate" | "endDate" | "travelers" | "tripType">>;
 
 export async function updateJourney(q: Queryable, userId: string, id: string, patch: JourneyPatch, now: number): Promise<boolean> {
-  const cols: Record<keyof JourneyPatch, string> = { title: "title", destination: "destination", startDate: "start_date", endDate: "end_date" };
+  const cols: Record<keyof JourneyPatch, string> = { title: "title", destination: "destination", startDate: "start_date", endDate: "end_date", travelers: "travelers", tripType: "trip_type" };
   const keys = (Object.keys(patch) as (keyof JourneyPatch)[]).filter((k) => patch[k] !== undefined);
   const sets = keys.map((k, i) => `${cols[k]} = $${i + 3}`);
   const rows = await q.query(`UPDATE journeys SET ${[...sets, `updated_at = $${keys.length + 3}`].join(", ")} WHERE id = $1 AND user_id = $2 RETURNING id`, [id, userId, ...keys.map((k) => patch[k]), toTs(now)]);
@@ -145,10 +183,14 @@ export async function upsertItem(q: Queryable, userId: string, n: NewItem): Prom
 export type ItemPatch = Partial<Pick<Item, "status" | "journeyId" | "title" | "startDate" | "startTime" | "endDate" | "endTime" | "place" | "confirmation">> & {
   note?: string | null;
   location?: { placeId: string; lat: number; lng: number; address: string | null };
+  facts?: ItemFacts;
 };
 
+/** Booking facts an edit may set (a value) or clear (null). */
+export type ItemFacts = Partial<{ reserve: boolean | null; bookBy: string | null; estimate: number | null; price: number | null; currency: string | null; url: string | null; phone: string | null; address: string | null }>;
+
 export async function updateItem(q: Queryable, userId: string, id: string, patch: ItemPatch, now: number): Promise<Item | null> {
-  const cols: Record<Exclude<keyof ItemPatch, "note" | "location">, string> = {
+  const cols: Record<Exclude<keyof ItemPatch, "note" | "location" | "facts">, string> = {
     status: "status", journeyId: "journey_id", title: "title", startDate: "start_date", startTime: "start_time", endDate: "end_date", endTime: "end_time", place: "place", confirmation: "confirmation",
   };
   const keys = (Object.keys(cols) as (keyof typeof cols)[]).filter((k) => patch[k] !== undefined);
@@ -160,6 +202,19 @@ export async function updateItem(q: Queryable, userId: string, id: string, patch
   else if (patch.note !== undefined) {
     params.push(patch.note);
     details = `(${details} || jsonb_build_object('note', $${params.length}::text))`;
+  }
+  if (patch.facts) {
+    const entries = Object.entries(patch.facts).filter(([, v]) => v !== undefined);
+    const cleared = entries.filter(([, v]) => v === null).map(([k]) => k);
+    const set = Object.fromEntries(entries.filter(([, v]) => v !== null));
+    if (cleared.length) {
+      params.push(cleared);
+      details = `(${details} - $${params.length}::text[])`;
+    }
+    if (Object.keys(set).length) {
+      params.push(JSON.stringify(set));
+      details = `(${details} || $${params.length}::jsonb)`;
+    }
   }
   if (patch.location) {
     const { address, ...pin } = patch.location;
