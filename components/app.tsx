@@ -9,8 +9,9 @@ import { ALLIANCE_LABEL, DEFAULT_PREFERENCES, type Preferences } from "@/lib/pre
 import type { SearchResult } from "@/lib/search";
 import type { DayPrice, Itinerary } from "@/lib/types";
 import type { Verified } from "@/lib/verify";
-import { SlidersHorizontal } from "lucide-react";
+import { Bot, SlidersHorizontal } from "lucide-react";
 import { AccountDialog, type Account } from "./account-dialog";
+import { AgentAccess } from "./agent-access";
 import { AiCanvas } from "./ai-canvas";
 import { ConnectAI, PROVIDER_NAME, type Provider } from "./connect-ai";
 import { GitHubLink, GitHubMark, REPO_URL } from "./github-link";
@@ -145,6 +146,9 @@ export function App() {
   const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [accountDialog, setAccountDialog] = useState<{ open: boolean; mode: "signin" | "register"; key: number }>({ open: false, mode: "signin", key: 0 });
   const [prefsDialog, setPrefsDialog] = useState({ open: false, key: 0 });
+  const [agentsOpen, setAgentsOpen] = useState(false);
+  // Where to go after signing in, when a page on this site (like an agent's consent screen) sent the traveller here.
+  const afterSignIn = useRef<string | null>(null);
   const [onboarding, setOnboarding] = useState({ open: false, key: 0 });
   const [touring, setTouring] = useState(false);
   // Set when onboarding hands off to the AI sign-in, so the tour starts once that closes.
@@ -247,6 +251,13 @@ export function App() {
             setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }));
           }
         }
+        const query = new URLSearchParams(window.location.search);
+        if (query.has("agents") && res.user) setAgentsOpen(true);
+        if (query.has("signin") && !res.user) {
+          const next = query.get("next");
+          afterSignIn.current = next && /^\/(?![/\\])/.test(next) ? next : null;
+          setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }));
+        }
         if (res.preferences) adoptPreferences(res.preferences, !fromUrl);
       })
       .catch(() => {})
@@ -279,6 +290,10 @@ export function App() {
     setAccount(a);
     adoptPreferences(p, true);
     refreshAi();
+    if (afterSignIn.current) {
+      window.location.assign(afterSignIn.current);
+      return;
+    }
     if (pairAfterSignIn.current) {
       pairAfterSignIn.current = false;
       setMode("trips");
@@ -372,6 +387,11 @@ export function App() {
             >
               <SlidersHorizontal size={16} />
             </button>
+            {account && (
+              <button type="button" onClick={() => setAgentsOpen(true)} aria-label="Agents" title="Agents: connect Claude, ChatGPT or Codex" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:hidden">
+                <Bot size={16} />
+              </button>
+            )}
             {account ? (
               <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} data-tour="account" className="cursor-pointer max-sm:hidden">
                 <Pill>{account.email.split("@")[0]}</Pill>
@@ -552,6 +572,7 @@ export function App() {
         </div>
       </footer>
 
+      <AgentAccess open={agentsOpen} onClose={() => setAgentsOpen(false)} />
       <AccountDialog
         key={`account-${accountDialog.key}`}
         open={accountDialog.open}

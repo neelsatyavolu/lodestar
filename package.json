@@ -16,11 +16,13 @@
     "smoke": "vitest run --config vitest.smoke.config.mts"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "^2",
     "@neelsatyavolu/shared-ai-auth": "github:neelsatyavolu/shared-ai-auth#bce03a005bee",
     "@vercel/functions": "^3.10.5",
     "geist": "^1.9.0",
     "lucide-react": "^1.66.0",
     "maplibre-gl": "^6.16.0",
+    "mcp-handler": "^2.3.1",
     "next": "16.4.2",
     "pg": "^8.23.1",
     "react": "19.3.0",
