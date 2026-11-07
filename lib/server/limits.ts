@@ -28,6 +28,12 @@ export const LIMITS = {
   // Search-as-you-type and the details panel; Google bills per call.
   places: [300, 15 * MINUTE],
   placesDaily: [3000, 24 * 60 * MINUTE],
+  // Agent access: tool calls per connected app or token, and the OAuth endpoints per address.
+  mcp: [600, 15 * MINUTE],
+  oauthRegister: [10, 60 * MINUTE],
+  oauthAuthorize: [30, 15 * MINUTE],
+  oauthToken: [60, 15 * MINUTE],
+  agentTokens: [20, 60 * MINUTE],
 } as const;
 
 /** False once `key` has used up the named limit. */

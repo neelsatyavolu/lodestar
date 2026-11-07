@@ -5,7 +5,7 @@ import { z } from "zod";
 
 export const KINDS = ["flight", "stay", "dining", "activity", "transport", "note"] as const;
 export const STATUSES = ["booked", "planned", "suggested", "cancelled"] as const;
-export const SOURCES = ["manual", "email", "flint", "wanderlog", "ai"] as const;
+export const SOURCES = ["manual", "email", "flint", "wanderlog", "ai", "agent"] as const;
 
 export type Kind = (typeof KINDS)[number];
 export type Status = (typeof STATUSES)[number];
@@ -32,7 +32,12 @@ export const DetailsSchema = z
     cuisine: z.string().max(60).optional(),
     priceLevel: z.string().max(4).optional(),
     why: z.string().max(400).optional(),
+    /** Needs booking: a planned item with this set is on the To book list. */
     reserve: z.boolean().optional(),
+    /** Book before this day. */
+    bookBy: IsoDate.optional(),
+    /** Expected cost while there is no price yet. */
+    estimate: z.number().nonnegative().max(1_000_000).optional(),
     meal: z.enum(["breakfast", "lunch", "dinner"]).optional(),
     rating: z.number().min(0).max(5).optional(),
     note: z.string().max(2000).optional(),
@@ -67,14 +72,34 @@ export type DraftItem = z.infer<typeof DraftItemSchema>;
 
 export type Item = DraftItem & { id: string; journeyId: string | null; source: Source; dedupeKey: string | null; updatedAt: number };
 
+export const TRIP_TYPES = ["city", "beach", "road", "family", "adventure", "ski", "business", "other"] as const;
+export type TripType = (typeof TRIP_TYPES)[number];
+
 export type Journey = {
   id: string;
   title: string;
   destination: string | null;
   startDate: string | null;
   endDate: string | null;
+  travelers: number | null;
+  tripType: TripType | null;
+  /** The secret share link's token, when sharing is on. */
+  shareToken: string | null;
   source: Source;
   createdAt: number;
 };
 
 export type JourneyWithItems = Journey & { items: Item[] };
+
+export const COST_CATEGORIES = ["flights", "stays", "transport", "dining", "activities", "other"] as const;
+export type CostCategory = (typeof COST_CATEGORIES)[number];
+
+/** A checklist entry: "Renew passport", "Download offline maps". */
+export type Task = { id: string; journeyId: string; title: string; done: boolean; due: string | null; section: string; position: number; source: Source };
+/** A titled note: "How the week works", "Dietary needs". */
+export type Note = { id: string; journeyId: string; title: string; body: string; position: number; source: Source };
+/** A budget line that isn't an item: gas, resort fees, tips. */
+export type Cost = { id: string; journeyId: string; label: string; amount: number; currency: string; category: CostCategory; paid: boolean; source: Source };
+
+/** One trip with everything in it: what the trip page and agents work from. */
+export type TripDetail = JourneyWithItems & { tasks: Task[]; notes: Note[]; costs: Cost[] };

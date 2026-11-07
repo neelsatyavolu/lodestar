@@ -179,7 +179,7 @@ describe("free drive times", () => {
 
 describe("map pins", () => {
   const base = (over: Partial<Item>): Item => ({ id: "i", journeyId: "j", kind: "activity", status: "planned", title: "Desert Museum", startDate: "2026-11-22", startTime: null, endDate: null, endTime: null, place: "Tucson", confirmation: null, details: {}, source: "manual", dedupeKey: null, updatedAt: 0, ...over });
-  const trip = (items: Item[]): JourneyWithItems => ({ id: "j", title: "Tucson", destination: "Tucson", startDate: "2026-11-21", endDate: "2026-11-26", source: "manual", createdAt: 0, items });
+  const trip = (items: Item[]): JourneyWithItems => ({ id: "j", title: "Tucson", destination: "Tucson", startDate: "2026-11-21", endDate: "2026-11-26", travelers: null, tripType: null, shareToken: null, source: "manual", createdAt: 0, items });
 
   it("pins flights to the arrival airport and looks everything else up by name, address and city", () => {
     const items = [

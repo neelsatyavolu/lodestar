@@ -96,6 +96,48 @@ const STATEMENTS = [
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS journey_items_dedupe ON journey_items (user_id, dedupe_key) WHERE dedupe_key IS NOT NULL`,
   `CREATE INDEX IF NOT EXISTS journey_items_journey ON journey_items (journey_id, start_date)`,
+  // The trip planner: who's going, what kind of trip, and the secret share link.
+  `ALTER TABLE journeys ADD COLUMN IF NOT EXISTS travelers int`,
+  `ALTER TABLE journeys ADD COLUMN IF NOT EXISTS trip_type text`,
+  `ALTER TABLE journeys ADD COLUMN IF NOT EXISTS share_token text UNIQUE`,
+  // A trip's checklist, notes and budget lines that aren't bookings.
+  `CREATE TABLE IF NOT EXISTS journey_tasks (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    journey_id uuid NOT NULL REFERENCES journeys (id) ON DELETE CASCADE,
+    title text NOT NULL,
+    done boolean NOT NULL DEFAULT false,
+    due date,
+    section text NOT NULL,
+    position int NOT NULL,
+    source text NOT NULL,
+    created_at timestamptz NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS journey_tasks_journey ON journey_tasks (journey_id, position)`,
+  `CREATE TABLE IF NOT EXISTS journey_notes (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    journey_id uuid NOT NULL REFERENCES journeys (id) ON DELETE CASCADE,
+    title text NOT NULL,
+    body text NOT NULL,
+    position int NOT NULL,
+    source text NOT NULL,
+    created_at timestamptz NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS journey_notes_journey ON journey_notes (journey_id, position)`,
+  `CREATE TABLE IF NOT EXISTS journey_costs (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    journey_id uuid NOT NULL REFERENCES journeys (id) ON DELETE CASCADE,
+    label text NOT NULL,
+    amount numeric(12, 2) NOT NULL,
+    currency text NOT NULL,
+    category text NOT NULL,
+    paid boolean NOT NULL DEFAULT false,
+    source text NOT NULL,
+    created_at timestamptz NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS journey_costs_journey ON journey_costs (journey_id, created_at)`,
   // Mail that arrived by forwarding or through Flint. The body is kept only until it has been read.
   `CREATE TABLE IF NOT EXISTS inbound_mail (
     id uuid PRIMARY KEY,
@@ -130,6 +172,48 @@ const STATEMENTS = [
     created_at timestamptz NOT NULL,
     last_delivery_at timestamptz
   )`,
+  // Agent access (MCP). OAuth clients: registered (id is a uuid) or described
+  // by a metadata document at an https URL (id is that URL, cached here).
+  `CREATE TABLE IF NOT EXISTS oauth_clients (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    redirect_uris jsonb NOT NULL,
+    kind text NOT NULL,
+    created_at timestamptz NOT NULL,
+    fetched_at timestamptz
+  )`,
+  // Authorization codes waiting to be exchanged. Single use; only a hash is kept.
+  `CREATE TABLE IF NOT EXISTS oauth_codes (
+    code_hash text PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    client_id text NOT NULL,
+    redirect_uri text NOT NULL,
+    challenge text NOT NULL,
+    resource text,
+    expires_at timestamptz NOT NULL
+  )`,
+  // One row per connected app or personal token: what the account sees and revokes.
+  `CREATE TABLE IF NOT EXISTS agent_grants (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    kind text NOT NULL,
+    client_id text,
+    name text NOT NULL,
+    created_at timestamptz NOT NULL,
+    last_used_at timestamptz
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS agent_grants_client ON agent_grants (user_id, client_id) WHERE kind = 'oauth'`,
+  // Access, refresh and personal tokens under a grant. Only SHA-256 hashes are kept.
+  `CREATE TABLE IF NOT EXISTS agent_tokens (
+    token_hash text PRIMARY KEY,
+    grant_id uuid NOT NULL REFERENCES agent_grants (id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    kind text NOT NULL,
+    expires_at timestamptz,
+    used_at timestamptz,
+    created_at timestamptz NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS agent_tokens_grant ON agent_tokens (grant_id)`,
 ];
 
 export async function migrate(db: Queryable): Promise<void> {

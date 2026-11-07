@@ -7,6 +7,9 @@ import type { JourneyWithItems } from "./types";
 const trip: JourneyWithItems = {
   id: "j",
   title: "Lisbon, May 2027",
+  travelers: null,
+  tripType: null,
+  shareToken: null,
   destination: "Lisbon",
   startDate: "2027-05-01",
   endDate: "2027-05-03",

@@ -9,7 +9,7 @@ const home = item({ kind: "flight", title: "UA 838 · NRT → SFO", startDate: "
 const hotel = item({ kind: "stay", title: "Hotel Gracery", startDate: "2027-03-02", endDate: "2027-03-06", place: "Tokyo", confirmation: "88 812" });
 const dinner = item({ kind: "dining", title: "Sushi Saito", startDate: "2027-03-03", startTime: "19:30" });
 
-const journey = (over: Partial<Journey>): Journey => ({ id: "j1", title: "Tokyo", destination: "Tokyo", startDate: "2027-03-01", endDate: "2027-03-06", source: "email", createdAt: 0, ...over });
+const journey = (over: Partial<Journey>): Journey => ({ id: "j1", title: "Tokyo", destination: "Tokyo", startDate: "2027-03-01", endDate: "2027-03-06", travelers: null, tripType: null, shareToken: null, source: "email", createdAt: 0, ...over });
 
 describe("dedupe keys", () => {
   it("identifies a flight segment by number and date, not by confirmation", () => {

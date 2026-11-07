@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FaresError } from "./fares";
+import { PlanError } from "./journeys/errors";
 
 // One response envelope for every JSON route: {ok: true, data} or {ok: false, error}.
 
@@ -37,6 +38,7 @@ export async function handle(req: Request, what: string, handler: () => Promise<
 
 export function fromError(err: unknown, what: string): NextResponse {
   if (err instanceof FaresError) return fail(err.message, err.status >= 500 ? err.status : 400);
+  if (err instanceof PlanError) return fail(err.message, err.status);
   if (err instanceof z.ZodError) return fail(err.issues[0]?.message ?? "Invalid request.", 400);
   console.error(`[api] ${what} failed:`, err instanceof Error ? err.message : err);
   return fail(`The ${what} failed. Try again.`, 500);
