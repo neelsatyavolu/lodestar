@@ -4,7 +4,7 @@ import { getJourney } from "../db/journeys";
 import { migrate } from "../db/schema";
 import { insertUser } from "../db/users";
 import { addItems, createTrip } from "../server/plan-ops";
-import { ingestMail, type IncomingMail } from "./ingest";
+import { fileItems, ingestMail, type IncomingMail } from "./ingest";
 import { DraftItemSchema } from "./types";
 
 let db: Db;
@@ -71,5 +71,25 @@ describe("a forwarded restaurant confirmation", () => {
     await ingestMail(db, ada, resy("m1"), NOW);
     const titles = (await getJourney(db, ada, tripId))!.items.map((i) => `${i.title}:${i.status}`).sort();
     expect(titles).toEqual(["5 Points:planned", "Penca:booked"]);
+  });
+
+  it("gives each booking its own stop when one email holds two tables at the same place", async () => {
+    const { tripId, stopId } = await tucsonWithPenca();
+    const table = (time: string, confirmation: string) => DraftItemSchema.parse({ kind: "dining", title: "Penca", startDate: "2026-11-21", startTime: time, confirmation });
+    await fileItems(db, ada, [table("12:00", "AAA1"), table("19:00", "BBB2")], "email", NOW);
+    const dining = (await getJourney(db, ada, tripId))!.items.filter((i) => i.kind === "dining");
+    expect(dining.map((i) => i.confirmation).sort()).toEqual(["AAA1", "BBB2"]);
+    expect(dining.find((i) => i.id === stopId)?.status).toBe("booked");
+  });
+
+  it("keeps the confirmation key when a later update leaves the number out", async () => {
+    const { tripId, stopId } = await tucsonWithPenca();
+    const table = (time: string, confirmation: string | null, startDate = "2026-11-21") => DraftItemSchema.parse({ kind: "dining", title: "Penca", startDate, startTime: time, confirmation });
+    await fileItems(db, ada, [table("19:00", "AAA1")], "email", NOW);
+    await fileItems(db, ada, [table("20:00", null)], "email", NOW);
+    // Moved to the next night, with the number again: still the same stop.
+    await fileItems(db, ada, [table("19:00", "AAA1", "2026-11-22")], "email", NOW);
+    const dining = (await getJourney(db, ada, tripId))!.items.filter((i) => i.kind === "dining");
+    expect(dining.map((i) => [i.id, i.startDate, i.confirmation])).toEqual([[stopId, "2026-11-22", "AAA1"]]);
   });
 });

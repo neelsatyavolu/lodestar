@@ -199,7 +199,9 @@ export async function bookPlanned(q: Queryable, userId: string, id: string, dedu
   const [row] = await q.query<{ id: string }>(
     `UPDATE journey_items SET
        status = $3::text, start_date = $4, start_time = COALESCE($5, start_time), end_date = COALESCE($6, end_date), end_time = COALESCE($7, end_time),
-       place = COALESCE($8, place), confirmation = COALESCE($9, confirmation), dedupe_key = $10,
+       place = COALESCE($8, place), confirmation = COALESCE($9, confirmation),
+       -- An update without the confirmation number keeps the key that has it.
+       dedupe_key = CASE WHEN $9::text IS NULL AND confirmation IS NOT NULL AND dedupe_key IS NOT NULL THEN dedupe_key ELSE $10 END,
        details = CASE WHEN $3::text = 'booked' THEN details - 'reserve' - 'bookBy' - 'estimate' ELSE details END || $11::jsonb,
        updated_at = $12
      WHERE id = $1 AND user_id = $2 RETURNING id`,

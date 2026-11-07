@@ -101,6 +101,10 @@ describe("restaurant confirmations", () => {
     expect(restaurantReservation(RESY.replace("Sun, Nov. 22", "Sat, Jan. 9"), Date.UTC(2026, 11, 20))?.startDate).toBe("2027-01-09");
   });
 
+  it("refuses a day that doesn't exist", () => {
+    expect(restaurantReservation(OPENTABLE.replace("November 25, 2026", "February 31, 2026"), SENT)).toBeNull();
+  });
+
   it("ignores mail that isn't a confirmation", () => {
     expect(restaurantReservation("Thanks for dining with OpenTable! Rate your meal.", SENT)).toBeNull();
     expect(restaurantReservation("Resy picks: the best new restaurants this week", SENT)).toBeNull();

@@ -55,7 +55,14 @@ export async function fileItems(q: Queryable, userId: string, items: DraftItem[]
   // A booking seen before updates itself by key; only new ones look for a planned stop.
   const fresh = items.filter((_, i) => !(keys[i] && existing.has(keys[i])));
   const candidates = await itemsOnDays(q, userId, [...new Set(fresh.map((i) => i.kind))] as Kind[], [...new Set(fresh.map((i) => i.startDate))]);
-  const planned: (Item | null)[] = items.map((item, i) => (keys[i] && existing.has(keys[i]) ? null : plannedMatch(item, candidates)));
+  // Each planned stop can take one booking: two tables at the same place that day stay two.
+  const taken = new Set<string>();
+  const planned: (Item | null)[] = items.map((item, i) => {
+    if (keys[i] && existing.has(keys[i])) return null;
+    const stop = plannedMatch(item, candidates.filter((c) => !taken.has(c.id)));
+    if (stop) taken.add(stop.id);
+    return stop;
+  });
   const known = [...existing.values(), ...planned.map((p) => p?.journeyId ?? null)].filter((id): id is string => id !== null);
   const placement = placeBatch(items, await journeyHeads(q, userId), known, cityForAirport);
   const journeyId =
