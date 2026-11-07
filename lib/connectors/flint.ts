@@ -16,7 +16,7 @@ const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const TRAVEL_SENDERS = [
   "united.com", "delta.com", "aa.com", "southwest.com", "jetblue.com", "alaskaair.com", "aircanada.ca", "britishairways.com", "lufthansa.com", "airfrance.fr", "klm.com", "emirates.com", "qatarairways.com.qa", "singaporeair.com", "cathaypacific.com", "ana.co.jp", "jal.com", "turkishairlines.com", "iberia.com", "virginatlantic.com", "flyfrontier.com", "spirit.com", "ryanair.com", "easyjet.com",
   "marriott.com", "hilton.com", "hyatt.com", "ihg.com", "accor.com", "airbnb.com", "booking.com", "expedia.com", "hotels.com", "vrbo.com", "agoda.com", "trip.com", "kayak.com", "priceline.com",
-  "opentable.com", "resy.com", "sevenrooms.com", "tock.com", "exploretock.com", "getyourguide.com", "viator.com", "klook.com", "eventbrite.com", "ticketmaster.com",
+  "opentable.com", "resy.com", "yelp.com", "sevenrooms.com", "tock.com", "exploretock.com", "getyourguide.com", "viator.com", "klook.com", "eventbrite.com", "ticketmaster.com",
   "hertz.com", "avis.com", "enterprise.com", "nationalcar.com", "sixt.com", "amtrak.com", "eurostar.com", "trainline.com", "renfe.com", "sncf-connect.com",
 ];
 

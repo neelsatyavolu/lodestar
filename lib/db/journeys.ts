@@ -180,6 +180,34 @@ export async function upsertItem(q: Queryable, userId: string, n: NewItem): Prom
   return row.id;
 }
 
+/** Stops filed in a trip on these days, of these kinds: where a confirmation may already be planned. */
+export async function itemsOnDays(q: Queryable, userId: string, kinds: Kind[], days: string[]): Promise<Item[]> {
+  if (!kinds.length || !days.length) return [];
+  const rows = await q.query(
+    `SELECT * FROM journey_items WHERE user_id = $1 AND journey_id IS NOT NULL AND kind = ANY($2::text[]) AND start_date = ANY($3::date[]) ${ITEM_ORDER}`,
+    [userId, kinds, days],
+  );
+  return rows.map(toItem);
+}
+
+/**
+ * Turns a planned stop into the booking a confirmation describes, in place:
+ * it keeps its id, title, note and map pin, takes the booking's time and
+ * facts, and leaves To book. Returns the id, or null if it's gone.
+ */
+export async function bookPlanned(q: Queryable, userId: string, id: string, dedupeKey: string | null, i: DraftItem, now: number): Promise<string | null> {
+  const [row] = await q.query<{ id: string }>(
+    `UPDATE journey_items SET
+       status = $3::text, start_date = $4, start_time = COALESCE($5, start_time), end_date = COALESCE($6, end_date), end_time = COALESCE($7, end_time),
+       place = COALESCE($8, place), confirmation = COALESCE($9, confirmation), dedupe_key = $10,
+       details = CASE WHEN $3::text = 'booked' THEN details - 'reserve' - 'bookBy' - 'estimate' ELSE details END || $11::jsonb,
+       updated_at = $12
+     WHERE id = $1 AND user_id = $2 RETURNING id`,
+    [id, userId, i.status, i.startDate, i.startTime, i.endDate, i.endTime, i.place, i.confirmation, dedupeKey, JSON.stringify(i.details), toTs(now)],
+  );
+  return row?.id ?? null;
+}
+
 export type ItemPatch = Partial<Pick<Item, "status" | "journeyId" | "title" | "startDate" | "startTime" | "endDate" | "endTime" | "place" | "confirmation">> & {
   note?: string | null;
   location?: { placeId: string; lat: number; lng: number; address: string | null };

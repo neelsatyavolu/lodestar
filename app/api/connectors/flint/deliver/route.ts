@@ -7,6 +7,12 @@ import { machineHandle, MAX_DELIVERY_BYTES, rawBody, signedConnection } from "@/
 import { senderKey } from "@/lib/server/journeys";
 import { allow } from "@/lib/server/limits";
 
+/** Flint's date as milliseconds: an ISO or RFC 2822 string, or a timestamp in seconds or milliseconds. */
+function sentAt(date: string | number | undefined): number | undefined {
+  const t = typeof date === "number" ? (date < 1e12 ? date * 1000 : date) : date ? Date.parse(date) : NaN;
+  return Number.isFinite(t) ? t : undefined;
+}
+
 // POST /api/connectors/flint/deliver: one message Flint matched against the approved manifest.
 // Signed with the connection's secret; the same Message-ID is filed once however often it arrives.
 export function POST(req: Request) {
@@ -18,7 +24,7 @@ export function POST(req: Request) {
     if (!(await allow("inboundMail", senderKey("flint", who.connectionId)))) return fail("Too many messages today.", 429);
     const m = DeliverySchema.parse(JSON.parse(body));
     const db = await getDb();
-    const result = await ingestMail(db, who.userId, { source: "flint", messageId: m.messageId, from: m.from, subject: m.subject, html: m.html ?? null, text: m.text ?? null }, Date.now());
+    const result = await ingestMail(db, who.userId, { source: "flint", messageId: m.messageId, from: m.from, subject: m.subject, html: m.html ?? null, text: m.text ?? null, sentAt: sentAt(m.date) }, Date.now());
     await touchLink(db, who.connectionId, Date.now());
     return ok({ status: result.status });
   });

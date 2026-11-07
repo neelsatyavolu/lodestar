@@ -1,5 +1,5 @@
 import { addDays } from "../format";
-import type { DraftItem, Journey } from "./types";
+import type { DraftItem, Item, Journey } from "./types";
 
 // Which trip a batch of items (everything read from one email) belongs to.
 // A wrong merge is worse than leaving an item unfiled, so this attaches only
@@ -22,6 +22,36 @@ export function dedupeKey(item: DraftItem): string | null {
   if (item.confirmation) return `${item.kind}:conf:${norm(item.confirmation)}`;
   const at = item.kind === "stay" ? item.startDate : `${item.startDate}${item.startTime ?? ""}`;
   return `${item.kind}:${norm(item.title)}:${at}`;
+}
+
+/** Kinds a confirmation can book in place of a stop already in the plan. */
+const BOOKABLE = new Set<DraftItem["kind"]>(["dining", "activity"]);
+
+/** "Dinner at Penca" and "Penca", or "The Flying V at Loews Ventana Canyon Resort" and "Flying V". */
+const sameName = (a: string, b: string) => {
+  const [x, y] = [norm(a), norm(b)].sort((p, q) => p.length - q.length);
+  return x.length >= 3 && y.includes(x);
+};
+
+/**
+ * The stop in a trip's plan that this confirmation books: same kind and day,
+ * one name inside the other, and not already holding a different booking.
+ * Null when there's none, or more than one and the time doesn't settle it.
+ */
+export function plannedMatch(incoming: DraftItem, candidates: Item[]): Item | null {
+  if (!BOOKABLE.has(incoming.kind) || incoming.status === "suggested") return null;
+  const fits = candidates.filter(
+    (c) =>
+      c.journeyId !== null &&
+      c.kind === incoming.kind &&
+      c.status !== "cancelled" &&
+      c.startDate === incoming.startDate &&
+      !(c.confirmation && incoming.confirmation && norm(c.confirmation) !== norm(incoming.confirmation)) &&
+      sameName(c.title, incoming.title),
+  );
+  if (fits.length <= 1) return fits[0] ?? null;
+  const sameTime = fits.filter((c) => c.startTime === incoming.startTime);
+  return sameTime.length === 1 ? sameTime[0] : null;
 }
 
 export type Span = { start: string; end: string };
