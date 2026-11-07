@@ -1,34 +1,19 @@
-import { Clock, ExternalLink, Globe, MapPin, MapPinOff, Phone, Star, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Clock, ExternalLink, Globe, MapPin, MapPinOff, Phone, Star, Trash2, X } from "lucide-react";
+import { useState } from "react";
 import { api } from "@/lib/client";
 import type { Item } from "@/lib/journeys/types";
 import { mapsSearchUrl, type LatLng, type PlaceDetails, type Suggestion } from "@/lib/places/types";
 import { Button, Pill, Spinner } from "../ui";
 import { DateField } from "./date-field";
+import { photoUrl, usePlace } from "./place-cache";
 import { PlaceSearch } from "./place-search";
-import { errorText } from "./shared";
+import { errorText, time12 } from "./shared";
 
 // Everything about one stop: Google's view of the place (photo, rating, price,
 // hours, phone, site) above, and the trip's own facts (when, confirmation,
 // note) below, editable in place.
 
 const WEEKDAY = new Date().toLocaleDateString("en-US", { weekday: "long" });
-
-function usePlace(placeId: string | undefined) {
-  const [state, setState] = useState<{ id: string; place: PlaceDetails | null; error: string | null } | null>(null);
-  useEffect(() => {
-    if (!placeId?.startsWith("g:")) return;
-    let alive = true;
-    api<{ place: PlaceDetails }>(`/api/places/details?id=${encodeURIComponent(placeId)}`)
-      .then((r) => alive && setState({ id: placeId, place: r.place, error: null }))
-      .catch((err) => alive && setState({ id: placeId, place: null, error: errorText(err, "Couldn't load this place.") }));
-    return () => {
-      alive = false;
-    };
-  }, [placeId]);
-  if (!placeId?.startsWith("g:")) return { place: null, loading: false, error: null };
-  return state?.id === placeId ? { place: state.place, loading: false, error: state.error } : { place: null, loading: true, error: null };
-}
 
 function GooglePart({ place }: { place: PlaceDetails }) {
   const [allHours, setAllHours] = useState(false);
@@ -37,7 +22,7 @@ function GooglePart({ place }: { place: PlaceDetails }) {
     <div className="space-y-2.5 text-[13px] text-body">
       {place.photos[0] && (
         // eslint-disable-next-line @next/next/no-img-element -- a redirect to Google's image host; next/image can't proxy it.
-        <img src={`/api/places/photo?name=${encodeURIComponent(place.photos[0])}&w=800`} alt="" className="h-44 w-full rounded-lg bg-elevated object-cover" loading="lazy" />
+        <img src={photoUrl(place.photos[0])} alt="" className="h-44 w-full rounded-lg bg-elevated object-cover outline outline-1 -outline-offset-1 outline-hairline-strong" loading="lazy" />
       )}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {place.rating !== null && (
@@ -62,7 +47,7 @@ function GooglePart({ place }: { place: PlaceDetails }) {
           <div>
             <button type="button" onClick={() => setAllHours(!allHours)} className="cursor-pointer text-left hover:text-ink">
               {place.openNow !== null && <span className={place.openNow ? "text-ok" : "text-danger"}>{place.openNow ? "Open now" : "Closed now"} · </span>}
-              {today ?? "Hours"} <span className="text-accent">{allHours ? "Hide" : "All week"}</span>
+              {today ?? "Hours"} <span className="text-accent">{allHours ? "Hide times" : "Show times"}</span>
             </button>
             {allHours && (
               <ul className="mt-1 space-y-0.5 text-mute">
@@ -90,6 +75,73 @@ function GooglePart({ place }: { place: PlaceDetails }) {
   );
 }
 
+const q = (s: string) => encodeURIComponent(s.trim());
+
+/** Search links on other sites: no API, just the place's name and town. */
+function OpenIn({ item, place }: { item: Item; place: PlaceDetails | null }) {
+  const name = place?.name ?? item.title;
+  const where = place?.address ?? item.details.address ?? item.place ?? "";
+  const links = [
+    { label: "Google Maps", href: place?.mapsUrl ?? item.details.url ?? mapsSearchUrl(`${name} ${where}`) },
+    { label: "Google", href: `https://www.google.com/search?q=${q(`${name} ${where}`)}` },
+    { label: "Yelp", href: `https://www.yelp.com/search?find_desc=${q(name)}&find_loc=${q(where)}` },
+    { label: "Tripadvisor", href: `https://www.tripadvisor.com/Search?q=${q(`${name} ${where}`)}` },
+  ];
+  return (
+    <div>
+      <p className="mb-1.5 text-[12px] text-mute">Open in</p>
+      <div className="flex flex-wrap gap-1.5">
+        {links.map((l) => (
+          <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-2.5 text-[12px] text-ink hover:border-hairline-hover">
+            {l.label} <ExternalLink size={11} className="text-ash" aria-hidden />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Photos({ place }: { place: PlaceDetails }) {
+  if (!place.photos.length) return <p className="text-[13px] text-mute">No photos for this place.</p>;
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {place.photos.slice(0, 8).map((p) => (
+        // eslint-disable-next-line @next/next/no-img-element -- a redirect to Google's image host; next/image can't proxy it.
+        <img key={p} src={photoUrl(p, 480)} alt="" loading="lazy" className="aspect-[4/3] w-full rounded-lg bg-elevated object-cover outline outline-1 -outline-offset-1 outline-hairline-strong" />
+      ))}
+    </div>
+  );
+}
+
+function Reviews({ item, place }: { item: Item; place: PlaceDetails | null }) {
+  const name = place?.name ?? item.title;
+  const where = place?.address ?? item.place ?? "";
+  return (
+    <div className="space-y-3 text-[13px] text-body">
+      {place?.rating != null && (
+        <p className="flex items-center gap-2 text-ink">
+          <Star size={15} className="fill-warn text-warn" aria-hidden /> <span className="text-[18px] font-medium">{place.rating.toFixed(1)}</span>
+          {place.ratingCount !== null && <span className="text-mute">from {place.ratingCount.toLocaleString()} Google reviews</span>}
+        </p>
+      )}
+      <p className="text-mute">Read what people say:</p>
+      <ul className="space-y-1.5">
+        {[
+          { label: "Google reviews", href: place?.mapsUrl ?? mapsSearchUrl(`${name} ${where}`) },
+          { label: "Yelp", href: `https://www.yelp.com/search?find_desc=${q(name)}&find_loc=${q(where)}` },
+          { label: "Tripadvisor", href: `https://www.tripadvisor.com/Search?q=${q(`${name} ${where}`)}` },
+        ].map((l) => (
+          <li key={l.label}>
+            <a href={l.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+              {l.label} <ExternalLink size={11} aria-hidden />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Pins an item to a place picked from search: for one whose place wasn't found, or a wrong pin. */
 function PinPicker({ item, near, onPinned, onCancel }: { item: Item; near: LatLng | null; onPinned: (i: Item) => void; onCancel?: () => void }) {
   const pin = async (s: Suggestion, place: PlaceDetails | null) => {
@@ -111,9 +163,12 @@ function PinPicker({ item, near, onPinned, onCancel }: { item: Item; near: LatLn
   );
 }
 
-/** `bare`: inside a sheet that already shows the name and a close button. `near`: where to search when pinning it. */
-export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = false }: { item: Item; near: LatLng | null; onClose: () => void; onChanged: (i: Item) => void; onRemoved: () => void; bare?: boolean }) {
+export type Pager = { index: number; total: number; go: (index: number) => void };
+
+/** `bare`: inside a sheet that already shows the name and a close button. `near`: where to search when pinning it. `pager`: steps through the day's stops. */
+export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = false, pager }: { item: Item; near: LatLng | null; onClose: () => void; onChanged: (i: Item) => void; onRemoved: () => void; bare?: boolean; pager?: Pager }) {
   const [repin, setRepin] = useState(false);
+  const [view, setView] = useState<"about" | "reviews" | "photos">("about");
   const pinned = item.details.lat !== undefined;
   const canPin = item.kind !== "note" && item.kind !== "flight";
   const { place, loading, error } = usePlace(item.details.placeId);
@@ -147,11 +202,11 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
 
   const status = (
     <>
-      {item.status === "booked" ? "Booked" : suggested ? "Idea" : item.status === "cancelled" ? "Cancelled" : "Planned"}
+      {item.status === "booked" ? "Booked" : suggested ? "Idea" : item.status === "cancelled" ? "Cancelled" : item.details.reserve ? "To book" : "Planned"}
+      {item.startTime && ` · ${time12(item.startTime)}`}
       {item.confirmation && <span className="font-mono"> · {item.confirmation}</span>}
     </>
   );
-  const fallbackMaps = item.details.url ?? mapsSearchUrl(`${item.title} ${item.details.address ?? item.place ?? ""}`);
   return (
     <div className="flex max-h-full flex-col">
       {!bare && (
@@ -160,13 +215,33 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
             <h2 className="text-[16px] font-medium text-ink">{place?.name ?? item.title}</h2>
             <p className="mt-0.5 text-[12px] text-mute">{status}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close details" className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
-            <X size={16} />
-          </button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            {pager && <PagerButtons pager={pager} />}
+            <button type="button" onClick={onClose} aria-label="Close details" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+      {place && (
+        <div className="flex shrink-0 gap-1 border-b border-hairline px-3" role="tablist" aria-label="Place details">
+          {(["about", "reviews", "photos"] as const).map((v) => (
+            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`relative h-10 cursor-pointer px-2.5 text-[13px] capitalize ${view === v ? "text-ink" : "text-mute hover:text-charcoal"}`}>
+              {v}
+              <span className={`absolute inset-x-2 -bottom-px h-0.5 rounded-full ${view === v ? "bg-accent" : "bg-transparent"}`} aria-hidden />
+            </button>
+          ))}
         </div>
       )}
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
-        {bare && <p className="text-[12px] text-mute">{status}</p>}
+        {bare && (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[12px] text-mute">{status}</p>
+            {pager && <PagerButtons pager={pager} />}
+          </div>
+        )}
+        {place && view === "photos" && <Photos place={place} />}
+        {view === "reviews" && <Reviews item={item} place={place} />}
         {canPin && !pinned && (
           <div className="space-y-2 rounded-lg border border-dashed border-hairline-strong p-3">
             <p className="flex items-center gap-2 text-[13px] text-body">
@@ -178,7 +253,7 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
         {canPin && pinned && repin && <PinPicker item={item} near={near} onPinned={(i) => (setRepin(false), onChanged(i))} onCancel={() => setRepin(false)} />}
         {loading && <Spinner />}
         {error && <p className="text-[12px] text-mute">{error}</p>}
-        {place ? (
+        {view !== "about" ? null : place ? (
           <GooglePart place={place} />
         ) : (
           !loading && (
@@ -189,12 +264,11 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
                 </p>
               )}
               {item.details.why && <p>{item.details.why}</p>}
-              <a href={fallbackMaps} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
-                Open in Google Maps <ExternalLink size={12} />
-              </a>
             </div>
           )
         )}
+
+        {view === "about" && <OpenIn item={item} place={place} />}
 
         <div className="space-y-3 border-t border-hairline pt-4">
           <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -233,6 +307,11 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
                 Mark booked
               </Button>
             )}
+            {item.status === "planned" && item.kind !== "note" && (
+              <Button size="sm" variant="quiet" disabled={busy} onClick={() => patch({ facts: item.details.reserve ? { reserve: null, bookBy: null } : { reserve: true } })}>
+                {item.details.reserve ? "Doesn't need booking" : "Needs booking"}
+              </Button>
+            )}
             {item.status === "booked" && (
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => patch({ status: "cancelled" })}>
                 Mark cancelled
@@ -245,5 +324,21 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
         </div>
       </div>
     </div>
+  );
+}
+
+function PagerButtons({ pager }: { pager: Pager }) {
+  return (
+    <span className="inline-flex items-center text-[12px] text-mute">
+      <button type="button" onClick={() => pager.go(pager.index - 1)} aria-label="Previous stop" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+        <ChevronLeft size={15} />
+      </button>
+      <span className="tnum px-0.5">
+        {pager.index + 1} of {pager.total}
+      </span>
+      <button type="button" onClick={() => pager.go(pager.index + 1)} aria-label="Next stop" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+        <ChevronRight size={15} />
+      </button>
+    </span>
   );
 }
