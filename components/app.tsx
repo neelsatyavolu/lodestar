@@ -584,7 +584,11 @@ export function App() {
         key={`account-${accountDialog.key}`}
         open={accountDialog.open}
         initialMode={accountDialog.mode}
-        onClose={() => setAccountDialog((d) => ({ ...d, open: false }))}
+        onClose={() => {
+          // Closed without signing in: a later sign-up shouldn't jump to the link that asked.
+          afterSignIn.current = null;
+          setAccountDialog((d) => ({ ...d, open: false }));
+        }}
         onSignedIn={signedIn}
         pendingPreferences={prefs}
       />

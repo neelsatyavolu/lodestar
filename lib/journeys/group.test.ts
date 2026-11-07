@@ -103,6 +103,19 @@ describe("a confirmation for a stop already planned", () => {
     expect(plannedMatch({ ...resy, kind: "stay" }, [stop({ kind: "stay" })])).toBeNull();
   });
 
+  it("doesn't cross towns, unless the address shows it's the same place", () => {
+    expect(plannedMatch({ ...resy, title: "Nobu", place: "New York" }, [stop({ title: "Nobu", place: "London" })])).toBeNull();
+    const yelp = { ...resy, title: "Saffron Indian Bistro", place: "Oro Valley", details: { address: "7607 N Oracle Rd, Oro Valley AZ" } };
+    expect(plannedMatch(yelp, [stop({ title: "Saffron", place: "Tucson", details: { address: "7607 N Oracle Rd, Tucson, AZ 85704, USA" } })])?.id).toBe("s1");
+    expect(plannedMatch(yelp, [stop({ title: "Saffron", place: null })])?.id).toBe("s1");
+  });
+
+  it("only lets a cancellation cancel a booking, never a stop that's just planned", () => {
+    const cancelled = { ...resy, status: "cancelled" as const };
+    expect(plannedMatch(cancelled, [stop({})])).toBeNull();
+    expect(plannedMatch(cancelled, [stop({ status: "booked" })])?.id).toBe("s1");
+  });
+
   it("picks between two same-named stops only by time", () => {
     const lunch = stop({ id: "lunch", startTime: "12:00" });
     const dinner = stop({ id: "dinner", startTime: "19:00" });

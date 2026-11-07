@@ -20,10 +20,10 @@ function isoDay(month: string, day: string, year: string | null, sentAt: number)
   const mo = MONTHS[month.toLowerCase().slice(0, 3)];
   const d = Number(day);
   if (!mo || d < 1 || d > 31) return null;
-  if (year) return `${year}-${pad(mo)}-${pad(d)}`;
-  const sent = new Date(sentAt);
-  let y = sent.getUTCFullYear();
-  if (Date.UTC(y, mo - 1, d) < sentAt - 30 * DAY_MS) y += 1;
+  let y = year ? Number(year) : new Date(sentAt).getUTCFullYear();
+  if (!year && Date.UTC(y, mo - 1, d) < sentAt - 30 * DAY_MS) y += 1;
+  // February 31 and the like: not a day, so not a booking.
+  if (new Date(Date.UTC(y, mo - 1, d)).getUTCDate() !== d) return null;
   return `${y}-${pad(mo)}-${pad(d)}`;
 }
 

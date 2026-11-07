@@ -150,6 +150,7 @@ export function NoteCard({ item, onOpen, onRemoved }: { item: Item; onOpen: () =
         type="button"
         onClick={async (e) => {
           e.stopPropagation();
+          if (!(await askConfirm("Delete this note?", "Delete note", item.title))) return;
           await api(`/api/journeys/items/${item.id}`, { method: "DELETE" }).then(onRemoved, () => {});
         }}
         aria-label="Remove note"

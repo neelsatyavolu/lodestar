@@ -33,10 +33,24 @@ const sameName = (a: string, b: string) => {
   return x.length >= 3 && y.includes(x);
 };
 
+const street = (address: string | undefined) => (address ? norm(address.split(",")[0]) : "");
+
 /**
- * The stop in a trip's plan that this confirmation books: same kind and day,
- * one name inside the other, and not already holding a different booking.
- * Null when there's none, or more than one and the time doesn't settle it.
+ * Two places that are clearly not the same: a Nobu in New York and one in London.
+ * Neighbouring towns aren't a conflict when the street matches or one address names the other's town.
+ */
+function placesConflict(a: Pick<DraftItem, "place" | "details">, b: Pick<DraftItem, "place" | "details">): boolean {
+  if (!a.place || !b.place || sameCity(a.place, b.place)) return false;
+  if (street(a.details.address) && street(a.details.address) === street(b.details.address)) return false;
+  const names = (address: string | undefined, place: string) => Boolean(address && norm(address).includes(norm(place)));
+  return !names(a.details.address, b.place) && !names(b.details.address, a.place);
+}
+
+/**
+ * The stop in a trip's plan that this confirmation books: same kind, day and
+ * town, one name inside the other, and not already holding a different
+ * booking. A cancellation only matches a booking. Null when there's none, or
+ * more than one and the time doesn't settle it.
  */
 export function plannedMatch(incoming: DraftItem, candidates: Item[]): Item | null {
   if (!BOOKABLE.has(incoming.kind) || incoming.status === "suggested") return null;
@@ -44,10 +58,11 @@ export function plannedMatch(incoming: DraftItem, candidates: Item[]): Item | nu
     (c) =>
       c.journeyId !== null &&
       c.kind === incoming.kind &&
-      c.status !== "cancelled" &&
+      (incoming.status === "cancelled" ? c.status === "booked" : c.status !== "cancelled") &&
       c.startDate === incoming.startDate &&
       !(c.confirmation && incoming.confirmation && norm(c.confirmation) !== norm(incoming.confirmation)) &&
-      sameName(c.title, incoming.title),
+      sameName(c.title, incoming.title) &&
+      !placesConflict(c, incoming),
   );
   if (fits.length <= 1) return fits[0] ?? null;
   const sameTime = fits.filter((c) => c.startTime === incoming.startTime);
