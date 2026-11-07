@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { safeReturnPath } from "@/lib/account/return-path";
 import { ApiError, api, post } from "@/lib/client";
 import { money } from "@/lib/format";
 import { flexHack, type Hack } from "@/lib/hacks";
@@ -255,7 +256,7 @@ export function App() {
         if (query.has("agents") && res.user) setAgentsOpen(true);
         if (query.has("signin") && !res.user) {
           const next = query.get("next");
-          afterSignIn.current = next && /^\/(?![/\\])/.test(next) ? next : null;
+          afterSignIn.current = safeReturnPath(next, window.location.origin);
           setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }));
         }
         if (res.preferences) adoptPreferences(res.preferences, !fromUrl);
