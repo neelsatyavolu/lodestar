@@ -6,6 +6,7 @@ import type { WanderlogTrip } from "@/lib/journeys/wanderlog";
 import { Dialog, Field, inputClass } from "../dialog";
 import { Button, Spinner } from "../ui";
 import { dateRange, errorText } from "./shared";
+import { askConfirm } from "../confirm";
 
 // The three ways trips come in besides typing: a private forwarding address,
 // Flint (pairs once, then sends travel mail on its own) and a Wanderlog import.
@@ -45,7 +46,7 @@ function useConnections(open: boolean) {
 export function EmailDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data, setData, error, setError } = useConnections(open);
   const rotate = async () => {
-    if (!window.confirm("Make a new address? Mail sent to the old one will stop reaching Trips.")) return;
+    if (!(await askConfirm("Make a new address?", "Make new address", "Mail sent to the old one will stop reaching Trips."))) return;
     try {
       const { address } = await post<{ address: string }>("/api/connectors/address", {});
       setData((d) => (d ? { ...d, address } : d));
@@ -56,7 +57,7 @@ export function EmailDialog({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <Dialog open={open} onClose={onClose} title="Add trips by email">
       <div className="space-y-4 p-5 text-[14px] text-body">
-        <p>Forward any flight, hotel, restaurant or tour confirmation to your private address. Lodestar files it in the right trip, or starts one.</p>
+        <p>Forward any flight, hotel, restaurant or tour confirmation to your private address. Lodestar files it in the right trip, or starts one. A table you already planned, say dinner at Penca on the 21st, becomes that booking instead of a second stop.</p>
         {!data && !error && <Spinner />}
         {data?.address && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-hairline-strong bg-deep p-3">
@@ -65,7 +66,7 @@ export function EmailDialog({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         )}
         {data && !data.address && <p className="text-mute">Forwarding isn&apos;t set up on this server yet.</p>}
-        <p className="text-[13px] text-mute">Confirmations with booking details built in are filed at once. Others are read by your ChatGPT or Grok the next time you open Trips. The address is private: anyone who has it can add to your trips.</p>
+        <p className="text-[13px] text-mute">Confirmations with booking details built in, and Resy, OpenTable and Yelp tables, are filed at once. Others are read by your ChatGPT or Grok the next time you open Trips. The address is private: anyone who has it can add to your trips.</p>
         {error && <p className="text-[13px] text-danger">{error}</p>}
         {data?.address && (
           <button type="button" onClick={rotate} className="cursor-pointer text-[13px] text-charcoal hover:text-ink">

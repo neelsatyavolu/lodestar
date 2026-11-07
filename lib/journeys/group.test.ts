@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cityForAirport } from "./jsonld";
-import { dedupeKey, destinationOf, journeyTitle, placeBatch, spanOf } from "./group";
-import { DraftItemSchema, type DraftItem, type Journey } from "./types";
+import { dedupeKey, destinationOf, journeyTitle, placeBatch, plannedMatch, spanOf } from "./group";
+import { DraftItemSchema, type DraftItem, type Item, type Journey } from "./types";
 
 const item = (over: Partial<DraftItem> & Pick<DraftItem, "kind" | "title" | "startDate">): DraftItem => DraftItemSchema.parse(over);
 const outbound = item({ kind: "flight", title: "UA 837 · SFO → NRT", startDate: "2027-03-01", startTime: "11:00", place: "Tokyo", details: { flightNumber: "UA 837", from: "SFO", to: "NRT" } });
@@ -78,5 +78,35 @@ describe("placing a batch", () => {
 
   it("doesn't open a trip for a cancellation alone", () => {
     expect(placeBatch([{ ...outbound, status: "cancelled" }], [], [], cityForAirport)).toEqual({ action: "unfiled" });
+  });
+});
+
+describe("a confirmation for a stop already planned", () => {
+  const stop = (over: Partial<Item>): Item => ({ ...item({ kind: "dining", title: "Penca", startDate: "2026-11-21", startTime: "19:30", status: "planned" }), id: "s1", journeyId: "j1", source: "manual", dedupeKey: null, updatedAt: 0, ...over });
+  const resy = item({ kind: "dining", title: "Penca", startDate: "2026-11-21", startTime: "19:00", details: { provider: "Resy", guests: 4 } });
+
+  it("finds the planned stop by name and day, whatever time was pencilled in", () => {
+    expect(plannedMatch(resy, [stop({})])?.id).toBe("s1");
+    expect(plannedMatch(resy, [stop({ title: "Dinner at Penca" })])?.id).toBe("s1");
+    expect(plannedMatch({ ...resy, title: "The Flying V at Loews Ventana Canyon Resort" }, [stop({ title: "Flying V" })])?.id).toBe("s1");
+    // An AI idea and a booking typed in by hand count too.
+    expect(plannedMatch(resy, [stop({ status: "suggested" })])?.id).toBe("s1");
+    expect(plannedMatch(resy, [stop({ status: "booked" })])?.id).toBe("s1");
+  });
+
+  it("leaves other days, other places, cancelled stops and other bookings alone", () => {
+    expect(plannedMatch(resy, [stop({ startDate: "2026-11-22" })])).toBeNull();
+    expect(plannedMatch(resy, [stop({ title: "5 Points" })])).toBeNull();
+    expect(plannedMatch(resy, [stop({ status: "cancelled" })])).toBeNull();
+    expect(plannedMatch(resy, [stop({ journeyId: null })])).toBeNull();
+    expect(plannedMatch({ ...resy, confirmation: "111" }, [stop({ confirmation: "222" })])).toBeNull();
+    expect(plannedMatch({ ...resy, kind: "stay" }, [stop({ kind: "stay" })])).toBeNull();
+  });
+
+  it("picks between two same-named stops only by time", () => {
+    const lunch = stop({ id: "lunch", startTime: "12:00" });
+    const dinner = stop({ id: "dinner", startTime: "19:00" });
+    expect(plannedMatch(resy, [lunch, dinner])?.id).toBe("dinner");
+    expect(plannedMatch({ ...resy, startTime: "20:00" }, [lunch, dinner])).toBeNull();
   });
 });

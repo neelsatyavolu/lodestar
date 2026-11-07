@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { Db, Queryable } from "../db/client";
 import { insertMail, setMailState } from "../db/inbound";
-import { journeyHeads, journeysForKeys, upsertItem, upsertJourney, widenJourney } from "../db/journeys";
-import { dedupeKey, placeBatch, spanOf } from "./group";
+import { bookPlanned, itemsOnDays, journeyHeads, journeysForKeys, upsertItem, upsertJourney, widenJourney } from "../db/journeys";
+import { dedupeKey, placeBatch, plannedMatch, spanOf } from "./group";
 import { cityForAirport, reservationsFromHtml } from "./jsonld";
-import type { DraftItem, Source } from "./types";
+import { restaurantReservation } from "./restaurants";
+import type { DraftItem, Item, Kind, Source } from "./types";
 
 // Every way mail reaches Trips (forwarding, Flint) ends here. Reservation
 // markup is read at once; anything else waits, body kept, for the AI reader,
@@ -12,7 +13,8 @@ import type { DraftItem, Source } from "./types";
 
 export const MAX_BODY_CHARS = 60_000;
 
-export type IncomingMail = { source: "forward" | "flint"; messageId: string; from: string; subject: string; html: string | null; text: string | null };
+/** `sentAt`: when the email was sent, for dates it gives without a year; defaults to now. */
+export type IncomingMail = { source: "forward" | "flint"; messageId: string; from: string; subject: string; html: string | null; text: string | null; sentAt?: number };
 export type IngestResult = { status: "duplicate" } | { status: "parsed"; items: number; journeyId: string | null } | { status: "needs_ai" };
 
 const ENTITY: Record<string, string> = { nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'" };
@@ -43,13 +45,18 @@ export function mailBody(m: Pick<IncomingMail, "html" | "text">): string {
 /**
  * Files a batch of items read from one email (or one import) into the right
  * trip: the one that already holds a booking, the one whose dates fit, a new
- * one for a flight or stay, or none ("Needs a trip").
+ * one for a flight or stay, or none ("Needs a trip"). A reservation for a stop
+ * already in a trip's plan books that stop rather than adding a second one.
  */
 export async function fileItems(q: Queryable, userId: string, items: DraftItem[], source: Source, now: number): Promise<string | null> {
   if (!items.length) return null;
   const keys = items.map(dedupeKey);
   const existing = await journeysForKeys(q, userId, keys.filter((k): k is string => k !== null));
-  const known = [...existing.values()].filter((id): id is string => id !== null);
+  // A booking seen before updates itself by key; only new ones look for a planned stop.
+  const fresh = items.filter((_, i) => !(keys[i] && existing.has(keys[i])));
+  const candidates = await itemsOnDays(q, userId, [...new Set(fresh.map((i) => i.kind))] as Kind[], [...new Set(fresh.map((i) => i.startDate))]);
+  const planned: (Item | null)[] = items.map((item, i) => (keys[i] && existing.has(keys[i]) ? null : plannedMatch(item, candidates)));
+  const known = [...existing.values(), ...planned.map((p) => p?.journeyId ?? null)].filter((id): id is string => id !== null);
   const placement = placeBatch(items, await journeyHeads(q, userId), known, cityForAirport);
   const journeyId =
     placement.action === "attach"
@@ -57,7 +64,11 @@ export async function fileItems(q: Queryable, userId: string, items: DraftItem[]
       : placement.action === "create"
         ? await upsertJourney(q, userId, { id: randomUUID(), title: placement.title, destination: placement.destination, startDate: placement.span.start, endDate: placement.span.end, source, now })
         : null;
-  for (const [i, item] of items.entries()) await upsertItem(q, userId, { id: randomUUID(), journeyId, source, dedupeKey: keys[i], item, now });
+  for (const [i, item] of items.entries()) {
+    const stop = planned[i];
+    if (stop && (await bookPlanned(q, userId, stop.id, keys[i], item, now))) continue;
+    await upsertItem(q, userId, { id: randomUUID(), journeyId, source, dedupeKey: keys[i], item, now });
+  }
   const span = spanOf(items.filter((i) => i.status !== "cancelled"));
   if (journeyId && span) await widenJourney(q, userId, journeyId, span.start, span.end);
   return journeyId;
@@ -67,7 +78,9 @@ export async function ingestMail(db: Db, userId: string, mail: IncomingMail, now
   return db.transaction(async (tx) => {
     const id = await insertMail(tx, userId, { id: randomUUID(), source: mail.source, messageId: mail.messageId, sender: mail.from, subject: mail.subject, now });
     if (!id) return { status: "duplicate" } as const;
-    const items = mail.html ? reservationsFromHtml(mail.html) : [];
+    const marked = mail.html ? reservationsFromHtml(mail.html) : [];
+    const table = marked.length ? null : restaurantReservation(mail.html ? htmlToText(mail.html) : (mail.text ?? ""), mail.sentAt ?? now);
+    const items = table ? [table] : marked;
     if (items.length) {
       const journeyId = await fileItems(tx, userId, items, mail.source === "flint" ? "flint" : "email", now);
       await setMailState(tx, userId, id, "parsed");
