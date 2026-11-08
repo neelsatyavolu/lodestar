@@ -138,10 +138,22 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
 }
 
 /** Free text in a day: a drive, a tip, free time. It sits between stops by its time and isn't one itself, so the drive between them still shows. */
-export function NoteCard({ item, onOpen, onRemoved }: { item: Item; onOpen: () => void; onRemoved: () => void }) {
+export function NoteCard({ item, onOpen, onRemoved, inLeg = false }: { item: Item; onOpen: () => void; onRemoved: () => void; inLeg?: boolean }) {
+  const card = <NoteBody item={item} onOpen={onOpen} onRemoved={onRemoved} />;
+  if (!inLeg) return <li>{card}</li>;
+  // Between two stops: the drive's dashed line keeps going past the note to the next stop, and the note sits beside it.
+  return (
+    <li className="relative pl-[28px] sm:pl-[32px]">
+      <span className="absolute -top-3 -bottom-2 left-[11px] border-l border-dashed border-hairline-hover sm:left-[15px]" aria-hidden />
+      {card}
+    </li>
+  );
+}
+
+function NoteBody({ item, onOpen, onRemoved }: { item: Item; onOpen: () => void; onRemoved: () => void }) {
   const when = timeRange(item);
   return (
-    <li onClick={onOpen} className="group flex cursor-pointer gap-3 rounded-xl bg-elevated px-3 py-3 sm:px-4">
+    <div onClick={onOpen} className="group flex cursor-pointer gap-3 rounded-xl bg-elevated px-3 py-3 sm:px-4">
       <StickyNote size={16} className="mt-0.5 shrink-0 text-ash" aria-hidden />
       <div className="min-w-0 flex-1 text-[15px] leading-relaxed">
         <p className="text-ink">
@@ -162,7 +174,7 @@ export function NoteCard({ item, onOpen, onRemoved }: { item: Item; onOpen: () =
       >
         <Trash2 size={14} />
       </button>
-    </li>
+    </div>
   );
 }
 

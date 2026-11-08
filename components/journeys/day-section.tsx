@@ -81,6 +81,10 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
     return next ? <LegRow key={`leg-${i.id}`} leg={legs.get(i.id)} directions={directionsUrl(point(i), point(next))} /> : null;
   };
 
+  // A note sits inside a drive when there's a stop before it (or the morning's stay starts the route) and one after it.
+  const betweenStops = (k: number) =>
+    (firm.slice(0, k).some((i) => i.kind !== "note") || morning.some((s) => stops[0]?.id === s.id)) && firm.slice(k + 1).some((i) => i.kind !== "note");
+
   return (
     <li id={`day-${date}`} className="scroll-mt-32">
       <Collapsible
@@ -118,9 +122,9 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
               {stops[0]?.id === s.id && legAfter(s)}
             </Fragment>
           ))}
-          {firm.map((i) =>
+          {firm.map((i, k) =>
             i.kind === "note" ? (
-              <NoteCard key={i.id} item={i} onOpen={() => onOpen(i.id)} onRemoved={() => onDrop(i.id)} />
+              <NoteCard key={i.id} item={i} inLeg={betweenStops(k)} onOpen={() => onOpen(i.id)} onRemoved={() => onDrop(i.id)} />
             ) : (
               <Fragment key={i.id}>
                 <StopCard item={i} pin={pins.get(i.id)} selected={i.id === selectedId} onOpen={() => onOpen(i.id)} onChanged={onReplace} onRemoved={() => onDrop(i.id)} />
