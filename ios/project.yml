@@ -1,0 +1,97 @@
+name: Lodestar
+options:
+  bundleIdPrefix: co.xanom
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_APPROACHABLE_CONCURRENCY: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: VTQW687WBQ
+    TARGETED_DEVICE_FAMILY: "1"
+
+targets:
+  Lodestar:
+    type: application
+    platform: iOS
+    sources:
+      - path: Lodestar
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: co.xanom.lodestar
+        PRODUCT_NAME: Lodestar
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Lodestar/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - sdk: AuthenticationServices.framework
+      - sdk: SafariServices.framework
+      - sdk: Network.framework
+    info:
+      path: Lodestar/Info.plist
+      properties:
+        CFBundleDisplayName: Lodestar
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        # lodestar://reset?token=… and lodestar://t/{token} (see App/DeepLink.swift).
+        CFBundleURLTypes:
+          - CFBundleURLName: co.xanom.lodestar
+            CFBundleURLSchemes:
+              - lodestar
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIAppFonts:
+          - Geist-Regular.ttf
+          - Geist-Medium.ttf
+          - Geist-SemiBold.ttf
+          - GeistMono-Regular.ttf
+          - GeistMono-Medium.ttf
+          - GeistSerif-Regular.ttf
+        # The base URL can point at a dev server on localhost (see ARCHITECTURE.md).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        # Default API base URL. Override at runtime with the `apiBaseURL` user default
+        # (for example the launch argument `-apiBaseURL http://localhost:3000`).
+        LodestarBaseURL: https://lodestar.xanom.co
+
+  LodestarTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: LodestarTests
+    dependencies:
+      - target: Lodestar
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: co.xanom.lodestar.tests
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Lodestar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Lodestar
+
+schemes:
+  Lodestar:
+    build:
+      targets:
+        Lodestar: all
+        LodestarTests: [test]
+    test:
+      gather_coverage_data: true
+      coverage_targets:
+        - Lodestar
+      targets:
+        - LodestarTests
