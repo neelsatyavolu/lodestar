@@ -51,6 +51,8 @@ export const DetailsSchema = z
     locatedAt: z.number().int().optional(),
     /** When a lookup last found nothing trustworthy; tried again a week later. */
     locateFailedAt: z.number().int().optional(),
+    /** Which search found nothing: Google still tries what OpenStreetMap couldn't place. */
+    locateFailedWith: z.enum(["google", "osm"]).optional(),
   })
   .strict();
 export type Details = z.infer<typeof DetailsSchema>;

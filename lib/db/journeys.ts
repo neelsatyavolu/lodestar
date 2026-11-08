@@ -249,7 +249,7 @@ export async function updateItem(q: Queryable, userId: string, id: string, patch
   if (patch.location) {
     const { address, ...pin } = patch.location;
     params.push(JSON.stringify({ ...pin, locatedAt: now, ...(address ? { address } : {}) }));
-    details = `(${details} - 'locateFailedAt') || $${params.length}::jsonb`;
+    details = `(${details} - 'locateFailedAt' - 'locateFailedWith') || $${params.length}::jsonb`;
   }
   if (details !== "details") sets.push(`details = ${details}`);
   params.push(toTs(now));
@@ -265,12 +265,12 @@ export async function deleteItem(q: Queryable, userId: string, id: string): Prom
 }
 
 /** Pins items to the map: merges place id and coordinates into their details. `failed` items are marked so they're retried later, not every visit. */
-export async function setItemLocations(q: Queryable, userId: string, located: { id: string; placeId?: string; lat: number; lng: number }[], failed: string[], now: number): Promise<void> {
+export async function setItemLocations(q: Queryable, userId: string, located: { id: string; placeId?: string; lat: number; lng: number }[], failed: string[], now: number, finder: "google" | "osm" = "osm"): Promise<void> {
   for (const l of located) {
     const patch = { lat: l.lat, lng: l.lng, locatedAt: now, ...(l.placeId ? { placeId: l.placeId } : {}) };
-    await q.query("UPDATE journey_items SET details = (details - 'locateFailedAt') || $3::jsonb WHERE id = $1 AND user_id = $2", [l.id, userId, JSON.stringify(patch)]);
+    await q.query("UPDATE journey_items SET details = (details - 'locateFailedAt' - 'locateFailedWith') || $3::jsonb WHERE id = $1 AND user_id = $2", [l.id, userId, JSON.stringify(patch)]);
   }
-  if (failed.length) await q.query("UPDATE journey_items SET details = details || jsonb_build_object('locateFailedAt', $3::bigint) WHERE id = ANY($1::uuid[]) AND user_id = $2", [failed, userId, now]);
+  if (failed.length) await q.query("UPDATE journey_items SET details = details || jsonb_build_object('locateFailedAt', $3::bigint, 'locateFailedWith', $4::text) WHERE id = ANY($1::uuid[]) AND user_id = $2", [failed, userId, now, finder]);
 }
 
 /** Clears a trip's earlier suggestions of one kind before a fresh set replaces them. */

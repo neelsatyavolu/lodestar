@@ -103,7 +103,7 @@ describe("trips and items", () => {
     await fileItems(db, ada, [DraftItemSchema.parse({ kind: "activity", status: "planned", title: "Sintra day trip", startDate: "2027-05-02" })], "manual", 1000);
     const [item] = (await getJourney(db, ada, id))!.items;
     await setItemLocations(db, ada, [], [item.id], 5000);
-    expect((await getJourney(db, ada, id))!.items[0].details).toEqual({ locateFailedAt: 5000 });
+    expect((await getJourney(db, ada, id))!.items[0].details).toEqual({ locateFailedAt: 5000, locateFailedWith: "osm" });
     const pinned = await updateItem(db, ada, item.id, { note: "Pena first", location: { placeId: "osm:N1", lat: 38.8, lng: -9.38, address: "Sintra, Portugal" } }, 6000);
     expect(pinned?.details).toEqual({ note: "Pena first", placeId: "osm:N1", lat: 38.8, lng: -9.38, address: "Sintra, Portugal", locatedAt: 6000 });
     expect(await updateItem(db, bob, item.id, { location: { placeId: "osm:N2", lat: 0, lng: 0, address: null } }, 7000)).toBeNull();

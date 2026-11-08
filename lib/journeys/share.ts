@@ -4,7 +4,7 @@ import type { Item, TripDetail } from "./types";
 // budget and anything only the AI suggested stay private; everything is
 // stripped here, on the server, before the page renders.
 
-const PRIVATE_DETAILS = new Set(["price", "estimate", "currency", "locateFailedAt", "locatedAt"]);
+const PRIVATE_DETAILS = new Set(["price", "estimate", "currency", "locateFailedAt", "locateFailedWith", "locatedAt"]);
 
 export type SharedTrip = Pick<TripDetail, "title" | "destination" | "startDate" | "endDate" | "travelers" | "tasks" | "notes"> & { items: Item[] };
 
