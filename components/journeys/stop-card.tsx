@@ -137,15 +137,19 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
   );
 }
 
-/** Free text the traveller typed into a day. */
+/** Free text in a day: a drive, a tip, free time. It sits between stops by its time and isn't one itself, so the drive between them still shows. */
 export function NoteCard({ item, onOpen, onRemoved }: { item: Item; onOpen: () => void; onRemoved: () => void }) {
+  const when = timeRange(item);
   return (
     <li onClick={onOpen} className="group flex cursor-pointer gap-3 rounded-xl bg-elevated px-3 py-3 sm:px-4">
       <StickyNote size={16} className="mt-0.5 shrink-0 text-ash" aria-hidden />
-      <p className="min-w-0 flex-1 whitespace-pre-line text-[15px] leading-relaxed text-body">
-        {item.title}
-        {item.details.note ? `\n${item.details.note}` : ""}
-      </p>
+      <div className="min-w-0 flex-1 text-[15px] leading-relaxed">
+        <p className="text-ink">
+          {when && <span className="tnum mr-2 text-[13px] text-mute">{when}</span>}
+          {item.title}
+        </p>
+        {item.details.note && <p className="max-w-[60ch] whitespace-pre-line text-body [text-wrap:pretty]">{item.details.note}</p>}
+      </div>
       <button
         type="button"
         onClick={async (e) => {
@@ -153,7 +157,7 @@ export function NoteCard({ item, onOpen, onRemoved }: { item: Item; onOpen: () =
           if (!(await askConfirm("Delete this note?", "Delete note", item.title))) return;
           await api(`/api/journeys/items/${item.id}`, { method: "DELETE" }).then(onRemoved, () => {});
         }}
-        aria-label="Remove note"
+        aria-label={`Remove note: ${item.title}`}
         className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger"
       >
         <Trash2 size={14} />
