@@ -18,7 +18,8 @@ export const DAY_COLORS = [
 
 export type Pin = { item: Item; n: number; color: (typeof DAY_COLORS)[number] };
 
-export const isPinned = (i: Item) => i.details.lat !== undefined && i.details.lng !== undefined && i.status !== "cancelled";
+// A note is never a stop, even when an agent gave it coordinates.
+export const isPinned = (i: Item) => i.kind !== "note" && i.details.lat !== undefined && i.details.lng !== undefined && i.status !== "cancelled";
 
 /** Located items in itinerary order, numbered within their day and coloured by day. */
 export function pinsOf(items: Item[]): Pin[] {
