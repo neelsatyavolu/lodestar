@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, post } from "@/lib/client";
 import { byItinerary, lookupsFor, searchCenter } from "@/lib/journeys/locate";
+import { locateWithOsm } from "@/lib/places/locate-osm";
+import { osmSearch } from "@/lib/places/osm";
 import { toBook } from "@/lib/journeys/plan";
 import type { Item, TripDetail } from "@/lib/journeys/types";
 import type { Provider } from "../connect-ai";
@@ -43,6 +45,8 @@ type Props = {
 
 const WIDE = "(min-width: 1024px)";
 const LOCATE_ROUNDS = 6;
+/** How long one round of in-browser lookups runs before saving what it has. */
+const BROWSER_BUDGET_MS = 30_000;
 
 export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChanged, onDeleted, autoDraft, onAutoDraftStarted }: Props) {
   const trip = fullTrip(journey);
@@ -107,14 +111,26 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
     reloadNow.current().catch((err) => setError(errorText(err, "Couldn't load the whole trip.")));
   }, [tripId]);
 
-  // Pin bookings that came from email or an import, once per visit: a call pins a dozen,
-  // so keep calling while some are left and the last call settled some.
+  // Pin bookings that came from email, an import or an agent, once per visit: a call pins a
+  // dozen, so keep calling while some are left and the last call settled some. Without Google
+  // the server asks the page to do the OpenStreetMap searches itself and save what it found.
   useEffect(() => {
     if (located.current || !loaded || !lookupsFor(journey, Date.now()).length) return;
     located.current = true;
     (async () => {
+      type Located = { journey: TripDetail; settled: number; remaining: number; browser?: boolean };
+      const url = `/api/journeys/${tripId}/locate`;
+      const inBrowser = (j: TripDetail) => locateWithOsm(lookupsFor(j, Date.now()), osmSearch, BROWSER_BUDGET_MS).then((results) => post<Located>(url, { results }));
+      // Once the server has said "do it yourself", later rounds go straight to the browser.
+      let here = false;
+      let current: TripDetail | null = null;
       for (let round = 0; round < LOCATE_ROUNDS; round++) {
-        const r = await post<{ journey: TripDetail; settled: number; remaining: number }>(`/api/journeys/${tripId}/locate`, {});
+        let r: Located = here && current ? await inBrowser(current) : await post<Located>(url, {});
+        if (r.browser) {
+          here = true;
+          r = await inBrowser(r.journey);
+        }
+        current = r.journey;
         change((t) => ({ ...t, items: r.journey.items }));
         // Search down or slow: nothing settled, so another call now would only repeat it.
         if (!r.remaining || !r.settled) break;
