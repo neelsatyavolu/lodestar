@@ -219,6 +219,7 @@ export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, key, selectedId, day, panelOpen]);
 
-  // Dark mode inverts the map's canvas only; pins and controls keep their colours.
-  return <div ref={box} className={`h-full w-full ${dark ? "[&_canvas]:[filter:invert(0.92)_hue-rotate(180deg)_saturate(0.7)_brightness(0.95)]" : ""}`} aria-label="Trip map" role="region" />;
+  // Dark mode inverts the map's canvas only; pins and controls keep their colours. `contain: paint`
+  // clips pins and bubbles off the map's edge in every browser; overflow alone let them draw over the page.
+  return <div ref={box} className={`h-full w-full overflow-hidden [contain:paint] ${dark ? "[&_canvas]:[filter:invert(0.92)_hue-rotate(180deg)_saturate(0.7)_brightness(0.95)]" : ""}`} aria-label="Trip map" role="region" />;
 }

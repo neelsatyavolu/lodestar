@@ -250,7 +250,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
         </div>
 
         {wide && (
-          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] border-l border-hairline lg:block">
+          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] overflow-hidden border-l border-hairline [contain:paint] lg:block">
             <TripMap items={trip.items} selectedId={selectedId} day={tab === "itinerary" ? activeDay : null} onSelect={fromMap} panelOpen={Boolean(panel)} />
             {panel && <div className="absolute inset-x-3 bottom-3 z-10 max-h-[66%] overflow-hidden rounded-xl border border-hairline-strong bg-card">{panel}</div>}
           </aside>
