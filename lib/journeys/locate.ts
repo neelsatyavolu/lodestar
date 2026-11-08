@@ -26,20 +26,25 @@ export function byItinerary(a: Item, b: Item): number {
 
 const located = (i: Item) => i.details.lat !== undefined && i.details.lng !== undefined;
 
-export function needsLocation(item: Item, now: number): boolean {
+/** The search doing the lookups: Google when there's a key, else OpenStreetMap. */
+export type Finder = "google" | "osm";
+
+export function needsLocation(item: Item, now: number, finder: Finder = "osm"): boolean {
   if (item.status === "cancelled" || item.kind === "note") return false;
   const d = item.details;
-  // Looked for lately and not found (or a stale pin not refreshed): wait out the week.
-  if ((d.locateFailedAt ?? 0) >= now - RETRY_FAILED_MS) return false;
+  // Looked for lately and not found (or a stale pin not refreshed): wait out the week. Google
+  // still tries what OpenStreetMap couldn't place; a failure from before this was recorded counts as OpenStreetMap's.
+  const failedRecently = (d.locateFailedAt ?? 0) >= now - RETRY_FAILED_MS;
+  if (failedRecently && (finder === "osm" || d.locateFailedWith === "google")) return false;
   if (!located(item)) return true;
   return d.placeId?.startsWith("g:") === true && (d.locatedAt ?? 0) < now - LOCATION_TTL_MS;
 }
 
 /** Everything still to pin, flights first (they need no search). */
-export function pendingLookups(j: JourneyWithItems, now: number): Lookup[] {
+export function pendingLookups(j: JourneyWithItems, now: number, finder: Finder = "osm"): Lookup[] {
   const out: Lookup[] = [];
   for (const item of j.items) {
-    if (!needsLocation(item, now)) continue;
+    if (!needsLocation(item, now, finder)) continue;
     if (item.kind === "flight") {
       const code = item.details.to;
       const a = code && /^[A-Z]{3}$/.test(code) ? airport(code) : undefined;
@@ -53,7 +58,7 @@ export function pendingLookups(j: JourneyWithItems, now: number): Lookup[] {
 }
 
 /** One round of lookups: a locate call does at most this many. */
-export const lookupsFor = (j: JourneyWithItems, now: number) => pendingLookups(j, now).slice(0, MAX_LOCATE);
+export const lookupsFor = (j: JourneyWithItems, now: number, finder: Finder = "osm") => pendingLookups(j, now, finder).slice(0, MAX_LOCATE);
 
 function center(items: Item[]): LatLng | null {
   if (!items.length) return null;

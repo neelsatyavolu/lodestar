@@ -26,11 +26,12 @@ export function POST(req: Request, ctx: TripCtx) {
     const journey = await getJourney(db, who.userId, who.id);
     if (!journey) return fail("That trip doesn't exist.", 404);
     const now = Date.now();
-    const lookups = lookupsFor(journey, now);
+    const g = google();
+    const finder = g ? "google" : "osm";
+    const lookups = lookupsFor(journey, now, finder);
     if (!lookups.length) return ok({ journey, located: 0, settled: 0, remaining: 0 });
     const gate = await placesUser();
     if (gate instanceof Response) return gate;
-    const g = google();
 
     if (!g) {
       const body = (await readJson(req, 16_000).catch(() => ({}))) as { results?: unknown };
@@ -40,7 +41,7 @@ export function POST(req: Request, ctx: TripCtx) {
       const results = LocateResultsSchema.parse(body.results);
       const found = results.found.filter((f) => waiting.has(f.id));
       const failed = results.failed.filter((id) => waiting.has(id));
-      await setItemLocations(db, who.userId, found, failed, now);
+      await setItemLocations(db, who.userId, found, failed, now, finder);
       const next = await getJourney(db, who.userId, who.id);
       return ok({ journey: next, located: found.length, settled: found.length + failed.length, remaining: next ? pendingLookups(next, now).length : 0 });
     }
@@ -72,8 +73,8 @@ export function POST(req: Request, ctx: TripCtx) {
         console.error("[locate]", err instanceof Error ? err.message : err);
       }
     }
-    await setItemLocations(db, who.userId, found, failed, now);
+    await setItemLocations(db, who.userId, found, failed, now, finder);
     const next = await getJourney(db, who.userId, who.id);
-    return ok({ journey: next, located: found.length, settled: found.length + failed.length, remaining: next ? pendingLookups(next, now).length : 0 });
+    return ok({ journey: next, located: found.length, settled: found.length + failed.length, remaining: next ? pendingLookups(next, now, finder).length : 0 });
   });
 }

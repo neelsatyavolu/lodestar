@@ -202,6 +202,15 @@ describe("map pins", () => {
     expect(needsLocation(base({ details: { lat: 1, lng: 2, placeId: "g:x", locatedAt: now - 40 * 86_400_000, locateFailedAt: now - 1000 } }), now)).toBe(false);
   });
 
+  it("lets Google try what OpenStreetMap couldn't place, but not what Google couldn't", () => {
+    const now = Date.now();
+    const recent = now - 3_600_000;
+    expect(needsLocation(base({ details: { locateFailedAt: recent, locateFailedWith: "osm" } }), now, "google")).toBe(true);
+    expect(needsLocation(base({ details: { locateFailedAt: recent } }), now, "google")).toBe(true);
+    expect(needsLocation(base({ details: { locateFailedAt: recent, locateFailedWith: "google" } }), now, "google")).toBe(false);
+    expect(needsLocation(base({ details: { locateFailedAt: recent, locateFailedWith: "google" } }), now, "osm")).toBe(false);
+  });
+
   it("looks Google coordinates up again after 30 days", () => {
     const now = Date.now();
     expect(needsLocation(base({ details: { lat: 1, lng: 2, placeId: "g:x", locatedAt: now - 31 * 86_400_000 } }), now)).toBe(true);

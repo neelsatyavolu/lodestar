@@ -115,7 +115,8 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   // dozen, so keep calling while some are left and the last call settled some. Without Google
   // the server asks the page to do the OpenStreetMap searches itself and save what it found.
   useEffect(() => {
-    if (located.current || !loaded || !lookupsFor(journey, Date.now()).length) return;
+    // Asked as Google would: the server knows which search it has and skips what that one can't find.
+    if (located.current || !loaded || !lookupsFor(journey, Date.now(), "google").length) return;
     located.current = true;
     (async () => {
       type Located = { journey: TripDetail; settled: number; remaining: number; browser?: boolean };
