@@ -20,7 +20,8 @@ export type Lookup = { id: string; title: string; address: string | null; city: 
  */
 export function byItinerary(a: Item, b: Item): number {
   const at = (i: Item) => i.startTime ?? (i.kind === "stay" ? "99:99" : "98:00");
-  return `${a.startDate}${at(a)}`.localeCompare(`${b.startDate}${at(b)}`);
+  // At the same time a note follows the stop, so "leave at 5:15" can share its time and still sit after it.
+  return `${a.startDate}${at(a)}`.localeCompare(`${b.startDate}${at(b)}`) || Number(a.kind === "note") - Number(b.kind === "note");
 }
 
 const located = (i: Item) => i.details.lat !== undefined && i.details.lng !== undefined;

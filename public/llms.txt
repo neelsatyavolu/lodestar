@@ -24,6 +24,7 @@ On the page:
 - Every control has a text name. Icon buttons name what they act on, for example "Actions for Penca", "Remove Renew passports" or "Actions for Saturday, November 21".
 - Nothing appears only on hover. Row actions are always on screen.
 - Removing or deleting asks in a dialog on the page, with Cancel and a named button (Remove, Delete trip). There are no browser pop-ups.
+- A day's drive times between stops are worked out for you. For when to leave, parking or a tip, add a note to the day (type it into "Add a place" and pick "Add … as a note", then set its time in its details) rather than a stop, so the drive times stay. Through MCP that's an item of kind "note" with a startTime.
 - Dates are picked from a calendar. Each day is a button named with its full date, for example "Saturday, November 21, 2026".
 
 ## Adding bookings by email
