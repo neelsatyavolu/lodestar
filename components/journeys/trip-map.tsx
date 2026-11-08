@@ -1,5 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
+import { distanceKm } from "@/lib/airports";
 import { useEffect, useRef, useState } from "react";
 import type { Item } from "@/lib/journeys/types";
 import { dayColor, pinsOf, type Pin } from "./pins";
@@ -12,8 +13,13 @@ import { dayColor, pinsOf, type Pin } from "./pins";
 
 const STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const ROUTE = "day-route";
-/** Pins closer than this on screen are fanned out so none hides another. */
+/** Pins closer than this on screen would hide each other. */
 const CROWD_PX = 22;
+/** Pins this close on the ground are one spot (two plans at one hotel): fanned out, never merged. */
+const SAME_SPOT_KM = 0.03;
+
+type Placed = { marker: Marker; lng: number; lat: number; keep: boolean };
+type MarkerCtor = typeof Marker;
 
 function darkMode(): boolean {
   const t = document.documentElement.getAttribute("data-theme");
@@ -57,29 +63,81 @@ function pinElement(pin: Pin, state: { selected: boolean; onDay: boolean }, onCl
   return el;
 }
 
-/** Fans out pins that sit on top of each other at the current zoom, in a small ring. */
-function spread(m: MlMap, placed: { marker: Marker; lng: number; lat: number }[]) {
+function clusterElement(count: number, onClick: () => void): HTMLElement {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.textContent = String(count);
+  el.title = `${count} stops`;
+  el.setAttribute("aria-label", `${count} stops close together. Zoom in`);
+  el.style.cssText = [
+    "display:flex;align-items:center;justify-content:center;border-radius:9999px;cursor:pointer;padding:0;",
+    "font:700 13px/1 var(--font-sans),system-ui;width:34px;height:34px;background:#111111;color:#ffffff;",
+    "border:2px solid #ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.45);z-index:2;",
+  ].join("");
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    onClick();
+  });
+  return el;
+}
+
+const sameSpot = (a: Placed, b: Placed) => distanceKm({ lat: a.lat, lon: a.lng }, { lat: b.lat, lon: b.lng }) < SAME_SPOT_KM;
+
+/**
+ * Keeps pins from hiding each other at the current zoom. Pins on one spot fan out in a small
+ * ring; different places that crowd together zoomed out become one bubble with their count,
+ * which zooms in to them. The open item's pin always shows on its own.
+ */
+function spread(m: MlMap, placed: Placed[], MarkerClass: MarkerCtor, bubbles: Marker[]): Marker[] {
+  bubbles.forEach((b) => b.remove());
   const pts = placed.map((p) => ({ ...p, at: m.project([p.lng, p.lat]) }));
-  const groups: (typeof pts)[] = [];
+  // First the spots: pins at one place, whatever the zoom.
+  const spots: (typeof pts)[] = [];
   for (const p of pts) {
-    const g = groups.find((grp) => Math.hypot(grp[0].at.x - p.at.x, grp[0].at.y - p.at.y) < CROWD_PX);
-    if (g) g.push(p);
-    else groups.push([p]);
+    const s = spots.find((grp) => sameSpot(grp[0], p));
+    if (s) s.push(p);
+    else spots.push([p]);
   }
-  for (const g of groups) {
-    const r = g.length > 1 ? 12 + g.length * 2 : 0;
-    g.forEach((p, i) => {
-      const a = (2 * Math.PI * i) / g.length - Math.PI / 2;
-      p.marker.setOffset(g.length > 1 ? [Math.round(r * Math.cos(a)), Math.round(r * Math.sin(a))] : [0, 0]);
+  // Then spots that crowd each other on screen.
+  const crowds: (typeof spots)[] = [];
+  for (const s of spots) {
+    const c = s.some((p) => p.keep) ? undefined : crowds.find((grp) => !grp[0].some((p) => p.keep) && Math.hypot(grp[0][0].at.x - s[0].at.x, grp[0][0].at.y - s[0].at.y) < CROWD_PX);
+    if (c) c.push(s);
+    else crowds.push([s]);
+  }
+  const next: Marker[] = [];
+  for (const crowd of crowds) {
+    const members = crowd.flat();
+    if (crowd.length > 1) {
+      members.forEach((p) => (p.marker.getElement().style.visibility = "hidden"));
+      const lng = members.reduce((t, p) => t + p.lng, 0) / members.length;
+      const lat = members.reduce((t, p) => t + p.lat, 0) / members.length;
+      const zoomIn = () => {
+        const xs = members.map((p) => p.lng);
+        const ys = members.map((p) => p.lat);
+        m.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: 70, maxZoom: 16, duration: 600 });
+      };
+      next.push(new MarkerClass({ element: clusterElement(members.length, zoomIn) }).setLngLat([lng, lat]).addTo(m));
+      continue;
+    }
+    const [spot] = crowd;
+    const r = spot.length > 1 ? 12 + spot.length * 2 : 0;
+    spot.forEach((p, i) => {
+      const a = (2 * Math.PI * i) / spot.length - Math.PI / 2;
+      p.marker.getElement().style.visibility = "";
+      p.marker.setOffset(spot.length > 1 ? [Math.round(r * Math.cos(a)), Math.round(r * Math.sin(a))] : [0, 0]);
     });
   }
+  return next;
 }
 
 /** `panelOpen`: the details panel covers the lower part of the map, so selected pins are framed above it. */
 export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }: { items: Item[]; selectedId: string | null; day: string | null; onSelect: (id: string) => void; panelOpen?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
-  const placed = useRef<{ marker: Marker; lng: number; lat: number }[]>([]);
+  const placed = useRef<Placed[]>([]);
+  const bubbles = useRef<Marker[]>([]);
+  const markerClass = useRef<MarkerCtor | null>(null);
   const fitted = useRef(false);
   const [ready, setReady] = useState(false);
   const [dark, setDark] = useState(false);
@@ -107,7 +165,7 @@ export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }:
         map.current = instance;
         setReady(true);
       });
-      instance.on("zoomend", () => spread(instance!, placed.current));
+      instance.on("zoomend", () => markerClass.current && (bubbles.current = spread(instance!, placed.current, markerClass.current, bubbles.current)));
     });
     return () => {
       cancelled = true;
@@ -123,12 +181,13 @@ export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }:
     let alive = true;
     import("maplibre-gl").then(({ Marker: MarkerClass, LngLatBounds }) => {
       if (!alive) return;
+      markerClass.current = MarkerClass;
       placed.current.forEach((p) => p.marker.remove());
       placed.current = pins.map((pin) => {
         const lng = pin.item.details.lng!;
         const lat = pin.item.details.lat!;
         const marker = new MarkerClass({ element: pinElement(pin, { selected: pin.item.id === selectedId, onDay: pin.item.startDate === day }, () => onSelect(pin.item.id)) }).setLngLat([lng, lat]).addTo(m);
-        return { marker, lng, lat };
+        return { marker, lng, lat, keep: pin.item.id === selectedId };
       });
       const stops = pins.filter((p) => p.item.startDate === day && p.item.status !== "suggested" && p.item.kind !== "flight");
       if (day) m.setPaintProperty(ROUTE, "line-color", dayColor(items, day).fill);
@@ -151,7 +210,7 @@ export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }:
         m.fitBounds(bounds, { padding: 70, maxZoom: 14, duration: fitted.current ? 600 : 0 });
       }
       fitted.current = true;
-      spread(m, placed.current);
+      bubbles.current = spread(m, placed.current, MarkerClass, bubbles.current);
     });
     return () => {
       alive = false;
