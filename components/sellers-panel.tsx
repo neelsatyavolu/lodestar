@@ -56,13 +56,13 @@ function SellerRow({ seller, bookingUrl, onBook }: { seller: VerifiedSeller; boo
         <Logo src={seller.logo} name={seller.name} size={28} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink">{seller.name}</div>
-          <Pill dot={TIER_DOT[seller.tier]} className="mt-0.5 !bg-transparent !px-0 !py-0 text-[11px] !text-charcoal">
+          <Pill dot={TIER_DOT[seller.tier]} className="mt-0.5 !bg-transparent !px-0 !py-0 text-[12px] !text-charcoal">
             {TIER_LABEL[seller.tier]}
           </Pill>
         </div>
         <div className="text-right">
           <div className="text-[15px] text-ink tnum">{money(seller.lowest)}</div>
-          {tiers && <div className="text-[11px] text-ash">from</div>}
+          {tiers && <div className="text-[12px] text-ash">from</div>}
         </div>
         <a
           href={bookingUrl}

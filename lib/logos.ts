@@ -57,7 +57,7 @@ export function initials(name: string): string {
 
 export function monogram(name: string): Image {
   const text = escapeXml(initials(name));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect x="0.5" y="0.5" width="63" height="63" rx="12" fill="#fcfdff"/><text x="32" y="38" text-anchor="middle" font-family="Geist, Helvetica, Arial, sans-serif" font-size="${text.length > 2 ? 18 : 22}" font-weight="600" fill="#000000">${text}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect x="0.5" y="0.5" width="63" height="63" rx="6" fill="#f2f0ea"/><text x="32" y="38" text-anchor="middle" font-family="Geist, Helvetica, Arial, sans-serif" font-size="${text.length > 2 ? 18 : 22}" font-weight="600" fill="#000000">${text}</text></svg>`;
   return { body: new TextEncoder().encode(svg).buffer as ArrayBuffer, type: "image/svg+xml", fallback: true };
 }
 

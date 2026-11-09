@@ -138,7 +138,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
     <section className="pt-10 sm:pt-16">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[clamp(32px,5vw,48px)] tracking-[-0.02em]">Trips</h1>
+          <h1 className="font-display text-[clamp(32px,5vw,48px)]">Trips</h1>
           <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-body">Plan any trip day by day, with what to book, a checklist and a budget. Forward a confirmation or connect Flint and bookings file themselves.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -217,7 +217,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
                     aria-label={`Trip for ${item.title}`}
                     defaultValue=""
                     onChange={(e) => e.target.value && fileItem(item, e.target.value)}
-                    className="mt-2 h-9 max-w-56 rounded-md border border-hairline-strong bg-deep px-2 text-[13px] text-ink"
+                    className="mt-2 h-9 max-w-56 rounded-md border border-hairline-hover bg-card px-2 text-[13px] text-ink"
                   >
                     <option value="">Move to…</option>
                     {data.journeys.map((j) => (

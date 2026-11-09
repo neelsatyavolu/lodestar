@@ -429,7 +429,7 @@ export function App() {
             <section className={`${result ? "pt-8 pb-6" : "pt-20 pb-10 sm:pt-28"}`}>
               {!result && (
                 <div className="mb-10 max-w-4xl">
-                  <h1 className="font-display text-[clamp(44px,8vw,88px)] tracking-[-0.02em]">
+                  <h1 className="font-display text-[clamp(44px,6.5vw,72px)]">
                     Lower fares.
                     <br />
                     <span className="text-charcoal">Sellers you can trust.</span>
@@ -518,7 +518,7 @@ export function App() {
             <AiCanvas
               intro={
                 <div className="mb-10 max-w-4xl pt-6 sm:pt-8">
-                  <h1 className="font-display text-[clamp(40px,7vw,76px)] tracking-[-0.02em]">
+                  <h1 className="font-display text-[clamp(40px,6vw,72px)]">
                     Say the trip.
                     <br />
                     <span className="text-charcoal">Get the shortlist.</span>

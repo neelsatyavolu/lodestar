@@ -156,14 +156,14 @@ export function PlaceSearch({ near, label, placeholder, initial = "", autoFocus 
           autoFocus={autoFocus}
           // The box around it shows focus; the page-wide ring would draw a second one inside.
           style={{ boxShadow: "none" }}
-          className="h-full min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-stone"
+          className="h-full min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-mute"
           disabled={busy}
         />
         {(searching || busy) && <Spinner />}
       </div>
       {error && <p className="mt-1 text-[12px] text-danger">{error}</p>}
       {open && (options.length > 0 || nothing) && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-hairline-strong bg-card shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-hairline-strong bg-card">
           {nothing && <p className="px-3 py-2.5 text-[13px] text-mute">No places match “{text}”. Try the name and the city.</p>}
           <ul id={listId} role="listbox" className="max-h-[340px] overflow-y-auto py-1">
             {options.map((s, i) => (
@@ -183,7 +183,7 @@ export function PlaceSearch({ near, label, placeholder, initial = "", autoFocus 
               </li>
             ))}
           </ul>
-          {rows.length > 0 && <p className="border-t border-hairline px-3 py-1.5 text-right text-[11px] text-ash">{results?.provider === "google" ? "Results from Google Maps" : "Results from OpenStreetMap"}</p>}
+          {rows.length > 0 && <p className="border-t border-hairline px-3 py-1.5 text-right text-[12px] text-ash">{results?.provider === "google" ? "Results from Google Maps" : "Results from OpenStreetMap"}</p>}
         </div>
       )}
     </div>

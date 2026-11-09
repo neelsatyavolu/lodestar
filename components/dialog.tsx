@@ -54,10 +54,10 @@ export function Field({ label, children, hint }: { label: string; children: Reac
     <label className="block">
       <span className="mb-1.5 block text-[12px] text-charcoal">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-[11px] text-ash">{hint}</span>}
+      {hint && <span className="mt-1 block text-[12px] text-ash">{hint}</span>}
     </label>
   );
 }
 
 export const inputClass =
-  "h-10 w-full rounded-md border border-hairline-strong bg-deep px-3 text-[14px] text-ink outline-none placeholder:text-stone focus:border-accent max-sm:h-12";
+  "h-10 w-full rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none placeholder:text-mute focus:border-accent max-sm:h-12";

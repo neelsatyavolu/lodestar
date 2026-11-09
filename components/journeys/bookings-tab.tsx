@@ -32,7 +32,7 @@ function CopyCode({ code }: { code: string }) {
         });
       }}
       aria-label={`Copy confirmation ${code}`}
-      className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-hairline-strong bg-deep px-2.5 font-mono text-[13px] text-ink hover:border-hairline-hover"
+      className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-hairline-hover bg-card px-2.5 font-mono text-[13px] text-ink hover:border-hairline-hover"
     >
       {code}
       {copied ? <Check size={12} className="text-ok" aria-hidden /> : <Copy size={12} className="text-ash" aria-hidden />}

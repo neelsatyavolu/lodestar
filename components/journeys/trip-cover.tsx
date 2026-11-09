@@ -63,7 +63,7 @@ export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }:
   const card = (
     <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
       <div className="min-w-0">
-        <h1 className="font-display text-[clamp(30px,5vw,46px)] leading-[1.05] tracking-[-0.02em] [text-wrap:balance]">{journey.title}</h1>
+        <h1 className="font-display text-[clamp(30px,5vw,46px)] leading-[1.05] [text-wrap:balance]">{journey.title}</h1>
         <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-body">
           {meta.map((m) => (
             <span key={m.text} className="tnum inline-flex items-center gap-1.5">

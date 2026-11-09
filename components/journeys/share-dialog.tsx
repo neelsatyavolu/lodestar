@@ -42,7 +42,7 @@ export function ShareDialog({ open, onClose, journeyId, token, onToken }: { open
         <Toggle checked={Boolean(token)} onChange={(on) => !busy && set(on)} label={token ? "Link is on" : "Link is off"} />
         {url && (
           <div className="flex items-center gap-2">
-            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-hairline-strong bg-deep px-3">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-hairline-hover bg-card px-3">
               <Link2 size={14} className="shrink-0 text-ash" aria-hidden />
               <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Share link" className="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-ink outline-none" />
             </div>

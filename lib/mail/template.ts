@@ -7,13 +7,13 @@
 export type EmailCopy = { subject: string; heading: string; body: string; button: string; url: string; linkHint: string; footer: string };
 export type RenderedEmail = { subject: string; html: string; text: string };
 
-const BG = "#000000";
-const CARD = "#0a0a0c";
-const INK = "#fcfdff";
-const INK_2 = "#a1a4a5";
-const LINE = "#2a2a2e";
-const BUTTON = "#fcfdff";
-const BUTTON_TEXT = "#000000";
+const BG = "#0e0e0d";
+const CARD = "#141413";
+const INK = "#f2f0ea";
+const INK_2 = "#9e9c97";
+const LINE = "#3a3a37";
+const BUTTON = "#f2f0ea";
+const BUTTON_TEXT = "#0e0e0d";
 const SANS = "Geist,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "Georgia,'Times New Roman',serif";
 
@@ -30,10 +30,10 @@ export function renderEmail(copy: EmailCopy): RenderedEmail {
 <tr><td align="center" style="padding:40px 16px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;text-align:left;">
 <tr><td style="padding:0 4px 20px;font-family:${SERIF};font-size:22px;line-height:28px;color:${INK};">&#10022; Lodestar</td></tr>
-<tr><td bgcolor="${CARD}" style="background:${CARD};border:1px solid ${LINE};border-radius:12px;padding:28px;">
+<tr><td bgcolor="${CARD}" style="background:${CARD};border:1px solid ${LINE};border-radius:6px;padding:28px;">
 <div style="font-family:${SANS};font-size:22px;line-height:30px;font-weight:500;color:${INK};">${escapeHtml(copy.heading)}</div>
 <div style="padding-top:12px;font-family:${SANS};font-size:16px;line-height:26px;color:${INK};">${escapeHtml(copy.body)}</div>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td bgcolor="${BUTTON}" style="background:${BUTTON};border-radius:8px;"><a href="${url}" style="display:inline-block;padding:11px 18px;font-family:${SANS};font-size:15px;line-height:18px;font-weight:500;color:${BUTTON_TEXT};text-decoration:none;">${escapeHtml(copy.button)}</a></td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td bgcolor="${BUTTON}" style="background:${BUTTON};border-radius:4px;"><a href="${url}" style="display:inline-block;padding:11px 18px;font-family:${SANS};font-size:15px;line-height:18px;font-weight:500;color:${BUTTON_TEXT};text-decoration:none;">${escapeHtml(copy.button)}</a></td></tr></table>
 <div style="padding-top:24px;font-family:${SANS};font-size:13px;line-height:20px;color:${INK_2};">${escapeHtml(copy.linkHint)}</div>
 <div style="padding-top:4px;font-family:${SANS};font-size:12px;line-height:18px;word-break:break-all;"><a href="${url}" style="color:${INK_2};">${url}</a></div>
 </td></tr>

@@ -103,7 +103,7 @@ function Month({
   return (
     <div className="min-w-0 flex-1">
       <div className="mb-2 text-center text-sm font-medium text-ink">{monthLabel(month)}</div>
-      <div className="grid grid-cols-7 text-center text-[11px] text-ash">
+      <div className="grid grid-cols-7 text-center text-[12px] text-ash">
         {WEEKDAYS.map((w, i) => (
           <div key={i} className="pb-1.5">
             {w}
@@ -235,7 +235,7 @@ export function DateRangeField({ depart, ret, roundTrip, today, onChange, onRoun
       aria-expanded={open && active}
       className={`block w-full cursor-pointer px-3 py-2.5 text-left ${active && open ? "bg-hover" : "hover:bg-hover"} ${dim ? "text-mute" : ""}`}
     >
-      <span className="block text-[11px] text-ash">{label}</span>
+      <span className="block text-[12px] text-ash">{label}</span>
       <span className={`mt-1 block text-[15px] tnum ${dim ? "text-mute" : "text-ink"}`}>{value}</span>
     </button>
   );
@@ -273,10 +273,10 @@ export function DateRangeField({ depart, ret, roundTrip, today, onChange, onRoun
               ))}
             </div>
             <div className="flex items-center gap-1">
-              <button type="button" aria-label="Previous month" disabled={!canGoBack} onClick={() => setView(addMonths(view, -1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:opacity-30">
+              <button type="button" aria-label="Previous month" disabled={!canGoBack} onClick={() => setView(addMonths(view, -1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:text-stone">
                 <ChevronLeft size={16} />
               </button>
-              <button type="button" aria-label="Next month" disabled={!canGoForward} onClick={() => setView(addMonths(view, 1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:opacity-30">
+              <button type="button" aria-label="Next month" disabled={!canGoForward} onClick={() => setView(addMonths(view, 1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:text-stone">
                 <ChevronRight size={16} />
               </button>
             </div>

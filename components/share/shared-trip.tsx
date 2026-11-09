@@ -27,7 +27,7 @@ const byTime = (a: Item, b: Item) => (a.startTime ?? "").localeCompare(b.startTi
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-20 border-t border-hairline pt-8 first:border-t-0 first:pt-0">
-      <h2 className="font-display text-[28px] tracking-[-0.01em] text-ink">{title}</h2>
+      <h2 className="font-display text-[28px] text-ink">{title}</h2>
       <div className="mt-5">{children}</div>
     </section>
   );
@@ -70,11 +70,11 @@ export function SharedTripView({ trip, today }: { trip: SharedTrip; today: strin
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-24 sm:px-6">
       <header className="pt-12 sm:pt-16">
         <p className="text-[13px] text-mute">A trip shared from Lodestar · read only</p>
-        <h1 className="mt-3 font-display text-[clamp(34px,6vw,52px)] leading-tight tracking-[-0.02em] text-ink">{trip.title}</h1>
+        <h1 className="mt-3 font-display text-[clamp(34px,6vw,52px)] leading-tight text-ink">{trip.title}</h1>
         <p className="mt-2 text-[16px] text-body">{[trip.destination, span(trip.startDate, trip.endDate), trip.travelers ? `${trip.travelers} ${trip.travelers === 1 ? "traveller" : "travellers"}` : null].filter(Boolean).join(" · ")}</p>
       </header>
 
-      <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 mt-8 flex gap-1 overflow-x-auto border-b border-hairline bg-canvas/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6">
+      <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 mt-8 flex gap-1 overflow-x-auto border-b border-hairline bg-canvas px-4 py-2 sm:-mx-6 sm:px-6">
         {nav.map(([id, label]) => (
           <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] text-mute hover:bg-hover hover:text-ink">
             {label}

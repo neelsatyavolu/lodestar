@@ -11,7 +11,7 @@ import { askConfirm } from "../confirm";
 // Titled notes in the Overview: "How the week works", "Dietary needs",
 // "Getting around". Written by hand, by the AI or by an agent.
 
-const textareaClass = "w-full resize-y rounded-md border border-hairline-strong bg-deep px-3 py-2 text-[14px] leading-relaxed text-ink outline-none placeholder:text-stone focus:border-accent";
+const textareaClass = "w-full resize-y rounded-md border border-hairline-hover bg-card px-3 py-2 text-[14px] leading-relaxed text-ink outline-none placeholder:text-mute focus:border-accent";
 
 function NoteEditor({ note, onSave, onCancel }: { note?: Note; onSave: (title: string, body: string) => Promise<void>; onCancel: () => void }) {
   const [title, setTitle] = useState(note?.title ?? "");

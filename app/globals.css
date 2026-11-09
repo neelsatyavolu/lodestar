@@ -1,100 +1,100 @@
 @import "tailwindcss";
 
-/* Blackletter (~/DESIGN.md): flat canvas, off-white ink, Geist Serif display,
-   Geist for everything else, blue as the only color, depth from luminance steps
-   and hairlines. Dark by default; light by system setting or data-theme.
-   Lodestar has no code wells, so --deep is an inset panel and goes light in
-   light mode (the spec keeps it dark only for code). */
+/* Ink & Instrument (~/DESIGN.md v3): warm off-black / paper canvas, Newsreader
+   for what people read, Geist Mono for numbers and labels, Geist for controls.
+   Blue is the only color; depth from luminance steps and hairlines.
+   Legacy alias names (charcoal, ash, elev) map onto the four v3 text/surface steps.
+   Lodestar has no code wells, so --deep is an inset panel and goes light in light mode. */
 :root {
-  --canvas: #000000;
-  --card: #0a0a0c;
-  --elev: #111114;
-  --deep: #06060a;
-  --ink: #fcfdff;
-  --body: rgba(252, 253, 255, 0.86);
-  --charcoal: rgba(252, 253, 255, 0.7);
-  --mute: #a1a4a5;
-  --ash: #888e90;
-  --stone: #464a4d;
-  --line: rgba(255, 255, 255, 0.06);
-  --line-2: rgba(255, 255, 255, 0.14);
-  --line-3: rgba(255, 255, 255, 0.3);
-  --hover: rgba(255, 255, 255, 0.04);
-  --primary: #fcfdff;
-  --primary-on: #000000;
-  --primary-hover: #e8f0ff;
+  --canvas: #0e0e0d;
+  --card: #141413;
+  --elev: #1a1a18;
+  --deep: #090908;
+  --ink: #f2f0ea;
+  --body: rgba(242, 240, 234, 0.86);
+  --charcoal: rgba(242, 240, 234, 0.86);
+  --mute: rgba(242, 240, 234, 0.55);
+  --ash: rgba(242, 240, 234, 0.55);
+  --stone: rgba(242, 240, 234, 0.28);
+  --line: rgba(242, 240, 234, 0.08);
+  --line-2: rgba(242, 240, 234, 0.18);
+  --line-3: rgba(242, 240, 234, 0.42);
+  --hover: #1a1a18;
+  --primary: #f2f0ea;
+  --primary-on: #0e0e0d;
+  --primary-hover: #e4e1d9;
   --accent: #4c8dff;
   --accent-hover: #6fa3ff;
-  --accent-on: #000000;
-  --tint: rgba(76, 141, 255, 0.12);
-  --ring: rgba(76, 141, 255, 0.55);
-  --ok: #3dd68c;
-  --danger: #ff4d5e;
-  --warn: #ffc53d;
-  --scrim: rgba(0, 0, 0, 0.7);
+  --accent-on: #0e0e0d;
+  --tint: rgba(76, 141, 255, 0.1);
+  --selection: rgba(76, 141, 255, 0.35);
+  --ok: #4fbf85;
+  --danger: #ee5a4b;
+  --warn: #d9a23a;
+  --scrim: rgba(9, 9, 8, 0.7);
   --ease: cubic-bezier(0.2, 0, 0, 1);
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --canvas: #fcfcfd;
-    --card: #ffffff;
-    --elev: #f4f5f7;
-    --deep: #f7f8fa;
-    --ink: #0a0a0c;
-    --body: rgba(10, 10, 12, 0.82);
-    --charcoal: rgba(10, 10, 12, 0.66);
-    --mute: #5f6366;
-    --ash: #7a7f82;
-    --stone: #c4c7ca;
-    --line: rgba(0, 0, 0, 0.06);
-    --line-2: rgba(0, 0, 0, 0.12);
-    --line-3: rgba(0, 0, 0, 0.28);
-    --hover: rgba(0, 0, 0, 0.035);
-    --primary: #0a0a0c;
-    --primary-on: #fcfdff;
-    --primary-hover: #26262b;
-    --accent: #2f6fe0;
-    --accent-hover: #2459ba;
+    --canvas: #f7f5ef;
+    --card: #fbfaf6;
+    --elev: #efece4;
+    --deep: #efece4;
+    --ink: #16161a;
+    --body: rgba(22, 22, 26, 0.86);
+    --charcoal: rgba(22, 22, 26, 0.86);
+    --mute: rgba(22, 22, 26, 0.64);
+    --ash: rgba(22, 22, 26, 0.64);
+    --stone: rgba(22, 22, 26, 0.28);
+    --line: rgba(22, 22, 26, 0.1);
+    --line-2: rgba(22, 22, 26, 0.22);
+    --line-3: rgba(22, 22, 26, 0.5);
+    --hover: #efece4;
+    --primary: #16161a;
+    --primary-on: #f7f5ef;
+    --primary-hover: #2a2a2f;
+    --accent: #2a63cc;
+    --accent-hover: #1f4fa8;
     --accent-on: #ffffff;
-    --tint: rgba(47, 111, 224, 0.08);
-    --ring: rgba(47, 111, 224, 0.45);
-    --ok: #14915a;
-    --danger: #d92d3f;
-    --warn: #b7791f;
-    --scrim: rgba(10, 10, 12, 0.4);
+    --tint: rgba(42, 99, 204, 0.09);
+    --selection: rgba(42, 99, 204, 0.25);
+    --ok: #1a7048;
+    --danger: #bc2e23;
+    --warn: #8a5e12;
+    --scrim: rgba(22, 22, 26, 0.4);
     color-scheme: light;
   }
 }
 
 :root[data-theme="light"] {
-  --canvas: #fcfcfd;
-  --card: #ffffff;
-  --elev: #f4f5f7;
-  --deep: #f7f8fa;
-  --ink: #0a0a0c;
-  --body: rgba(10, 10, 12, 0.82);
-  --charcoal: rgba(10, 10, 12, 0.66);
-  --mute: #5f6366;
-  --ash: #7a7f82;
-  --stone: #c4c7ca;
-  --line: rgba(0, 0, 0, 0.06);
-  --line-2: rgba(0, 0, 0, 0.12);
-  --line-3: rgba(0, 0, 0, 0.28);
-  --hover: rgba(0, 0, 0, 0.035);
-  --primary: #0a0a0c;
-  --primary-on: #fcfdff;
-  --primary-hover: #26262b;
-  --accent: #2f6fe0;
-  --accent-hover: #2459ba;
+  --canvas: #f7f5ef;
+  --card: #fbfaf6;
+  --elev: #efece4;
+  --deep: #efece4;
+  --ink: #16161a;
+  --body: rgba(22, 22, 26, 0.86);
+  --charcoal: rgba(22, 22, 26, 0.86);
+  --mute: rgba(22, 22, 26, 0.64);
+  --ash: rgba(22, 22, 26, 0.64);
+  --stone: rgba(22, 22, 26, 0.28);
+  --line: rgba(22, 22, 26, 0.1);
+  --line-2: rgba(22, 22, 26, 0.22);
+  --line-3: rgba(22, 22, 26, 0.5);
+  --hover: #efece4;
+  --primary: #16161a;
+  --primary-on: #f7f5ef;
+  --primary-hover: #2a2a2f;
+  --accent: #2a63cc;
+  --accent-hover: #1f4fa8;
   --accent-on: #ffffff;
-  --tint: rgba(47, 111, 224, 0.08);
-  --ring: rgba(47, 111, 224, 0.45);
-  --ok: #14915a;
-  --danger: #d92d3f;
-  --warn: #b7791f;
-  --scrim: rgba(10, 10, 12, 0.4);
+  --tint: rgba(42, 99, 204, 0.09);
+  --selection: rgba(42, 99, 204, 0.25);
+  --ok: #1a7048;
+  --danger: #bc2e23;
+  --warn: #8a5e12;
+  --scrim: rgba(22, 22, 26, 0.4);
   color-scheme: light;
 }
 
@@ -124,13 +124,16 @@
   --color-danger: var(--danger);
   --color-warn: var(--warn);
   --color-scrim: var(--scrim);
-  --font-serif: var(--font-geist-serif), Georgia, serif;
+  --font-serif: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
 }
 
 html {
@@ -147,12 +150,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Geist Serif: hero and section openers only, 40px and up, tight leading. */
+/* Newsreader display: hero and section openers. opsz follows size automatically. */
 .font-display {
   font-family: var(--font-serif);
   font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
@@ -187,20 +190,22 @@ textarea {
   transition:
     color 150ms var(--ease),
     background-color 150ms var(--ease),
-    border-color 150ms var(--ease),
-    box-shadow 150ms var(--ease);
+    border-color 150ms var(--ease);
 }
 
 :focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--ring);
-  border-radius: 6px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--selection);
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -208,7 +213,7 @@ textarea {
   }
 }
 .rise {
-  animation: rise 250ms var(--ease) both;
+  animation: rise 200ms var(--ease) both;
 }
 
 /* Loading placeholder: a flat surface that breathes while a live request runs. */

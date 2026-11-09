@@ -1,18 +1,18 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-// Primitives from ~/DESIGN.md (Blackletter): the primary button is the brightest
-// pixel (ink on canvas, inverted in light mode), accent is the one blue action,
-// ghost and outline are secondary. 36px tall, 8px radius; pills are full radius.
+// Primitives from ~/DESIGN.md (Ink & Instrument v3): primary is ink on canvas
+// (inverted in light mode), accent is the one blue action, ghost and outline are
+// secondary. 36px tall (44px on touch), 4px radius; pills are full radius.
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "accent" | "ghost" | "outline" | "quiet"; size?: "md" | "sm" };
 
 export function Button({ variant = "ghost", size = "md", className = "", ...rest }: ButtonProps) {
-  const base = "inline-flex items-center justify-center gap-2 rounded-md font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap";
+  const base = "inline-flex items-center justify-center gap-2 rounded-md font-medium disabled:text-stone disabled:cursor-default cursor-pointer whitespace-nowrap";
   const sizes = size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-4 text-sm max-sm:h-11";
   const variants = {
-    primary: "bg-primary text-primary-on hover:bg-primary-hover",
-    accent: "bg-accent text-accent-on hover:bg-accent-hover",
-    ghost: "bg-elevated text-ink border border-hairline-strong hover:border-hairline-hover",
+    primary: "bg-primary text-primary-on hover:bg-primary-hover disabled:bg-hover disabled:text-stone",
+    accent: "bg-accent text-accent-on hover:bg-accent-hover disabled:bg-hover disabled:text-stone",
+    ghost: "bg-transparent text-ink border border-hairline-strong hover:bg-hover",
     outline: "bg-canvas text-ink border border-hairline-strong hover:bg-elevated",
     quiet: "text-charcoal hover:text-ink",
   }[variant];

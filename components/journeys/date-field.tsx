@@ -34,7 +34,7 @@ function Calendar({ value, range, inline, alignEnd = false, onPick, onDone }: { 
         {[view, addMonths(view, 1)].map((month, i) => (
           <div key={month} className={`min-w-0 flex-1 ${i === 1 ? (alignEnd ? "hidden" : "max-sm:hidden") : ""}`}>
             <div className="mb-2 text-center text-sm font-medium text-ink">{monthLabel(month)}</div>
-            <div className="grid grid-cols-7 text-center text-[11px] text-ash">
+            <div className="grid grid-cols-7 text-center text-[12px] text-ash">
               {WEEKDAYS.map((w, k) => (
                 <div key={k} className="pb-1.5">
                   {w}
@@ -95,7 +95,7 @@ function usePopover() {
   return { open, setOpen, root };
 }
 
-const fieldClass = "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-hairline-strong bg-deep px-3 text-left text-[14px] text-ink hover:border-hairline-hover max-sm:h-12";
+const fieldClass = "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-hairline-hover bg-card px-3 text-left text-[14px] text-ink hover:border-hairline-hover max-sm:h-12";
 
 const compactClass = "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] text-charcoal hover:bg-hover hover:text-ink";
 

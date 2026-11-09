@@ -30,7 +30,7 @@ function GooglePart({ place }: { place: PlaceDetails }) {
           <span className="inline-flex items-center gap-1 text-ink">
             <Star size={13} className="fill-warn text-warn" aria-hidden /> {place.rating.toFixed(1)}
             {place.ratingCount !== null && <span className="text-mute">({place.ratingCount.toLocaleString()})</span>}
-            <span className="text-[11px] text-ash">Google</span>
+            <span className="text-[12px] text-ash">Google</span>
           </span>
         )}
         {place.priceLevel && <span className="font-mono text-mute">{place.priceLevel}</span>}
@@ -279,7 +279,7 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
               aria-label="Time"
               defaultValue={item.startTime ?? ""}
               onBlur={(e) => e.target.value !== (item.startTime ?? "") && patch({ startTime: e.target.value || null })}
-              className="h-10 rounded-md border border-hairline-strong bg-deep px-2 text-[14px] text-ink outline-none focus:border-accent max-sm:h-12"
+              className="h-10 rounded-md border border-hairline-hover bg-card px-2 text-[14px] text-ink outline-none focus:border-accent max-sm:h-12"
             />
           </div>
           <textarea
@@ -289,7 +289,7 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
             placeholder="Notes: what to order, who's coming, how to get there"
             rows={3}
             maxLength={2000}
-            className="w-full resize-y rounded-md border border-hairline-strong bg-deep px-3 py-2 text-[13px] text-ink outline-none placeholder:text-stone focus:border-accent"
+            className="w-full resize-y rounded-md border border-hairline-hover bg-card px-3 py-2 text-[13px] text-ink outline-none placeholder:text-mute focus:border-accent"
           />
           {canPin && pinned && !repin && (
             <button type="button" onClick={() => setRepin(true)} className="cursor-pointer text-[12px] text-mute hover:text-ink">

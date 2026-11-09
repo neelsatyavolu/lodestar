@@ -20,8 +20,8 @@ function OfferRow({ offer, nights }: { offer: VerifiedOffer; nights: number }) {
       <Logo src={offer.logo} name={offer.seller} size={28} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm text-ink">{offer.seller}</div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
-          <Pill dot={TIER_DOT[offer.tier]} className="!bg-transparent !px-0 !py-0 text-[11px] !text-charcoal">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px]">
+          <Pill dot={TIER_DOT[offer.tier]} className="!bg-transparent !px-0 !py-0 text-[12px] !text-charcoal">
             {STAY_TIER_LABEL[offer.tier]}
           </Pill>
           {offer.free_cancel_until && <span className="text-body">Free cancellation until {day(offer.free_cancel_until)}</span>}
@@ -29,7 +29,7 @@ function OfferRow({ offer, nights }: { offer: VerifiedOffer; nights: number }) {
       </div>
       <div className="text-right tnum">
         <div className="text-[15px] text-ink">{money(offer.total)}</div>
-        <div className="text-[11px] text-ash">
+        <div className="text-[12px] text-ash">
           {money(offer.nightly)} × {nights} nights
         </div>
       </div>
@@ -157,9 +157,9 @@ export function StayCard({
           {hotel.amenities.length > 0 && <p className="truncate text-xs text-ash">{hotel.amenities.slice(0, 4).join(" · ")}</p>}
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-[11px] text-ash">from</div>
+          <div className="text-[12px] text-ash">from</div>
           <div className="text-xl text-ink tnum">{money(hotel.price)}</div>
-          <div className="text-[11px] text-ash">
+          <div className="text-[12px] text-ash">
             a night<span className="max-sm:hidden">, before taxes</span>
           </div>
         </div>

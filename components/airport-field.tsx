@@ -89,9 +89,9 @@ export function AirportField({
 
   return (
     <div className="relative min-w-0 flex-1">
-      <label className={`block text-[11px] text-ash ${bare ? "pb-1.5" : "px-3 pt-2.5"}`}>{label}</label>
+      <label className={`block text-[12px] text-ash ${bare ? "pb-1.5" : "px-3 pt-2.5"}`}>{label}</label>
       <div
-        className={`flex min-h-10 flex-wrap items-center gap-1.5 ${bare ? "rounded-md border border-hairline-strong bg-deep px-2 py-1 has-[input:focus]:border-accent" : "px-3 pb-2"}`}
+        className={`flex min-h-10 flex-wrap items-center gap-1.5 ${bare ? "rounded-md border border-hairline-hover bg-card px-2 py-1 has-[input:focus]:border-accent" : "px-3 pb-2"}`}
         onClick={() => input.current?.focus()}
       >
         {value.map((code) => (
@@ -114,7 +114,7 @@ export function AirportField({
           onKeyDown={onKey}
           placeholder={value.length ? (value.length < MAX_CODES ? "Add airport" : "") : placeholder}
           disabled={value.length >= MAX_CODES}
-          className={`min-w-20 flex-1 bg-transparent py-1 text-[15px] text-ink placeholder:text-stone outline-none ${bare ? "focus-visible:shadow-none!" : ""}`}
+          className={`min-w-20 flex-1 bg-transparent py-1 text-[15px] text-ink placeholder:text-mute outline-none ${bare ? "focus-visible:outline-none!" : ""}`}
           role="combobox"
           aria-expanded={open && items.length > 0}
           aria-controls={listId}

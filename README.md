@@ -23,7 +23,7 @@ pnpm dev         # web app on localhost:3000
 
 ## Design
 
-Blackletter: a flat black canvas (light mode by system setting or the theme toggle), Geist Serif for the hero only, Geist for everything else, Geist Mono for codes, and blue (`#4C8DFF`) as the one color. Green, yellow and red appear only as small status dots. Tokens live in `app/globals.css`.
+Ink & Instrument: a warm off-black canvas (paper in light mode, by system setting or the theme toggle), Newsreader for headlines, Geist for UI text, Geist Mono for numbers, codes and labels, and blue (`#4C8DFF`) as the one color. Green, yellow and red appear only as state. Radii stay at 6px or below. Tokens live in `app/globals.css`.
 
 ## How it works
 

@@ -142,18 +142,18 @@ function hardLayover(l: Slice["layovers"][number]): boolean {
 }
 
 function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; googlePrice: number; trustedOnly: boolean }) {
-  if (!check) return <div className="text-[11px] text-ash">Sellers not checked</div>;
+  if (!check) return <div className="text-[12px] text-ash">Sellers not checked</div>;
   if (check.state === "loading")
     return (
-      <div className="inline-flex items-center gap-1.5 text-[11px] text-ash">
+      <div className="inline-flex items-center gap-1.5 text-[12px] text-ash">
         <Spinner className="!size-2.5" /> Checking sellers
       </div>
     );
-  if (check.state === "error") return <div className="text-[11px] text-ash">Couldn&apos;t check sellers</div>;
+  if (check.state === "error") return <div className="text-[12px] text-ash">Couldn&apos;t check sellers</div>;
   const v = check.data;
   if (v.lowestTrusted === null)
     return (
-      <div className="inline-flex items-center gap-1.5 text-[11px] text-charcoal">
+      <div className="inline-flex items-center gap-1.5 text-[12px] text-charcoal">
         <StatusDot state="warn" className="!size-1.5" /> Only unvetted agencies
       </div>
     );
@@ -161,7 +161,7 @@ function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; 
   const label = airline ? "Airline direct" : v.trustedSeller;
   const differs = trustedOnly && Math.round(v.lowestTrusted) !== Math.round(googlePrice);
   return (
-    <div className="inline-flex items-center justify-end gap-1.5 text-[11px] text-charcoal">
+    <div className="inline-flex items-center justify-end gap-1.5 text-[12px] text-charcoal">
       <StatusDot state={differs ? "warn" : "ok"} className="!size-1.5" />
       {label}
       {differs && v.lowestTrusted > googlePrice && <span className="text-ash"> · {money(googlePrice)} elsewhere</span>}
@@ -219,7 +219,7 @@ export function ItineraryCard({
         </div>
         <div className="w-28 shrink-0 text-right">
           <div className="text-xl text-ink tnum">{money(price)}</div>
-          <div className="text-[11px] text-ash">{it.slices.length > 1 ? "round trip" : "one way"}</div>
+          <div className="text-[12px] text-ash">{it.slices.length > 1 ? "round trip" : "one way"}</div>
           <div className="mt-1">
             <SellerLine check={check} googlePrice={it.price} trustedOnly={trustedOnly} />
           </div>

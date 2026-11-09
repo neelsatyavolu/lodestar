@@ -92,7 +92,7 @@ export function DateStrip({ days, selected, onPick }: { days: DayPrice[]; select
                   style={{ height: `${max === min ? 60 : 25 + ((d.price - min) / (max - min)) * 75}%` }}
                 />
               </span>
-              <span className={`text-[11px] ${isSel ? "text-ink" : "text-ash"}`}>{day(d.depart).replace(",", "")}</span>
+              <span className={`text-[12px] ${isSel ? "text-ink" : "text-ash"}`}>{day(d.depart).replace(",", "")}</span>
             </button>
           );
         })}

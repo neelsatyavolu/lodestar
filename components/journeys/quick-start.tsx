@@ -13,7 +13,7 @@ import { errorText, TRIP_TYPE_LABEL } from "./shared";
 
 export function TravellersField({ value, onChange }: { value: number | null; onChange: (n: number | null) => void }) {
   const n = value ?? 1;
-  const step = "inline-flex size-10 cursor-pointer items-center justify-center rounded-md border border-hairline-strong bg-deep text-charcoal hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
+  const step = "inline-flex size-10 cursor-pointer items-center justify-center rounded-md border border-hairline-strong bg-deep text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone";
   return (
     <div className="flex items-center gap-3" role="group" aria-label="Travellers">
       <button type="button" className={step} aria-label="One fewer" disabled={n <= 1} onClick={() => onChange(Math.max(1, n - 1))}>

@@ -227,7 +227,7 @@ export function AiCanvas({
           rows={started ? 2 : 3}
           maxLength={1200}
           placeholder={started ? "Reply, or change the trip." : "Describe the trip. Where, roughly when, and what matters to you."}
-          className="block w-full resize-none bg-transparent px-4 pt-4 text-[16px] leading-relaxed text-ink outline-none placeholder:text-stone focus-visible:shadow-none!"
+          className="block w-full resize-none bg-transparent px-4 pt-4 text-[16px] leading-relaxed text-ink outline-none placeholder:text-mute focus-visible:outline-none!"
           aria-label={started ? "Reply" : "Describe your trip"}
         />
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">

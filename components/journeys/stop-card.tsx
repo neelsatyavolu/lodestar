@@ -25,7 +25,7 @@ export function Teardrop({ pin, kind, dashed = false }: { pin?: Pin; kind: Item[
       <svg viewBox="0 0 24 30" className="absolute inset-0 size-full">
         <path d="M12 29C12 29 22.5 18.6 22.5 11.5C22.5 5.7 17.8 1 12 1S1.5 5.7 1.5 11.5C1.5 18.6 12 29 12 29Z" fill={dashed ? "none" : fill} stroke={fill} strokeWidth={dashed ? 1.5 : 0} strokeDasharray={dashed ? "3 2" : undefined} />
       </svg>
-      <span className="relative mt-[5px] text-[11px] font-bold leading-none" style={{ color: dashed ? fill : ink }}>
+      <span className="relative mt-[5px] text-[12px] font-bold leading-none" style={{ color: dashed ? fill : ink }}>
         {Icon ? <Icon size={11} /> : pin?.n}
       </span>
     </span>

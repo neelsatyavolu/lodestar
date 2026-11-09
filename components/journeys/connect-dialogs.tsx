@@ -133,7 +133,7 @@ export function FlintDialog({ open, onClose, fromFlint = false }: { open: boolea
             <div className="min-w-0 flex-1 space-y-2">
               <p>When Flint asks for a code, type this one. It works once, for 10 minutes.</p>
               {code ? (
-                <p className="font-mono text-[28px] tracking-[0.12em] text-ink">{code.code}</p>
+                <p className="font-mono text-[28px] tracking-[0.06em] text-ink">{code.code}</p>
               ) : (
                 <Button variant="primary" disabled={busy} onClick={getCode}>
                   {busy && <Spinner />} Get a code

@@ -67,7 +67,7 @@ export function ItemRow({ item, pin, onChanged, onRemoved, onOpen, selected = fa
       <span className="w-12 shrink-0 pt-0.5 font-mono text-[12px] text-ash">{item.startTime ?? ""}</span>
       {pin ? (
         <span
-          className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+          className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full text-[12px] font-bold"
           style={suggested ? { border: `1.5px dashed ${pin.color.fill}`, color: pin.color.fill } : { background: pin.color.fill, color: pin.color.ink }}
           title="On the map"
         >

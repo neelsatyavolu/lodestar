@@ -80,7 +80,7 @@ export function DraftProgress({ run, gen }: { run: ReturnType<typeof useDraftRun
           return (
             <li key={p.part} className="min-w-0">
               <div className={`h-1 rounded-full ${s === "done" ? "bg-accent" : s === "running" ? "animate-pulse bg-accent/60" : s === "failed" ? "bg-danger" : "bg-elevated"}`} aria-hidden />
-              <div className="mt-1.5 flex items-center gap-1 text-[11px]">
+              <div className="mt-1.5 flex items-center gap-1 text-[12px]">
                 {s === "done" && <Check size={11} className="shrink-0 text-accent" aria-hidden />}
                 {s === "running" && <Spinner className="!size-2.5 shrink-0" />}
                 <span className={`truncate ${s === "failed" ? "text-danger" : s === "pending" ? "text-ash" : "text-body"}`}>{p.short}</span>

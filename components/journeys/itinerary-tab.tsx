@@ -43,10 +43,10 @@ export function ItineraryTab(p: Props) {
         </Button>
       </TabHead>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <button type="button" disabled={!hasDates || p.suggesting !== null} onClick={() => p.onSuggest("dining")} className="inline-flex h-8 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink disabled:cursor-not-allowed disabled:opacity-40">
+        <button type="button" disabled={!hasDates || p.suggesting !== null} onClick={() => p.onSuggest("dining")} className="inline-flex h-8 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone">
           {p.suggesting === "dining" ? <Spinner /> : <UtensilsCrossed size={14} aria-hidden />} Plan meals
         </button>
-        <button type="button" disabled={!hasDates || !trip.destination || p.suggesting !== null} onClick={() => p.onSuggest("hotels")} className="inline-flex h-8 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink disabled:cursor-not-allowed disabled:opacity-40">
+        <button type="button" disabled={!hasDates || !trip.destination || p.suggesting !== null} onClick={() => p.onSuggest("hotels")} className="inline-flex h-8 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone">
           {p.suggesting === "hotels" ? <Spinner /> : <Building2 size={14} aria-hidden />} Find hotels
         </button>
         {p.suggesting && <span className="text-[12px] text-mute">{p.suggesting === "dining" ? "Planning meals around your days…" : "Searching live hotel prices…"}</span>}

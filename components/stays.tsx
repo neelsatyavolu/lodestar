@@ -16,7 +16,7 @@ import { Button } from "./ui";
 type Result = { id: number; query: StaysSearch; hotels: Hotel[]; url: string };
 type Flex = { state: "loading" } | { state: "done"; savings: Record<string, FlexSaving> } | { state: "error" };
 
-const inputClass = "h-11 w-full rounded-md border border-hairline-strong bg-deep px-3 text-[15px] text-ink outline-none focus:border-accent";
+const inputClass = "h-11 w-full rounded-md border border-hairline-hover bg-card px-3 text-[15px] text-ink outline-none focus:border-accent";
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback);
 const isAbort = (err: unknown) => err instanceof DOMException && err.name === "AbortError";
 
@@ -91,7 +91,7 @@ export function Stays({ trustedOnly }: { trustedOnly: boolean }) {
     <section className={result ? "pt-8 pb-6" : "pt-20 pb-10 sm:pt-28"}>
       {!result && (
         <div className="mb-10 max-w-4xl">
-          <h1 className="font-display text-[clamp(44px,8vw,88px)] tracking-[-0.02em]">
+          <h1 className="font-display text-[clamp(44px,6.5vw,72px)]">
             Hotels too.
             <br />
             <span className="text-charcoal">Same sellers you can trust.</span>

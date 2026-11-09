@@ -9,7 +9,7 @@ import { Button, Toggle } from "./ui";
 export const CABIN_LABEL: Record<Cabin, string> = { ECONOMY: "Economy", PREMIUM_ECONOMY: "Premium economy", BUSINESS: "Business", FIRST: "First" };
 export const STOP_LABEL: Record<MaxStops, string> = { ANY: "Any", "0": "Nonstop only", "1": "1 stop or fewer", "2": "2 stops or fewer" };
 
-export const selectClass = "h-10 w-full cursor-pointer rounded-md border border-hairline-strong bg-deep px-3 text-[14px] text-ink outline-none max-sm:h-12";
+export const selectClass = "h-10 w-full cursor-pointer rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none max-sm:h-12";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -119,7 +119,7 @@ export function PreferencesDialog({
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[11px] text-ash">Leave all off to see every airline. Google also includes close partners of an alliance.</p>
+            <p className="mt-1.5 text-[12px] text-ash">Leave all off to see every airline. Google also includes close partners of an alliance.</p>
           </div>
           <AirportField bare kind="airline" max={10} label="Prefer these airlines (ranked higher, e.g. where you have status)" value={p.preferredAirlines} onChange={(v) => set("preferredAirlines", v)} placeholder="Airline name or code" />
           <AirportField bare kind="airline" max={20} label="Never show these airlines" value={p.avoidedAirlines} onChange={(v) => set("avoidedAirlines", v)} placeholder="Airline name or code" />

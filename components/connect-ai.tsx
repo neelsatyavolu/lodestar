@@ -92,7 +92,7 @@ export function ConnectAI({ open, onClose, onConnected, signedIn, initial = "cod
         </div>
         <ol className="space-y-4 text-[13px]">
           <li className="flex gap-3">
-            <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-[11px] text-charcoal">1</span>
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-[12px] text-charcoal">1</span>
             <div className="space-y-2">
               <p className="text-body">{HOW[provider]}</p>
               <Button size="sm" onClick={start}>
@@ -101,7 +101,7 @@ export function ConnectAI({ open, onClose, onConnected, signedIn, initial = "cod
             </div>
           </li>
           <li className={`flex gap-3 ${started ? "" : "opacity-50"}`}>
-            <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-[11px] text-charcoal">2</span>
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-[12px] text-charcoal">2</span>
             <div className="flex-1 space-y-2">
               <label htmlFor="ai-callback" className="block text-body">
                 Paste the {provider === "codex" ? "address" : "code"} here
@@ -112,7 +112,7 @@ export function ConnectAI({ open, onClose, onConnected, signedIn, initial = "cod
                 onChange={(e) => setPasted(e.target.value)}
                 disabled={!started}
                 placeholder={provider === "codex" ? "http://localhost:1455/auth/callback?code=…" : "Code from Grok"}
-                className="h-10 w-full rounded-md border border-hairline-strong bg-deep px-3 font-mono text-[13px] text-ink outline-none placeholder:text-stone focus:border-ink"
+                className="h-10 w-full rounded-md border border-hairline-hover bg-card px-3 font-mono text-[13px] text-ink outline-none placeholder:text-mute focus:border-ink"
                 autoComplete="off"
                 spellCheck={false}
               />

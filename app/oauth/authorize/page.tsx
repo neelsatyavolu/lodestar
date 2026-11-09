@@ -19,7 +19,7 @@ function Shell({ title, children }: { title: string; children: React.ReactNode }
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-24 pb-24">
       <p className="text-[13px] text-mute">Lodestar</p>
-      <h1 className="mt-2 font-display text-[clamp(32px,6vw,44px)] leading-tight tracking-[-0.02em]">{title}</h1>
+      <h1 className="mt-2 font-display text-[clamp(32px,6vw,44px)] leading-tight">{title}</h1>
       {children}
     </main>
   );

@@ -41,7 +41,7 @@ export function Chips({ label, choices, value, onChange, max }: { label: string;
           onBlur={add}
           placeholder="Other…"
           aria-label={`Add to ${label.toLowerCase()}`}
-          className="h-9 w-28 rounded-full border border-dashed border-hairline-strong bg-transparent px-3.5 text-[13px] text-ink outline-none placeholder:text-stone focus:border-accent max-sm:h-10"
+          className="h-9 w-28 rounded-full border border-dashed border-hairline-strong bg-transparent px-3.5 text-[13px] text-ink outline-none placeholder:text-mute focus:border-accent max-sm:h-10"
         />
       </div>
     </fieldset>

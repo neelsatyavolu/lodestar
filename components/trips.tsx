@@ -20,7 +20,7 @@ import { askConfirm } from "./confirm";
 
 type Shared = { checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean };
 
-const inputClass = "h-9 rounded-md border border-hairline-strong bg-deep px-2.5 text-[14px] text-ink outline-none focus:border-accent";
+const inputClass = "h-9 rounded-md border border-hairline-hover bg-card px-2.5 text-[14px] text-ink outline-none focus:border-accent";
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback);
 /** Google's policy words, kept only when they're ones the booking API accepts. */
 const oneOf = <T extends string>(v: string | null, allowed: readonly T[]): T | null => (allowed.includes(v as T) ? (v as T) : null);
@@ -50,7 +50,7 @@ export function Trips({ focus, onPlan, embedded = false, ...shared }: Shared & {
         </>
       ) : (
         <>
-          <h1 className="font-display text-[clamp(32px,5vw,48px)] tracking-[-0.02em]">Trips</h1>
+          <h1 className="font-display text-[clamp(32px,5vw,48px)]">Trips</h1>
           <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-body">Shortlists you saved from Plan. Lodestar checks their fares every day and emails you when an alert fires.</p>
         </>
       )}
