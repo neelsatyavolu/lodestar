@@ -90,10 +90,10 @@ export function AccountDialog({
         <div className="flex flex-wrap justify-between gap-2 text-[13px]">
           {mode === "signin" ? (
             <>
-              <button type="button" className="cursor-pointer text-accent hover:underline" onClick={() => switchTo("register")}>
+              <button type="button" className="cursor-pointer text-accent hover:underline pointer-coarse:min-h-11" onClick={() => switchTo("register")}>
                 Create an account
               </button>
-              <button type="button" className="cursor-pointer text-mute hover:text-ink" onClick={() => switchTo("forgot")}>
+              <button type="button" className="cursor-pointer text-mute hover:text-ink pointer-coarse:min-h-11" onClick={() => switchTo("forgot")}>
                 Forgot password?
               </button>
             </>

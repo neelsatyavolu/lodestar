@@ -93,7 +93,7 @@ export function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () => void 
           {index + 1} of {shown.length}
         </p>
         <h2 className="mt-1 text-[15px] font-medium text-ink">{step.title}</h2>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-body">{step.body}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-body">{step.body}</p>
         <div className="mt-4 flex items-center gap-2">
           <button type="button" onClick={onDone} className="mr-auto cursor-pointer text-xs text-mute hover:text-ink">
             Skip tour

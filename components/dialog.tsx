@@ -38,7 +38,7 @@ export function Dialog({
       <div className="flex max-h-[calc(100dvh-32px)] flex-col">
         <div className="flex shrink-0 items-center justify-between border-b border-hairline px-5 py-4">
           <h2 className="text-base font-medium">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="cursor-pointer text-ash hover:text-ink">
+          <button type="button" onClick={onClose} aria-label="Close" className="-mr-2 inline-flex size-8 cursor-pointer items-center justify-center text-ash hover:text-ink pointer-coarse:-mr-3 pointer-coarse:size-11">
             <X size={16} />
           </button>
         </div>
@@ -52,7 +52,7 @@ export function Dialog({
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[12px] text-charcoal">{label}</span>
+      <span className="mb-2 block text-[12px] text-charcoal">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-[12px] text-ash">{hint}</span>}
     </label>

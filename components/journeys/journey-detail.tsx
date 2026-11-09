@@ -205,9 +205,9 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
 
   return (
     // Wide screens break out of the page column: plan left, map right.
-    <section className="pt-6 sm:pt-10 lg:relative lg:left-1/2 lg:-ml-[50vw] lg:w-screen lg:pt-0">
+    <section className="pt-6 sm:pt-12 lg:relative lg:left-1/2 lg:-ml-[50vw] lg:w-screen lg:pt-0">
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,42%)]">
-        <div className="w-full lg:ml-auto lg:max-w-[780px] lg:px-8 lg:pb-24 lg:pt-8">
+        <div className="w-full lg:ml-auto lg:max-w-[780px] lg:px-6 lg:pb-24 lg:pt-8">
           <TripCover journey={trip} onBack={() => (writeLocation(null, null), onBack())} onEdit={() => openDialog("edit")} onShare={() => openDialog("share")} onDelete={del} />
           {draft.state && (
             <div className="mt-5">

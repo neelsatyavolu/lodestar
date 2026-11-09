@@ -90,33 +90,33 @@ function BookCard({ item, onOpen, onBook, onChanged, onError }: { item: Item; on
           <button type="button" onClick={onOpen} className="cursor-pointer text-left text-[15px] font-medium text-ink hover:underline">
             {item.title}
           </button>
-          <p className="mt-0.5 text-[13px] text-mute">
+          <p className="mt-1 text-[13px] text-mute">
             {[`${day(item.startDate)}${item.startTime ? ` · ${timeRange(item)}` : ""}`, d.address ?? item.place].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="shrink-0 text-right">
           {due ? <p className={`text-[13px] font-medium ${due.tone ? TONE[due.tone] : "text-body"}`}>{due.text}</p> : <p className="text-[13px] text-ash">No deadline</p>}
-          {d.estimate !== undefined && <p className="tnum mt-0.5 text-[12px] text-mute">about {amount(d.estimate, d.currency)}</p>}
+          {d.estimate !== undefined && <p className="tnum mt-1 text-[12px] text-mute">about {amount(d.estimate, d.currency)}</p>}
         </div>
       </div>
       {(d.note || d.why) && <p className="max-w-[65ch] px-5 pb-3 text-[13px] leading-relaxed text-body [text-wrap:pretty]">{d.note ?? d.why}</p>}
-      <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-4 py-3">
         <Button size="sm" variant="primary" disabled={busy} onClick={onBook}>
           <Check size={14} /> Mark booked
         </Button>
         {d.url && (
-          <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] font-medium text-ink hover:border-hairline-hover">
+          <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 pointer-coarse:h-11 items-center gap-2 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] font-medium text-ink hover:border-hairline-hover">
             Reserve <ExternalLink size={12} aria-hidden />
           </a>
         )}
         {d.phone && (
-          <a href={`tel:${d.phone.replace(/[^\d+]/g, "")}`} className="inline-flex h-8 items-center gap-1.5 px-2 text-[13px] text-charcoal hover:text-ink">
+          <a href={`tel:${d.phone.replace(/[^\d+]/g, "")}`} className="inline-flex h-8 pointer-coarse:h-11 items-center gap-2 px-2 text-[13px] text-charcoal hover:text-ink">
             <Phone size={13} aria-hidden /> <span className="tnum">{d.phone}</span>
           </a>
         )}
         <div className="ml-auto flex items-center gap-1">
           <DateField label="Book by" value={d.bookBy ?? null} onChange={(v) => patch({ facts: { bookBy: v } })} compact icon={<CalendarClock size={14} />} />
-          <button type="button" disabled={busy} onClick={() => patch({ facts: { reserve: null, bookBy: null } })} title="Doesn't need booking" aria-label={`${item.title} doesn't need booking`} className="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+          <button type="button" disabled={busy} onClick={() => patch({ facts: { reserve: null, bookBy: null } })} title="Doesn't need booking" aria-label={`${item.title} doesn't need booking`} className="inline-flex size-9 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
             <X size={14} />
           </button>
         </div>

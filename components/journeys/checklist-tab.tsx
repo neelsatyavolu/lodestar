@@ -104,12 +104,12 @@ export function ChecklistTab({ trip, gen, onTasks }: { trip: TripDetail; gen: Ge
                 const due = !t.done ? deadline(t.due ?? undefined) : null;
                 return (
                   <li key={t.id} className="group flex items-center gap-3 px-4">
-                    <label className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 py-2.5">
+                    <label className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 py-3">
                       <input type="checkbox" checked={t.done} onChange={() => toggle(t)} className="size-4 shrink-0 cursor-pointer accent-[var(--accent)]" />
                       <span className={`min-w-0 flex-1 text-[14px] transition-colors duration-150 ${t.done ? "text-ash line-through" : "text-ink"}`}>{t.title}</span>
                       {t.due && <span className={`tnum shrink-0 text-[12px] ${due?.tone === "danger" ? "text-danger" : due?.tone === "warn" ? "text-warn" : "text-ash"}`}>by {shortDate(t.due)}</span>}
                     </label>
-                    <button type="button" onClick={() => remove(t)} aria-label={`Remove ${t.title}`} className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
+                    <button type="button" onClick={() => remove(t)} aria-label={`Remove ${t.title}`} className="inline-flex size-9 pointer-coarse:size-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
                       <Trash2 size={14} />
                     </button>
                   </li>

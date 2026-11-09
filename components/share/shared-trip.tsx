@@ -37,7 +37,7 @@ function Stop({ item }: { item: Item }) {
   const Icon = ICON[item.kind];
   const sub = [item.kind === "flight" && item.endTime ? `arrives ${item.endTime}` : null, item.kind === "stay" && item.endDate ? `check-out ${short(item.endDate)}` : null, item.details.address ?? item.place].filter(Boolean).join(" · ");
   return (
-    <li className="flex gap-3 py-2.5">
+    <li className="flex gap-3 py-3">
       <span className="w-12 shrink-0 pt-0.5 font-mono text-[12px] text-ash">{item.startTime ?? ""}</span>
       <Icon size={16} className="mt-0.5 shrink-0 text-charcoal" aria-hidden />
       <div className="min-w-0">
@@ -46,7 +46,7 @@ function Stop({ item }: { item: Item }) {
           {item.status === "booked" && <span className="ml-2 text-[12px] text-ok">Booked</span>}
           {item.status === "planned" && item.details.reserve && <span className="ml-2 text-[12px] text-warn">To book</span>}
         </p>
-        {sub && <p className="mt-0.5 text-[13px] text-mute">{sub}</p>}
+        {sub && <p className="mt-1 text-[13px] text-mute">{sub}</p>}
         {item.details.note && <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-body">{item.details.note}</p>}
       </div>
     </li>
@@ -76,7 +76,7 @@ export function SharedTripView({ trip, today }: { trip: SharedTrip; today: strin
 
       <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 mt-8 flex gap-1 overflow-x-auto border-b border-hairline bg-canvas px-4 py-2 sm:-mx-6 sm:px-6">
         {nav.map(([id, label]) => (
-          <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] text-mute hover:bg-hover hover:text-ink">
+          <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full px-3 py-2 text-[13px] text-mute hover:bg-hover hover:text-ink">
             {label}
           </a>
         ))}
@@ -145,7 +145,7 @@ export function SharedTripView({ trip, today }: { trip: SharedTrip; today: strin
                       {i.details.bookBy ? `Book by ${short(i.details.bookBy)}` : `For ${short(i.startDate)}`}
                     </span>
                   </div>
-                  <p className="mt-0.5 flex flex-wrap gap-x-3 text-[13px] text-mute">
+                  <p className="mt-1 flex flex-wrap gap-x-3 text-[13px] text-mute">
                     <span>{[short(i.startDate), i.startTime, i.place].filter(Boolean).join(" · ")}</span>
                     {i.details.phone && (
                       <a href={`tel:${i.details.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1 text-accent hover:underline">
@@ -167,7 +167,7 @@ export function SharedTripView({ trip, today }: { trip: SharedTrip; today: strin
                   <h3 className="text-[13px] font-medium text-charcoal">{KIND_HEADING[g.kind]}</h3>
                   <ul className="mt-1">
                     {g.items.map((i) => (
-                      <li key={i.id} className="flex items-baseline justify-between gap-4 border-b border-hairline py-2.5 last:border-0">
+                      <li key={i.id} className="flex items-baseline justify-between gap-4 border-b border-hairline py-3 last:border-0">
                         <span className={`text-[15px] ${i.status === "cancelled" ? "text-ash line-through" : "text-ink"}`}>{i.title}</span>
                         <span className="shrink-0 text-[13px] text-mute">{[short(i.startDate), i.startTime].filter(Boolean).join(" · ")}</span>
                       </li>

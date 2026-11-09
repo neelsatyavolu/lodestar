@@ -25,9 +25,9 @@ function CopyText({ text, label }: { text: string; label: string }) {
       .catch(() => {});
   };
   return (
-    <div className="flex items-center gap-2 rounded-md border border-hairline-strong bg-deep py-1.5 pl-3 pr-1.5">
+    <div className="flex items-center gap-2 rounded-md border border-hairline-strong bg-deep py-2 pl-3 pr-2">
       <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-[12px] text-body">{text}</code>
-      <button type="button" onClick={copy} aria-label={`Copy ${label}`} title="Copy" className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded text-ash hover:text-ink">
+      <button type="button" onClick={copy} aria-label={`Copy ${label}`} title="Copy" className="inline-flex size-7 pointer-coarse:size-11 shrink-0 cursor-pointer items-center justify-center rounded text-ash hover:text-ink">
         {copied ? <Check size={14} className="text-ok" /> : <Copy size={14} />}
       </button>
     </div>
@@ -38,7 +38,7 @@ function Step({ name, children }: { name: string; children: React.ReactNode }) {
   return (
     <div>
       <h3 className="text-[13px] font-medium text-ink">{name}</h3>
-      <div className="mt-1.5 space-y-2 text-[13px] text-mute">{children}</div>
+      <div className="mt-2 space-y-2 text-[13px] text-mute">{children}</div>
     </div>
   );
 }
@@ -95,7 +95,7 @@ export function AgentAccess({ open, onClose }: { open: boolean; onClose: () => v
 
   return (
     <Dialog open={open} onClose={onClose} title="Agents" width={600}>
-      <div className="space-y-7 px-5 py-5">
+      <div className="space-y-8 px-5 py-5">
         <p className="text-[14px] leading-relaxed text-body">
           Let Claude, ChatGPT, Codex or any MCP client read and plan your trips: build itineraries, fill the To book list, the checklist, notes and the budget.
         </p>

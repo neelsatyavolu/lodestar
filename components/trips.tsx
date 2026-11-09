@@ -20,7 +20,7 @@ import { askConfirm } from "./confirm";
 
 type Shared = { checks: Record<string, SellerCheck>; onCheck: (it: Itinerary) => void; trustedOnly: boolean };
 
-const inputClass = "h-9 rounded-md border border-hairline-hover bg-card px-2.5 text-[14px] text-ink outline-none focus:border-accent";
+const inputClass = "h-9 pointer-coarse:h-11 rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none focus:border-accent";
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback);
 /** Google's policy words, kept only when they're ones the booking API accepts. */
 const oneOf = <T extends string>(v: string | null, allowed: readonly T[]): T | null => (allowed.includes(v as T) ? (v as T) : null);
@@ -42,7 +42,7 @@ export function Trips({ focus, onPlan, embedded = false, ...shared }: Shared & {
   if (embedded && !error && !trips?.length) return null;
 
   return (
-    <section className={embedded ? "" : "pt-10 sm:pt-16"}>
+    <section className={embedded ? "" : "pt-12 sm:pt-16"}>
       {embedded ? (
         <>
           <h2 className="text-[13px] font-medium text-ink">Watching fares</h2>
@@ -195,7 +195,7 @@ function TripCard({ trip, focused, onChange, onDelete, ...shared }: Shared & { t
         <Button size="sm" variant="ghost" onClick={() => setOpen(!open)}>
           {open ? "Hide shortlist" : "Show shortlist"}
         </Button>
-        <button type="button" onClick={del} aria-label={`Delete ${trip.title}`} className="ml-auto inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-mute hover:text-danger">
+        <button type="button" onClick={del} aria-label={`Delete ${trip.title}`} className="ml-auto inline-flex cursor-pointer items-center gap-2 text-[13px] text-mute hover:text-danger pointer-coarse:min-h-11">
           <Trash2 size={14} /> Delete
         </button>
       </div>

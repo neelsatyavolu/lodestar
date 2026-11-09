@@ -89,15 +89,15 @@ export function AirportField({
 
   return (
     <div className="relative min-w-0 flex-1">
-      <label className={`block text-[12px] text-ash ${bare ? "pb-1.5" : "px-3 pt-2.5"}`}>{label}</label>
+      <label className={`block text-[12px] text-ash ${bare ? "pb-2" : "px-3 pt-3"}`}>{label}</label>
       <div
-        className={`flex min-h-10 flex-wrap items-center gap-1.5 ${bare ? "rounded-md border border-hairline-hover bg-card px-2 py-1 has-[input:focus]:border-accent" : "px-3 pb-2"}`}
+        className={`flex min-h-10 flex-wrap items-center gap-2 pointer-coarse:min-h-11 ${bare ? "rounded-md border border-hairline-hover bg-card px-2 py-1 has-[input:focus]:border-accent" : "px-3 pb-2"}`}
         onClick={() => input.current?.focus()}
       >
         {value.map((code) => (
-          <span key={code} className="inline-flex items-center gap-1 rounded-sm bg-elevated py-0.5 pl-2 pr-1 font-mono text-[13px] text-ink">
+          <span key={code} className="inline-flex items-center gap-1 rounded-sm bg-elevated py-1 pl-2 pr-1 font-mono text-[13px] text-ink">
             {code}
-            <button type="button" aria-label={`Remove ${code}`} className="rounded-sm p-0.5 text-ash hover:text-ink cursor-pointer" onClick={() => onChange(value.filter((c) => c !== code))}>
+            <button type="button" aria-label={`Remove ${code}`} className="rounded-sm p-1 text-ash hover:text-ink cursor-pointer pointer-coarse:p-2" onClick={() => onChange(value.filter((c) => c !== code))}>
               <X size={12} />
             </button>
           </span>

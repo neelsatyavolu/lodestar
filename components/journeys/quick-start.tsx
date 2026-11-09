@@ -39,7 +39,7 @@ export function TripTypeField({ value, onChange }: { value: TripType | null; onC
           role="radio"
           aria-checked={value === t}
           onClick={() => onChange(value === t ? null : t)}
-          className={`h-9 cursor-pointer rounded-full border px-3.5 text-[13px] transition-colors duration-150 ${value === t ? "border-accent bg-tint text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+          className={`h-9 pointer-coarse:h-11 cursor-pointer rounded-full border px-4 text-[13px] transition-colors duration-150 ${value === t ? "border-accent bg-tint text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
         >
           {TRIP_TYPE_LABEL[t]}
         </button>
@@ -111,7 +111,7 @@ export function NewTripDialog({ open, onClose, provider, onConnectAi, onCreated 
           <input autoFocus value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Lisbon, the Amalfi Coast, Tucson" className={inputClass} maxLength={80} />
         </Field>
         <div>
-          <span className="mb-1.5 block text-[12px] text-charcoal">When</span>
+          <span className="mb-2 block text-[12px] text-charcoal">When</span>
           <DateRangeField
             inline
             label="Trip dates"
@@ -124,11 +124,11 @@ export function NewTripDialog({ open, onClose, provider, onConnectAi, onCreated 
           />
         </div>
         <div>
-          <span className="mb-1.5 block text-[12px] text-charcoal">Who&apos;s going</span>
+          <span className="mb-2 block text-[12px] text-charcoal">Who&apos;s going</span>
           <TravellersField value={travelers} onChange={setTravelers} />
         </div>
         <div>
-          <span className="mb-1.5 block text-[12px] text-charcoal">What kind of trip</span>
+          <span className="mb-2 block text-[12px] text-charcoal">What kind of trip</span>
           <TripTypeField value={type} onChange={setType} />
         </div>
         <div className="space-y-3 rounded-xl border border-hairline-strong bg-deep p-4">

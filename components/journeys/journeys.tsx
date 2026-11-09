@@ -135,7 +135,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
   };
 
   return (
-    <section className="pt-10 sm:pt-16">
+    <section className="pt-12 sm:pt-16">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[clamp(32px,5vw,48px)]">Trips</h1>
@@ -157,7 +157,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
         </div>
       </div>
 
-      <div className="mt-8 space-y-10">
+      <div className="mt-8 space-y-12">
         {error && <p className="text-[13px] text-danger">{error}</p>}
         {notice && <p className="rounded-lg border border-hairline-strong bg-card px-4 py-3 text-[13px] text-body">{notice}</p>}
         {!data && !error && <p className="text-[13px] text-mute">Loading…</p>}
@@ -186,14 +186,14 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
                 </p>
               ))}
             {[...waiting, ...failed].length > 0 && (
-              <ul className="mt-2 space-y-1">
+              <ul className="space-y-1 not-first:mt-2">
                 {[...waiting, ...failed].map((m) => (
                   <li key={m.id} className="flex items-center gap-2 text-[13px] text-mute">
                     <span className="min-w-0 flex-1 truncate">
                       {m.subject || "(no subject)"} <span className="text-ash">· {m.sender}</span>
                       {m.state === "failed" && <span className="text-danger"> · {m.error ?? "Couldn't be read"}</span>}
                     </span>
-                    <button type="button" onClick={() => forgetMail(m.id)} aria-label={`Forget ${m.subject}`} className="inline-flex size-7 cursor-pointer items-center justify-center text-ash hover:text-ink">
+                    <button type="button" onClick={() => forgetMail(m.id)} aria-label={`Forget ${m.subject}`} className="inline-flex size-7 pointer-coarse:size-11 cursor-pointer items-center justify-center text-ash hover:text-ink">
                       <Trash2 size={13} />
                     </button>
                   </li>
@@ -217,7 +217,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
                     aria-label={`Trip for ${item.title}`}
                     defaultValue=""
                     onChange={(e) => e.target.value && fileItem(item, e.target.value)}
-                    className="mt-2 h-9 max-w-56 rounded-md border border-hairline-hover bg-card px-2 text-[13px] text-ink"
+                    className="mt-2 h-9 pointer-coarse:h-11 max-w-56 rounded-md border border-hairline-hover bg-card px-2 text-[13px] text-ink"
                   >
                     <option value="">Move to…</option>
                     {data.journeys.map((j) => (
@@ -241,7 +241,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
             ].map((c) => (
               <div key={c.title} className="flex flex-col rounded-lg border border-hairline-strong bg-card p-5">
                 <h3 className="text-[15px] font-medium text-ink">{c.title}</h3>
-                <p className="mt-1.5 flex-1 text-[13px] text-mute">{c.body}</p>
+                <p className="mt-2 flex-1 text-[13px] text-mute">{c.body}</p>
                 <button type="button" onClick={c.act} className="mt-4 cursor-pointer self-start text-[13px] text-accent hover:underline">
                   {c.label}
                 </button>
@@ -330,7 +330,7 @@ function JourneyCard({ journey, onOpen }: { journey: PlanTrip; onOpen: () => voi
         </p>
         <p className="mt-3 text-[13px] text-body">{tally(journey.items)}</p>
         {open.length > 0 && (
-          <p className={`mt-1 inline-flex items-center gap-1.5 text-[12px] ${due?.tone === "danger" ? "text-danger" : due?.tone === "warn" ? "text-warn" : "text-mute"}`}>
+          <p className={`mt-1 inline-flex items-center gap-2 text-[12px] ${due?.tone === "danger" ? "text-danger" : due?.tone === "warn" ? "text-warn" : "text-mute"}`}>
             <CalendarClock size={12} aria-hidden />
             {open.length} to book{open[0].details.bookBy ? ` · next by ${shortDate(open[0].details.bookBy)}` : ""}
           </p>

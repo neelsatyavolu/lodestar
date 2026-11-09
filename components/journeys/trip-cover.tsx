@@ -64,9 +64,9 @@ export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }:
     <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
       <div className="min-w-0">
         <h1 className="font-display text-[clamp(30px,5vw,46px)] leading-[1.05] [text-wrap:balance]">{journey.title}</h1>
-        <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-body">
+        <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-body">
           {meta.map((m) => (
-            <span key={m.text} className="tnum inline-flex items-center gap-1.5">
+            <span key={m.text} className="tnum inline-flex items-center gap-2">
               <span className="text-ash">{m.icon}</span> {m.text}
             </span>
           ))}
@@ -74,7 +74,7 @@ export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }:
           {when && <span className="text-accent">{when}</span>}
         </p>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="-mx-3 flex items-center gap-1">
         <Button size="sm" variant="quiet" onClick={onEdit}>
           <Pencil size={14} /> Edit
         </Button>
@@ -91,7 +91,7 @@ export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }:
 
   return (
     <header>
-      <button type="button" onClick={onBack} className="inline-flex h-9 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink">
+      <button type="button" onClick={onBack} className="inline-flex h-9 pointer-coarse:h-11 cursor-pointer items-center gap-2 text-[13px] text-charcoal hover:text-ink">
         <ArrowLeft size={14} /> All trips
       </button>
       {photo ? (
@@ -106,7 +106,7 @@ export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }:
               className={`size-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
             />
           </div>
-          <div className="relative mx-3 -mt-14 rounded-xl border border-hairline-strong bg-card px-5 py-4 sm:mx-6 sm:px-6 sm:py-5">{card}</div>
+          <div className="relative mx-3 -mt-12 rounded-xl border border-hairline-strong bg-card px-5 py-4 sm:mx-6 sm:px-6 sm:py-5">{card}</div>
         </div>
       ) : (
         <div className="mt-3">{card}</div>

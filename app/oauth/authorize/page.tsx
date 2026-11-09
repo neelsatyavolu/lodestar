@@ -56,7 +56,7 @@ async function Consent({ searchParams }: { searchParams: Search }) {
     return (
       <Shell title={`Connect ${client.name}`}>
         <p className="mt-4 text-[15px] leading-relaxed text-body">Sign in to Lodestar to let {client.name} work on your trips.</p>
-        <a href={`/?signin=1&next=${encodeURIComponent(here)}`} className="mt-8 inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-on hover:bg-primary-hover">
+        <a href={`/?signin=1&next=${encodeURIComponent(here)}`} className="mt-8 inline-flex h-9 pointer-coarse:h-11 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-on hover:bg-primary-hover">
           Sign in to Lodestar
         </a>
       </Shell>

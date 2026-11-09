@@ -71,7 +71,7 @@ function Select<T extends string | number>({ value, options, onChange, label }: 
       <select
         value={String(value)}
         onChange={(e) => onChange(options.find(([v]) => String(v) === e.target.value)![0])}
-        className="h-8 cursor-pointer appearance-none rounded-md border border-hairline-hover bg-card pl-3 pr-7 text-[13px] text-ink outline-none hover:border-hairline-hover max-sm:h-10"
+        className="h-8 cursor-pointer appearance-none rounded-md border border-hairline-hover bg-card pl-3 pr-8 text-[13px] text-ink outline-none hover:border-hairline-hover pointer-coarse:h-11"
       >
         {options.map(([v, l]) => (
           <option key={String(v)} value={String(v)}>
@@ -79,7 +79,7 @@ function Select<T extends string | number>({ value, options, onChange, label }: 
           </option>
         ))}
       </select>
-      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-ash">▾</span>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-ash">▾</span>
     </label>
   );
 }
@@ -110,14 +110,14 @@ export function SearchForm({
       }}
       className="rounded-xl border border-hairline-strong bg-card"
     >
-      <div className="flex flex-wrap items-center gap-2 border-b border-hairline px-3 py-2.5">
-        <div className="inline-flex rounded-md border border-hairline-strong p-0.5">
+      <div className="flex flex-wrap items-center gap-2 border-b border-hairline px-3 py-3">
+        <div className="inline-flex rounded-md border border-hairline-strong p-1 pointer-coarse:p-0">
           {[true, false].map((rt) => (
             <button
               key={String(rt)}
               type="button"
               onClick={() => onChange({ ...form, roundTrip: rt, return: rt ? (form.return ?? addDays(form.depart, 5)) : form.return })}
-              className={`h-7 cursor-pointer rounded-sm px-3 text-[13px] max-sm:h-9 ${form.roundTrip === rt ? "bg-elevated text-ink" : "text-mute hover:text-charcoal"}`}
+              className={`h-7 cursor-pointer rounded-sm px-3 text-[13px] pointer-coarse:h-11 ${form.roundTrip === rt ? "bg-elevated text-ink" : "text-mute hover:text-charcoal"}`}
             >
               {rt ? "Round trip" : "One way"}
             </button>
@@ -138,7 +138,7 @@ export function SearchForm({
             type="button"
             aria-label="Swap from and to"
             onClick={() => onChange({ ...form, from: form.to, to: form.from })}
-            className="mx-1 flex size-8 cursor-pointer items-center justify-center rounded-full border border-hairline-strong bg-elevated text-charcoal hover:text-ink"
+            className="mx-1 flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-full border border-hairline-strong bg-elevated text-charcoal hover:text-ink"
           >
             <ArrowLeftRight size={14} />
           </button>

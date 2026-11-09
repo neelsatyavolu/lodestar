@@ -24,7 +24,7 @@ export function Logo({ src, name, size = 28, className = "" }: { src: string; na
       loading="lazy"
       onError={() => setFailed(true)}
       style={style}
-      className={`shrink-0 rounded-md bg-white object-contain p-0.5 ${className}`}
+      className={`shrink-0 rounded-md bg-white object-contain p-1 ${className}`}
     />
   );
 }

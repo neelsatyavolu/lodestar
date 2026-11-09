@@ -101,10 +101,10 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
           </button>
           {statusPill(item)}
         </div>
-        {sub && <p className="mt-0.5 truncate text-[13px] text-mute">{sub}</p>}
-        {(item.details.note || item.details.why) && <p className="mt-1.5 max-w-[60ch] whitespace-pre-line text-[15px] leading-relaxed text-body [text-wrap:pretty]">{item.details.note ?? item.details.why}</p>}
+        {sub && <p className="mt-1 truncate text-[13px] text-mute">{sub}</p>}
+        {(item.details.note || item.details.why) && <p className="mt-2 max-w-[60ch] whitespace-pre-line text-[15px] leading-relaxed text-body [text-wrap:pretty]">{item.details.note ?? item.details.why}</p>}
         <div className="mt-2 flex flex-wrap items-center gap-2 empty:hidden" onClick={(e) => e.stopPropagation()}>
-          {when && <span className="tnum inline-flex h-6 items-center rounded-full bg-elevated px-2.5 text-[12px] text-charcoal">{when}</span>}
+          {when && <span className="tnum inline-flex h-6 items-center rounded-full bg-elevated px-3 text-[12px] text-charcoal">{when}</span>}
           {item.kind === "flight" && item.endTime && <span className="text-[12px] text-mute">{item.details.from && item.details.to ? `${item.details.from} → ${item.details.to}` : null}</span>}
           {suggested && (
             <>
@@ -170,7 +170,7 @@ function NoteBody({ item, onOpen, onRemoved }: { item: Item; onOpen: () => void;
           await api(`/api/journeys/items/${item.id}`, { method: "DELETE" }).then(onRemoved, () => {});
         }}
         aria-label={`Remove note: ${item.title}`}
-        className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger"
+        className="inline-flex size-8 pointer-coarse:size-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger"
       >
         <Trash2 size={14} />
       </button>
@@ -183,7 +183,7 @@ export function StayRow({ stay, date, onOpen }: { stay: Item; date: string; onOp
   const label = stay.startDate === date ? `Check in${stay.startTime ? ` ${time12(stay.startTime)}` : ""}` : stay.endDate === date ? `Check out${stay.endTime ? ` ${time12(stay.endTime)}` : ""}` : null;
   return (
     <li>
-      <button type="button" onClick={onOpen} className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-left hover:bg-hover">
+      <button type="button" onClick={onOpen} className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-left hover:bg-hover pointer-coarse:min-h-11">
         <BedDouble size={16} className="shrink-0 text-charcoal" aria-hidden />
         <span className="min-w-0 flex-1 truncate text-[14px] text-body">{stay.title}</span>
         {label && <span className="shrink-0 text-[12px] text-mute">{label}</span>}

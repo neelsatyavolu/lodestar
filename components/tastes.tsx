@@ -8,7 +8,7 @@ import { Field, inputClass } from "./dialog";
 type Set = <K extends keyof Preferences>(k: K, v: Preferences[K]) => void;
 
 const chip = (on: boolean) =>
-  `h-9 cursor-pointer rounded-full border px-3.5 text-[13px] max-sm:h-10 ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`;
+  `h-9 cursor-pointer rounded-full border px-4 text-[13px] pointer-coarse:h-11 ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`;
 
 /** Toggle chips for a list preference, plus a box for anything not offered. */
 export function Chips({ label, choices, value, onChange, max }: { label: string; choices: string[]; value: string[]; onChange: (v: string[]) => void; max: number }) {
@@ -41,7 +41,7 @@ export function Chips({ label, choices, value, onChange, max }: { label: string;
           onBlur={add}
           placeholder="Other…"
           aria-label={`Add to ${label.toLowerCase()}`}
-          className="h-9 w-28 rounded-full border border-dashed border-hairline-strong bg-transparent px-3.5 text-[13px] text-ink outline-none placeholder:text-mute focus:border-accent max-sm:h-10"
+          className="h-9 w-28 rounded-full border border-dashed border-hairline-strong bg-transparent px-4 text-[13px] text-ink outline-none placeholder:text-mute focus:border-accent pointer-coarse:h-11"
         />
       </div>
     </fieldset>

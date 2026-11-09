@@ -46,10 +46,10 @@ export function TabBar({ tab, onChange, counts }: { tab: Tab; onChange: (t: Tab)
                 type="button"
                 onClick={() => onChange(t.id)}
                 aria-current={active ? "page" : undefined}
-                className={`relative inline-flex h-11 cursor-pointer items-center gap-1.5 px-3 text-[14px] transition-colors duration-150 ${active ? "text-ink" : "text-mute hover:text-charcoal"}`}
+                className={`relative inline-flex h-11 cursor-pointer items-center gap-2 px-3 text-[14px] transition-colors duration-150 ${active ? "text-ink" : "text-mute hover:text-charcoal"}`}
               >
                 {t.label}
-                {counts[t.id] && <span className={`tnum rounded-full px-1.5 text-[12px] leading-[18px] ${active ? "bg-tint text-accent" : "bg-elevated text-mute"}`}>{counts[t.id]}</span>}
+                {counts[t.id] && <span className={`tnum rounded-full px-2 text-[12px] leading-[18px] ${active ? "bg-tint text-accent" : "bg-elevated text-mute"}`}>{counts[t.id]}</span>}
                 <span className={`absolute inset-x-3 -bottom-px h-0.5 rounded-full ${active ? "bg-accent" : "bg-transparent"}`} aria-hidden />
               </button>
             </li>

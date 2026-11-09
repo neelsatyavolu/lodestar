@@ -43,10 +43,10 @@ export function ItineraryTab(p: Props) {
         </Button>
       </TabHead>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <button type="button" disabled={!hasDates || p.suggesting !== null} onClick={() => p.onSuggest("dining")} className="inline-flex h-8 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone">
+        <button type="button" disabled={!hasDates || p.suggesting !== null} onClick={() => p.onSuggest("dining")} className="inline-flex h-8 pointer-coarse:h-11 cursor-pointer items-center gap-2 text-[13px] text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone">
           {p.suggesting === "dining" ? <Spinner /> : <UtensilsCrossed size={14} aria-hidden />} Plan meals
         </button>
-        <button type="button" disabled={!hasDates || !trip.destination || p.suggesting !== null} onClick={() => p.onSuggest("hotels")} className="inline-flex h-8 cursor-pointer items-center gap-1.5 text-[13px] text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone">
+        <button type="button" disabled={!hasDates || !trip.destination || p.suggesting !== null} onClick={() => p.onSuggest("hotels")} className="inline-flex h-8 pointer-coarse:h-11 cursor-pointer items-center gap-2 text-[13px] text-charcoal hover:text-ink disabled:cursor-default disabled:text-stone">
           {p.suggesting === "hotels" ? <Spinner /> : <Building2 size={14} aria-hidden />} Find hotels
         </button>
         {p.suggesting && <span className="text-[12px] text-mute">{p.suggesting === "dining" ? "Planning meals around your days…" : "Searching live hotel prices…"}</span>}
@@ -79,7 +79,7 @@ export function ItineraryTab(p: Props) {
               <AiButton gen={gen} part="itinerary" variant="primary" />
             </EmptyState>
           )}
-          <ol className="space-y-10">
+          <ol className="space-y-12">
             {days.map((d) => (
               <DaySection key={d} journey={trip} date={d} active={d === p.activeDay} selectedId={p.selectedId} onFocusDay={() => p.onFocusDay(d)} onOpen={p.onOpen} onReplace={p.onReplace} onDrop={p.onDrop} onAdded={p.onAdded} />
             ))}

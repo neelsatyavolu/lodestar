@@ -8,7 +8,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primar
 
 export function Button({ variant = "ghost", size = "md", className = "", ...rest }: ButtonProps) {
   const base = "inline-flex items-center justify-center gap-2 rounded-md font-medium disabled:text-stone disabled:cursor-default cursor-pointer whitespace-nowrap";
-  const sizes = size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-4 text-sm max-sm:h-11";
+  const sizes = size === "sm" ? "h-8 px-3 text-[13px] pointer-coarse:h-11" : "h-9 px-4 text-sm pointer-coarse:h-11";
   const variants = {
     primary: "bg-primary text-primary-on hover:bg-primary-hover disabled:bg-hover disabled:text-stone",
     accent: "bg-accent text-accent-on hover:bg-accent-hover disabled:bg-hover disabled:text-stone",
@@ -31,7 +31,7 @@ export function StatusDot({ state, className = "" }: { state: State; className?:
 export function Pill({ children, tone = "neutral", dot, className = "" }: { children: ReactNode; tone?: "neutral" | "accent"; dot?: State; className?: string }) {
   const look = tone === "accent" ? "bg-tint text-accent" : "bg-elevated text-body";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${look} ${className}`}>
+    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${look} ${className}`}>
       {dot && <StatusDot state={dot} className="!size-1.5" />}
       {children}
     </span>
@@ -46,7 +46,7 @@ export function Toggle({ checked, onChange, label, hint }: { checked: boolean; o
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       title={hint}
-      className={`inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] cursor-pointer max-sm:h-10 ${
+      className={`inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] cursor-pointer pointer-coarse:h-11 ${
         checked ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"
       }`}
     >

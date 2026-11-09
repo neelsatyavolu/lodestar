@@ -20,7 +20,7 @@ function GooglePart({ place }: { place: PlaceDetails }) {
   const [allHours, setAllHours] = useState(false);
   const today = place.hours.find((h) => h.startsWith(WEEKDAY));
   return (
-    <div className="space-y-2.5 text-[13px] text-body">
+    <div className="space-y-3 text-[13px] text-body">
       {place.photos[0] && (
         // eslint-disable-next-line @next/next/no-img-element -- a redirect to Google's image host; next/image can't proxy it.
         <img src={photoUrl(place.photos[0])} alt="" className="h-44 w-full rounded-lg bg-elevated object-cover outline outline-1 -outline-offset-1 outline-hairline-strong" loading="lazy" />
@@ -51,7 +51,7 @@ function GooglePart({ place }: { place: PlaceDetails }) {
               {today ?? "Hours"} <span className="text-accent">{allHours ? "Hide times" : "Show times"}</span>
             </button>
             {allHours && (
-              <ul className="mt-1 space-y-0.5 text-mute">
+              <ul className="mt-1 space-y-1 text-mute">
                 {place.hours.map((h) => (
                   <li key={h} className={h.startsWith(WEEKDAY) ? "text-ink" : ""}>
                     {h}
@@ -90,10 +90,10 @@ function OpenIn({ item, place }: { item: Item; place: PlaceDetails | null }) {
   ];
   return (
     <div>
-      <p className="mb-1.5 text-[12px] text-mute">Open in</p>
-      <div className="flex flex-wrap gap-1.5">
+      <p className="mb-2 text-[12px] text-mute">Open in</p>
+      <div className="flex flex-wrap gap-2">
         {links.map((l) => (
-          <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-2.5 text-[12px] text-ink hover:border-hairline-hover">
+          <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 pointer-coarse:h-11 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[12px] text-ink hover:border-hairline-hover">
             {l.label} <ExternalLink size={11} className="text-ash" aria-hidden />
           </a>
         ))}
@@ -126,7 +126,7 @@ function Reviews({ item, place }: { item: Item; place: PlaceDetails | null }) {
         </p>
       )}
       <p className="text-mute">Read what people say:</p>
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {[
           { label: "Google reviews", href: place?.mapsUrl ?? mapsSearchUrl(`${name} ${where}`) },
           { label: "Yelp", href: `https://www.yelp.com/search?find_desc=${q(name)}&find_loc=${q(where)}` },
@@ -214,11 +214,11 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
         <div className="flex items-start justify-between gap-3 border-b border-hairline px-4 py-3">
           <div className="min-w-0">
             <h2 className="text-[16px] font-medium text-ink">{place?.name ?? item.title}</h2>
-            <p className="mt-0.5 text-[12px] text-mute">{status}</p>
+            <p className="mt-1 text-[12px] text-mute">{status}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-0.5">
+          <div className="flex shrink-0 items-center gap-1">
             {pager && <PagerButtons pager={pager} />}
-            <button type="button" onClick={onClose} aria-label="Close details" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+            <button type="button" onClick={onClose} aria-label="Close details" className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
               <X size={16} />
             </button>
           </div>
@@ -227,7 +227,7 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
       {place && (
         <div className="flex shrink-0 gap-1 border-b border-hairline px-3" role="tablist" aria-label="Place details">
           {(["about", "reviews", "photos"] as const).map((v) => (
-            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`relative h-10 cursor-pointer px-2.5 text-[13px] capitalize ${view === v ? "text-ink" : "text-mute hover:text-charcoal"}`}>
+            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`relative h-10 cursor-pointer px-3 text-[13px] capitalize ${view === v ? "text-ink" : "text-mute hover:text-charcoal"}`}>
               {v}
               <span className={`absolute inset-x-2 -bottom-px h-0.5 rounded-full ${view === v ? "bg-accent" : "bg-transparent"}`} aria-hidden />
             </button>
@@ -331,13 +331,13 @@ export function PlacePanel({ item, near, onClose, onChanged, onRemoved, bare = f
 function PagerButtons({ pager }: { pager: Pager }) {
   return (
     <span className="inline-flex items-center text-[12px] text-mute">
-      <button type="button" onClick={() => pager.go(pager.index - 1)} aria-label="Previous stop" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+      <button type="button" onClick={() => pager.go(pager.index - 1)} aria-label="Previous stop" className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
         <ChevronLeft size={15} />
       </button>
-      <span className="tnum px-0.5">
+      <span className="tnum px-1">
         {pager.index + 1} of {pager.total}
       </span>
-      <button type="button" onClick={() => pager.go(pager.index + 1)} aria-label="Next stop" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+      <button type="button" onClick={() => pager.go(pager.index + 1)} aria-label="Next stop" className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
         <ChevronRight size={15} />
       </button>
     </span>

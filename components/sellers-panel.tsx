@@ -69,13 +69,13 @@ function SellerRow({ seller, bookingUrl, onBook }: { seller: VerifiedSeller; boo
           target="_blank"
           rel="noopener noreferrer"
           title={`Opens this exact itinerary on Google Flights, where you continue to ${seller.name}`}
-          className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] text-ink hover:border-hairline-hover max-sm:h-10"
+          className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] text-ink hover:border-hairline-hover pointer-coarse:h-11"
         >
           Book <ArrowUpRight size={13} />
         </a>
       </div>
       {!tiers && onBook && seller.fares[0] && (
-        <div className="mt-1.5 pl-10">
+        <div className="mt-2 pl-10">
           <BookedButton onClick={() => onBook(seller, seller.fares[0])} />
         </div>
       )}

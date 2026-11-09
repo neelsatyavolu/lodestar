@@ -64,7 +64,7 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
           <input autoFocus value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Lisbon" className={inputClass} maxLength={80} />
         </Field>
         <div>
-          <span className="mb-1.5 block text-[12px] text-charcoal">Dates</span>
+          <span className="mb-2 block text-[12px] text-charcoal">Dates</span>
           <DateRangeField
             inline
             label="Trip dates"
@@ -80,11 +80,11 @@ export function JourneyDialog({ open, onClose, journey, onSaved }: { open: boole
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={destination ? `${destination} trip` : "Name"} className={inputClass} maxLength={160} />
         </Field>
         <div>
-          <span className="mb-1.5 block text-[12px] text-charcoal">Who&apos;s going</span>
+          <span className="mb-2 block text-[12px] text-charcoal">Who&apos;s going</span>
           <TravellersField value={travelers} onChange={setTravelers} />
         </div>
         <div>
-          <span className="mb-1.5 block text-[12px] text-charcoal">What kind of trip</span>
+          <span className="mb-2 block text-[12px] text-charcoal">What kind of trip</span>
           <TripTypeField value={type} onChange={setType} />
         </div>
         <button type="submit" hidden />
@@ -156,7 +156,7 @@ export function AddItemDialog({ open, onClose, journey, onAdded, preset }: { ope
               role="radio"
               aria-checked={kind === k}
               onClick={() => setKind(k)}
-              className={`h-9 cursor-pointer rounded-full border px-3.5 text-[13px] ${kind === k ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+              className={`h-9 pointer-coarse:h-11 cursor-pointer rounded-full border px-4 text-[13px] ${kind === k ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
             >
               {KIND_LABEL[k]}
             </button>
@@ -168,7 +168,7 @@ export function AddItemDialog({ open, onClose, journey, onAdded, preset }: { ope
         <div className="grid gap-4 sm:grid-cols-2">
           {kind === "stay" ? (
             <div className="sm:col-span-2">
-              <span className="mb-1.5 block text-[12px] text-charcoal">Check-in and check-out</span>
+              <span className="mb-2 block text-[12px] text-charcoal">Check-in and check-out</span>
               <DateRangeField
                 inline
                 label="Check-in and check-out"
@@ -182,7 +182,7 @@ export function AddItemDialog({ open, onClose, journey, onAdded, preset }: { ope
             </div>
           ) : (
             <div className="sm:col-span-2">
-              <span className="mb-1.5 block text-[12px] text-charcoal">Date</span>
+              <span className="mb-2 block text-[12px] text-charcoal">Date</span>
               <DateField inline label="Date" value={date || null} onChange={setDate} />
             </div>
           )}

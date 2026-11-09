@@ -69,9 +69,9 @@ export function Results({
   return (
     <section aria-label="Flights" className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-md border border-hairline-strong p-0.5" role="tablist">
+        <div className="inline-flex rounded-md border border-hairline-strong p-1 pointer-coarse:p-0" role="tablist">
           {(["best", "cheapest", "fastest"] as Sort[]).map((s) => (
-            <button key={s} role="tab" aria-selected={sort === s} type="button" onClick={() => setSort(s)} className={`h-7 cursor-pointer rounded-sm px-3 text-[13px] capitalize max-sm:h-9 ${sort === s ? "bg-elevated text-ink" : "text-mute hover:text-charcoal"}`}>
+            <button key={s} role="tab" aria-selected={sort === s} type="button" onClick={() => setSort(s)} className={`h-7 cursor-pointer rounded-sm px-3 text-[13px] capitalize pointer-coarse:h-11 ${sort === s ? "bg-elevated text-ink" : "text-mute hover:text-charcoal"}`}>
               {s}
             </button>
           ))}
@@ -82,7 +82,7 @@ export function Results({
       </div>
 
       {carriers.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {carriers.map(([code, c]) => {
             const on = airlines.includes(code);
             return (
@@ -90,7 +90,7 @@ export function Results({
                 key={code}
                 type="button"
                 onClick={() => setAirlines(on ? airlines.filter((a) => a !== code) : [...airlines, code])}
-                className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full border pl-1 pr-3 text-[13px] ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+                className={`inline-flex h-9 pointer-coarse:h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border pl-1 pr-3 text-[13px] ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
               >
                 <AirlineLogo code={code} name={c.name} size={24} />
                 {c.name}
@@ -101,7 +101,7 @@ export function Results({
         </div>
       )}
 
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {shown.slice(0, limit).map((it) => (
           <ItineraryCard key={it.id} it={it} badges={badges(it)} check={checks[it.id]} onCheck={() => onCheck(it)} trustedOnly={trustedOnly} alt={alt} highlight={highlight === it.id} />
         ))}

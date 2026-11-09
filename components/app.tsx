@@ -364,23 +364,23 @@ export function App() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
-        <div className="mx-auto flex h-16 max-w-[1120px] items-center gap-2 px-4 sm:gap-4 sm:px-8">
-          <Link href="/" className="flex items-center gap-2" aria-label="Lodestar home">
+        <div className="mx-auto flex h-16 max-w-[1120px] items-center gap-1 px-4 sm:gap-4 sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2 pointer-coarse:min-h-11" aria-label="Lodestar home">
             <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
               <path d="M11 1.5 L12.6 9.4 L20.5 11 L12.6 12.6 L11 20.5 L9.4 12.6 L1.5 11 L9.4 9.4 Z" fill="currentColor" />
             </svg>
-            <span className="text-[18px] font-medium tracking-[-0.02em] max-[400px]:sr-only">Lodestar</span>
+            <span className="text-[18px] font-medium tracking-[-0.02em] max-md:sr-only">Lodestar</span>
           </Link>
-          <nav className="inline-flex shrink-0 rounded-full bg-elevated p-0.5 text-[13px] sm:ml-2" aria-label="Mode">
+          <nav className="ml-1 inline-flex min-w-0 overflow-x-auto rounded-full bg-elevated p-1 text-[13px] [scrollbar-width:none] pointer-coarse:p-0 sm:ml-2" aria-label="Mode">
             {((account ? ["search", "stays", "ai", "trips"] : ["search", "stays", "ai"]) as Mode[]).map((m) => (
-              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 cursor-pointer whitespace-nowrap rounded-full px-3 sm:px-3.5 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
+              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-2 pointer-coarse:h-11 md:px-4 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
                 {MODE_LABEL[m]}
               </button>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 max-sm:pointer-coarse:gap-0 sm:gap-2">
             <ThemeToggle />
-            <span className="max-sm:hidden">
+            <span className="max-lg:hidden">
               <GitHubLink />
             </span>
             <button
@@ -389,17 +389,17 @@ export function App() {
               aria-label="Travel preferences"
               data-tour="prefs"
               title="Travel preferences"
-              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:size-10"
+              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink pointer-coarse:size-11"
             >
               <SlidersHorizontal size={16} />
             </button>
             {account && (
-              <button type="button" onClick={() => setAgentsOpen(true)} aria-label="Agents" title="Agents: connect Claude, ChatGPT or Codex" className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:hidden">
+              <button type="button" onClick={() => setAgentsOpen(true)} aria-label="Agents" title="Agents: connect Claude, ChatGPT or Codex" className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:hidden">
                 <Bot size={16} />
               </button>
             )}
             {account ? (
-              <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} data-tour="account" className="cursor-pointer max-sm:hidden">
+              <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} data-tour="account" className="shrink-0 cursor-pointer max-sm:hidden">
                 <Pill>{account.email.split("@")[0]}</Pill>
               </button>
             ) : (
@@ -423,12 +423,12 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-24 sm:px-8">
+      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-24 sm:px-6">
         {/* Both modes stay mounted so switching tabs keeps the search and a running AI canvas. */}
         <div hidden={mode !== "search"}>
-            <section className={`${result ? "pt-8 pb-6" : "pt-20 pb-10 sm:pt-28"}`}>
+            <section className={`${result ? "pt-8 pb-6" : "pt-16 pb-12 sm:pt-24"}`}>
               {!result && (
-                <div className="mb-10 max-w-4xl">
+                <div className="mb-12 max-w-4xl">
                   <h1 className="font-display text-[clamp(44px,6.5vw,72px)]">
                     Lower fares.
                     <br />
@@ -446,11 +446,11 @@ export function App() {
                 busy={busy}
                 filters={{ alliances: prefs.alliances, avoidAirlines: prefs.avoidedAirlines }}
               />
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                 {preferenceChips(prefs).map((c) => (
                   <Pill key={c}>{c}</Pill>
                 ))}
-                <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} className="cursor-pointer px-1 text-accent hover:underline">
+                <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} className="cursor-pointer px-1 text-accent hover:underline pointer-coarse:min-h-11">
                   {account ? "Edit preferences" : "Set alliances and preferences"}
                 </button>
                 {!account && (
@@ -467,7 +467,7 @@ export function App() {
 
             {error && <p className="mb-6 rounded-lg border border-danger/40 bg-card p-4 text-sm text-danger">{error}</p>}
             {busy && !result && (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="skeleton h-24 rounded-lg" />
                 ))}
@@ -489,7 +489,7 @@ export function App() {
                 />
                 {calendar.loading && <p className="text-xs text-ash">Checking prices three days either side…</p>}
                 {splitOpen && splitPair.length === 2 && (
-                  <section id="split" className="space-y-2.5 rounded-xl border border-hairline-strong bg-deep p-4">
+                  <section id="split" className="space-y-3 rounded-xl border border-hairline-strong bg-deep p-4">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <h3 className="text-sm text-ink">Two one-way tickets · {money(splitPair[0].price + splitPair[1].price)} total</h3>
                       <button type="button" onClick={() => setSplitOpen(false)} className="cursor-pointer text-xs text-ash hover:text-ink">
@@ -514,10 +514,10 @@ export function App() {
           <Stays trustedOnly={trustedOnly} />
         </div>
         <div hidden={mode !== "ai"}>
-          <section className="pt-10 sm:pt-16">
+          <section className="pt-12 sm:pt-16">
             <AiCanvas
               intro={
-                <div className="mb-10 max-w-4xl pt-6 sm:pt-8">
+                <div className="mb-12 max-w-4xl pt-6 sm:pt-8">
                   <h1 className="font-display text-[clamp(40px,6vw,72px)]">
                     Say the trip.
                     <br />
@@ -567,12 +567,12 @@ export function App() {
       </main>
 
       <footer className="border-t border-hairline">
-        <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 text-xs text-ash sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 text-xs text-ash sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="space-y-1">
             <p>Live prices from Google Flights and Google Hotels. Lodestar doesn&apos;t sell tickets or rooms: you book with the airline, hotel or agency.</p>
             <p>Prices in USD, taxes included, per the seller at search time.</p>
           </div>
-          <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-charcoal hover:text-ink">
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-2 text-charcoal hover:text-ink pointer-coarse:min-h-11">
             <GitHubMark size={14} /> Open source on GitHub · MIT
           </a>
         </div>

@@ -245,7 +245,7 @@ export function WanderlogDialog({ open, onClose, onImported }: { open: boolean; 
             <ul className="divide-y divide-hairline rounded-lg border border-hairline-strong">
               {trips.map((t) => (
                 <li key={t.key}>
-                  <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
+                  <label className="flex cursor-pointer items-center gap-3 px-3 py-3">
                     <input type="checkbox" checked={picked.has(t.key)} onChange={() => toggle(t.key)} className="size-4 accent-[var(--accent)]" />
                     <span className="min-w-0 flex-1 truncate text-ink">{t.title}</span>
                     <span className="shrink-0 text-[12px] text-ash">{dateRange(t.startDate, t.endDate)}</span>

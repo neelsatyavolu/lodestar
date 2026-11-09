@@ -102,7 +102,7 @@ export function PreferencesDialog({
 
         <Section title="Airlines">
           <div>
-            <span className="mb-1.5 block text-[12px] text-charcoal">Alliances (only show these)</span>
+            <span className="mb-2 block text-[12px] text-charcoal">Alliances (only show these)</span>
             <div className="flex flex-wrap gap-2">
               {ALLIANCES.map((a) => {
                 const on = p.alliances.includes(a);
@@ -112,14 +112,14 @@ export function PreferencesDialog({
                     type="button"
                     aria-pressed={on}
                     onClick={() => set("alliances", on ? p.alliances.filter((x) => x !== a) : [...p.alliances, a])}
-                    className={`h-9 cursor-pointer rounded-full border px-3.5 text-[13px] max-sm:h-10 ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
+                    className={`h-9 cursor-pointer rounded-full border px-4 text-[13px] pointer-coarse:h-11 ${on ? "border-hairline-hover bg-elevated text-ink" : "border-hairline-strong text-mute hover:text-charcoal"}`}
                   >
                     {ALLIANCE_LABEL[a]}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 text-[12px] text-ash">Leave all off to see every airline. Google also includes close partners of an alliance.</p>
+            <p className="mt-2 text-[12px] text-ash">Leave all off to see every airline. Google also includes close partners of an alliance.</p>
           </div>
           <AirportField bare kind="airline" max={10} label="Prefer these airlines (ranked higher, e.g. where you have status)" value={p.preferredAirlines} onChange={(v) => set("preferredAirlines", v)} placeholder="Airline name or code" />
           <AirportField bare kind="airline" max={20} label="Never show these airlines" value={p.avoidedAirlines} onChange={(v) => set("avoidedAirlines", v)} placeholder="Airline name or code" />

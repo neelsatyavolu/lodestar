@@ -92,7 +92,7 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
         onToggle={() => (setOpen(!open), onFocusDay())}
         menuLabel={`Actions for ${longDay(date)}`}
         title={
-          <span className="flex items-center gap-2.5">
+          <span className="flex items-center gap-3">
             <span className="size-2.5 shrink-0 rounded-full" style={{ background: color.fill }} aria-hidden />
             <span className={active ? "text-ink" : "text-ink/90"}>{longDay(date)}</span>
           </span>
@@ -105,7 +105,7 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
         }
         aside={
           drive && (
-            <span className="tnum hidden items-center gap-1.5 text-[12px] text-mute sm:inline-flex" title="Driving between stops">
+            <span className="tnum hidden items-center gap-2 text-[12px] text-mute sm:inline-flex" title="Driving between stops">
               <Car size={13} aria-hidden /> {drive}
             </span>
           )
@@ -143,7 +143,7 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
         {adding ? (
           <AddPlace journeyId={journey.id} date={date} near={near} onAdded={onAdded} />
         ) : (
-          <button type="button" onClick={() => setAdding(true)} className={`mt-2 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-hover hover:text-ink ${empty ? "" : "-ml-2"}`}>
+          <button type="button" onClick={() => setAdding(true)} className={`mt-2 inline-flex h-9 pointer-coarse:h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] text-mute hover:bg-hover hover:text-ink ${empty ? "" : "-ml-2"}`}>
             <Plus size={14} aria-hidden /> {empty ? "Nothing planned yet. Add a place" : "Add a place"}
           </button>
         )}

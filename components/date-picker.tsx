@@ -105,7 +105,7 @@ function Month({
       <div className="mb-2 text-center text-sm font-medium text-ink">{monthLabel(month)}</div>
       <div className="grid grid-cols-7 text-center text-[12px] text-ash">
         {WEEKDAYS.map((w, i) => (
-          <div key={i} className="pb-1.5">
+          <div key={i} className="pb-2">
             {w}
           </div>
         ))}
@@ -233,7 +233,7 @@ export function DateRangeField({ depart, ret, roundTrip, today, onChange, onRoun
       type="button"
       onClick={onClick}
       aria-expanded={open && active}
-      className={`block w-full cursor-pointer px-3 py-2.5 text-left ${active && open ? "bg-hover" : "hover:bg-hover"} ${dim ? "text-mute" : ""}`}
+      className={`block w-full cursor-pointer px-3 py-3 text-left ${active && open ? "bg-hover" : "hover:bg-hover"} ${dim ? "text-mute" : ""}`}
     >
       <span className="block text-[12px] text-ash">{label}</span>
       <span className={`mt-1 block text-[15px] tnum ${dim ? "text-mute" : "text-ink"}`}>{value}</span>
@@ -257,7 +257,7 @@ export function DateRangeField({ depart, ret, roundTrip, today, onChange, onRoun
           className="rise absolute right-0 top-full z-40 mt-2 w-[min(680px,calc(100vw-32px))] rounded-xl border border-hairline-strong bg-card p-4 max-lg:right-auto max-lg:left-1/2 max-lg:-translate-x-1/2"
         >
           <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="inline-flex rounded-md border border-hairline-strong p-0.5 text-[13px]">
+            <div className="inline-flex rounded-md border border-hairline-strong p-1 pointer-coarse:p-0 text-[13px]">
               {[true, false].map((rt) => (
                 <button
                   key={String(rt)}
@@ -266,17 +266,17 @@ export function DateRangeField({ depart, ret, roundTrip, today, onChange, onRoun
                     onRoundTrip(rt);
                     setPhase("depart");
                   }}
-                  className={`h-7 cursor-pointer rounded-sm px-3 ${roundTrip === rt ? "bg-elevated text-ink" : "text-mute hover:text-charcoal"}`}
+                  className={`h-7 cursor-pointer rounded-sm px-3 pointer-coarse:h-11 ${roundTrip === rt ? "bg-elevated text-ink" : "text-mute hover:text-charcoal"}`}
                 >
                   {rt ? "Round trip" : "One way"}
                 </button>
               ))}
             </div>
             <div className="flex items-center gap-1">
-              <button type="button" aria-label="Previous month" disabled={!canGoBack} onClick={() => setView(addMonths(view, -1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:text-stone">
+              <button type="button" aria-label="Previous month" disabled={!canGoBack} onClick={() => setView(addMonths(view, -1))} className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:text-stone">
                 <ChevronLeft size={16} />
               </button>
-              <button type="button" aria-label="Next month" disabled={!canGoForward} onClick={() => setView(addMonths(view, 1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:text-stone">
+              <button type="button" aria-label="Next month" disabled={!canGoForward} onClick={() => setView(addMonths(view, 1))} className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink disabled:cursor-default disabled:text-stone">
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -310,7 +310,7 @@ export function DateRangeField({ depart, ret, roundTrip, today, onChange, onRoun
             </span>
             {priceQuery ? (
               loading ? (
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-2">
                   <Spinner className="!size-3" /> Loading fares
                 </span>
               ) : prices.size ? (

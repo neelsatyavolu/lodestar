@@ -90,7 +90,7 @@ export function ItemRow({ item, pin, onChanged, onRemoved, onOpen, selected = fa
           {suggested && <Pill tone="accent">Idea</Pill>}
           {item.confirmation && <span className="font-mono text-[12px] text-mute" title="Confirmation">{item.confirmation}</span>}
         </div>
-        {subtitle(item) && <p className="mt-0.5 text-[13px] text-mute">{subtitle(item)}</p>}
+        {subtitle(item) && <p className="mt-1 text-[13px] text-mute">{subtitle(item)}</p>}
         {item.details.why && <p className="mt-1 text-[13px] text-body">{item.details.why}</p>}
         {item.details.price !== undefined && item.kind === "stay" && suggested && <p className="mt-1 text-[13px] text-body">From ${item.details.price} a night on today&apos;s search{item.details.rating ? ` · rated ${item.details.rating}` : ""}</p>}
         {item.details.note && <p className="mt-1 whitespace-pre-line text-[13px] text-body">{item.details.note}</p>}
@@ -116,11 +116,11 @@ export function ItemRow({ item, pin, onChanged, onRemoved, onOpen, selected = fa
       {!suggested && (
         <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-start gap-1">
           {!cancelled && item.status === "booked" && (
-            <button type="button" disabled={busy} onClick={() => patch({ status: "cancelled" })} title="Mark cancelled" aria-label={`Mark ${item.title} cancelled`} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+            <button type="button" disabled={busy} onClick={() => patch({ status: "cancelled" })} title="Mark cancelled" aria-label={`Mark ${item.title} cancelled`} className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
               <X size={14} />
             </button>
           )}
-          <button type="button" disabled={busy} onClick={remove} title="Remove" aria-label={`Remove ${item.title}`} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
+          <button type="button" disabled={busy} onClick={remove} title="Remove" aria-label={`Remove ${item.title}`} className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
             <Trash2 size={14} />
           </button>
         </div>

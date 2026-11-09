@@ -164,7 +164,7 @@ export function PlaceSearch({ near, label, placeholder, initial = "", autoFocus 
       {error && <p className="mt-1 text-[12px] text-danger">{error}</p>}
       {open && (options.length > 0 || nothing) && (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-hairline-strong bg-card">
-          {nothing && <p className="px-3 py-2.5 text-[13px] text-mute">No places match “{text}”. Try the name and the city.</p>}
+          {nothing && <p className="px-3 py-3 text-[13px] text-mute">No places match “{text}”. Try the name and the city.</p>}
           <ul id={listId} role="listbox" className="max-h-[340px] overflow-y-auto py-1">
             {options.map((s, i) => (
               <li key={s?.id ?? "note"} id={`${listId}-${i}`} role="option" aria-selected={i === active}>
@@ -172,7 +172,7 @@ export function PlaceSearch({ near, label, placeholder, initial = "", autoFocus 
                   type="button"
                   onMouseEnter={() => setActive(i)}
                   onClick={() => choose(s)}
-                  className={`flex w-full cursor-pointer items-start gap-2.5 px-3 py-2 text-left ${i === active ? "bg-hover" : ""}`}
+                  className={`flex w-full cursor-pointer items-start gap-3 px-3 py-2 text-left ${i === active ? "bg-hover" : ""}`}
                 >
                   {s ? <KindIcon s={s} /> : <StickyNote size={14} className="mt-0.5 shrink-0 text-ash" aria-hidden />}
                   <span className="min-w-0">
@@ -183,7 +183,7 @@ export function PlaceSearch({ near, label, placeholder, initial = "", autoFocus 
               </li>
             ))}
           </ul>
-          {rows.length > 0 && <p className="border-t border-hairline px-3 py-1.5 text-right text-[12px] text-ash">{results?.provider === "google" ? "Results from Google Maps" : "Results from OpenStreetMap"}</p>}
+          {rows.length > 0 && <p className="border-t border-hairline px-3 py-2 text-right text-[12px] text-ash">{results?.provider === "google" ? "Results from Google Maps" : "Results from OpenStreetMap"}</p>}
         </div>
       )}
     </div>

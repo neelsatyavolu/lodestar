@@ -103,10 +103,10 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
           <table className="w-full text-[14px]">
             <thead>
               <tr className="border-b border-hairline text-left text-[12px] text-mute">
-                <th className="px-4 py-2.5 font-normal">Category</th>
-                <th className="px-4 py-2.5 text-right font-normal">Paid</th>
-                <th className="px-4 py-2.5 text-right font-normal">Estimated</th>
-                <th className="px-4 py-2.5 text-right font-normal max-sm:hidden">Total</th>
+                <th className="px-4 py-3 font-normal">Category</th>
+                <th className="px-4 py-3 text-right font-normal">Paid</th>
+                <th className="px-4 py-3 text-right font-normal">Estimated</th>
+                <th className="px-4 py-3 text-right font-normal max-sm:hidden">Total</th>
               </tr>
             </thead>
             <tbody className="tnum divide-y divide-hairline">
@@ -121,10 +121,10 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
             </tbody>
             <tfoot className="tnum border-t border-hairline-strong">
               <tr>
-                <td className="px-4 py-3.5 font-medium text-ink">All in</td>
-                <td className="px-4 py-3.5 text-right text-body">{amount(b.paid, b.currency)}</td>
-                <td className="px-4 py-3.5 text-right text-mute">~{amount(b.estimated, b.currency)}</td>
-                <td className="px-4 py-3.5 text-right text-[16px] font-medium text-ink max-sm:hidden">{amount(b.total, b.currency)}</td>
+                <td className="px-4 py-4 font-medium text-ink">All in</td>
+                <td className="px-4 py-4 text-right text-body">{amount(b.paid, b.currency)}</td>
+                <td className="px-4 py-4 text-right text-mute">~{amount(b.estimated, b.currency)}</td>
+                <td className="px-4 py-4 text-right text-[16px] font-medium text-ink max-sm:hidden">{amount(b.total, b.currency)}</td>
               </tr>
             </tfoot>
           </table>
@@ -140,12 +140,12 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
           <h3 id="extras-head" className="text-[15px] font-medium text-ink">
             Other costs
           </h3>
-          <p className="mt-0.5 text-[13px] text-mute">Things that aren&apos;t a booking. Tick paid once they are.</p>
+          <p className="mt-1 text-[13px] text-mute">Things that aren&apos;t a booking. Tick paid once they are.</p>
         </div>
         {trip.costs.length > 0 && (
           <ul className="divide-y divide-hairline rounded-xl border border-hairline-strong bg-card">
             {trip.costs.map((c) => (
-              <li key={c.id} className="group flex items-center gap-3 px-4 py-2.5">
+              <li key={c.id} className="group flex items-center gap-3 px-4 py-3">
                 <input type="checkbox" checked={c.paid} onChange={(e) => patch(c, { paid: e.target.checked })} aria-label={`${c.label} paid`} className="size-4 shrink-0 cursor-pointer accent-[var(--accent)]" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] text-ink">{c.label}</span>
@@ -155,7 +155,7 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
                   </span>
                 </span>
                 <span className={`tnum shrink-0 text-[14px] ${c.paid ? "text-body" : "text-mute"}`}>{c.paid ? "" : "~"}{amount(c.amount, c.currency)}</span>
-                <button type="button" onClick={() => remove(c)} aria-label={`Remove ${c.label}`} className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
+                <button type="button" onClick={() => remove(c)} aria-label={`Remove ${c.label}`} className="inline-flex size-9 pointer-coarse:size-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
                   <Trash2 size={14} />
                 </button>
               </li>
@@ -176,7 +176,7 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
               const value = paid ? i.details.price! : (i.details.estimate ?? i.details.price!);
               return (
                 <li key={i.id}>
-                  <button type="button" onClick={() => onOpenItem(i.id)} className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left hover:bg-hover">
+                  <button type="button" onClick={() => onOpenItem(i.id)} className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left hover:bg-hover">
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14px] text-ink">{i.title}</span>
                       <span className="block text-[12px] text-ash">

@@ -88,9 +88,9 @@ export function Stays({ trustedOnly }: { trustedOnly: boolean }) {
   const found = result ? Object.keys(savings).length : 0;
 
   return (
-    <section className={result ? "pt-8 pb-6" : "pt-20 pb-10 sm:pt-28"}>
+    <section className={result ? "pt-8 pb-6" : "pt-16 pb-12 sm:pt-24"}>
       {!result && (
-        <div className="mb-10 max-w-4xl">
+        <div className="mb-12 max-w-4xl">
           <h1 className="font-display text-[clamp(44px,6.5vw,72px)]">
             Hotels too.
             <br />

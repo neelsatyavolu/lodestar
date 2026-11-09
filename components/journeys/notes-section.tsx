@@ -105,15 +105,15 @@ export function NotesSection({ journeyId, notes, gen, onNotes, editing, setEditi
             <div className="flex items-start justify-between gap-3">
               <h4 className="text-[15px] font-medium text-ink">{n.title}</h4>
               <div className="-mr-2 -mt-1.5 flex shrink-0">
-                <button type="button" onClick={() => setEditing(n.id)} aria-label={`Edit ${n.title}`} className="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
+                <button type="button" onClick={() => setEditing(n.id)} aria-label={`Edit ${n.title}`} className="inline-flex size-9 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-ink">
                   <Pencil size={14} />
                 </button>
-                <button type="button" onClick={() => remove(n)} aria-label={`Delete ${n.title}`} className="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
+                <button type="button" onClick={() => remove(n)} aria-label={`Delete ${n.title}`} className="inline-flex size-9 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:text-danger">
                   <Trash2 size={14} />
                 </button>
               </div>
             </div>
-            {n.body && <p className="mt-1.5 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed text-body [text-wrap:pretty]">{n.body}</p>}
+            {n.body && <p className="mt-2 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed text-body [text-wrap:pretty]">{n.body}</p>}
           </article>
         ),
       )}
@@ -121,7 +121,7 @@ export function NotesSection({ journeyId, notes, gen, onNotes, editing, setEditi
         <NoteEditor onSave={create} onCancel={() => setEditing(null)} />
       ) : (
         notes.length > 0 && (
-          <button type="button" onClick={() => setEditing("new")} className="-ml-2 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-hover hover:text-ink">
+          <button type="button" onClick={() => setEditing("new")} className="-ml-2 inline-flex h-9 pointer-coarse:h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] text-mute hover:bg-hover hover:text-ink">
             <Plus size={14} aria-hidden /> Add a note
           </button>
         )

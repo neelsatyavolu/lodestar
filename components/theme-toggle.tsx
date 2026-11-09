@@ -51,7 +51,7 @@ export function ThemeToggle() {
       onClick={() => apply(next)}
       aria-label={`Theme: ${theme}. Switch to ${next}.`}
       title={`Theme: ${theme}`}
-      className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:size-10"
+      className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:text-ink pointer-coarse:size-11"
     >
       <Icon size={16} />
     </button>

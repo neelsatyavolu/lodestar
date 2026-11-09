@@ -110,10 +110,10 @@ export function AiStatus({ gen, parts }: { gen: Generator; parts: PlanPart[] }) 
 /** A tab with nothing in it yet: what goes here, and two ways to fill it. */
 export function EmptyState({ icon, title, body, children }: { icon: ReactNode; title: string; body: string; children?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-hairline-strong px-6 py-10 text-center">
+    <div className="rounded-xl border border-dashed border-hairline-strong px-6 py-12 text-center">
       <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-elevated text-charcoal">{icon}</div>
       <h3 className="mt-4 text-[15px] font-medium text-ink">{title}</h3>
-      <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-mute [text-wrap:pretty]">{body}</p>
+      <p className="mx-auto mt-2 max-w-sm text-[13px] text-mute [text-wrap:pretty]">{body}</p>
       {children && <div className="mt-5 flex flex-wrap items-center justify-center gap-2">{children}</div>}
     </div>
   );

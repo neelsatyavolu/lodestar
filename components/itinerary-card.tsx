@@ -145,7 +145,7 @@ function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; 
   if (!check) return <div className="text-[12px] text-ash">Sellers not checked</div>;
   if (check.state === "loading")
     return (
-      <div className="inline-flex items-center gap-1.5 text-[12px] text-ash">
+      <div className="inline-flex items-center gap-2 text-[12px] text-ash">
         <Spinner className="!size-2.5" /> Checking sellers
       </div>
     );
@@ -153,7 +153,7 @@ function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; 
   const v = check.data;
   if (v.lowestTrusted === null)
     return (
-      <div className="inline-flex items-center gap-1.5 text-[12px] text-charcoal">
+      <div className="inline-flex items-center gap-2 text-[12px] text-charcoal">
         <StatusDot state="warn" className="!size-1.5" /> Only unvetted agencies
       </div>
     );
@@ -161,7 +161,7 @@ function SellerLine({ check, googlePrice, trustedOnly }: { check?: SellerCheck; 
   const label = airline ? "Airline direct" : v.trustedSeller;
   const differs = trustedOnly && Math.round(v.lowestTrusted) !== Math.round(googlePrice);
   return (
-    <div className="inline-flex items-center justify-end gap-1.5 text-[12px] text-charcoal">
+    <div className="inline-flex items-center justify-end gap-2 text-[12px] text-charcoal">
       <StatusDot state={differs ? "warn" : "ok"} className="!size-1.5" />
       {label}
       {differs && v.lowestTrusted > googlePrice && <span className="text-ash"> · {money(googlePrice)} elsewhere</span>}
@@ -205,7 +205,7 @@ export function ItineraryCard({
       <button type="button" onClick={toggle} aria-expanded={open} className="flex w-full cursor-pointer items-center gap-4 p-4 text-left">
         <div className="min-w-0 flex-1 space-y-3">
           {badges.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {badges.map((b) => (
                 <Pill key={b} tone={b === "Best" ? "accent" : "neutral"} dot={b === "Self-transfer" ? "warn" : undefined}>
                   {b}
@@ -249,7 +249,7 @@ export function ItineraryCard({
                 <p>{check.error}</p>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={onCheck}>Try again</Button>
-                  <a href={it.booking_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center px-3 text-[13px] text-accent hover:underline">
+                  <a href={it.booking_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 pointer-coarse:h-11 items-center px-3 text-[13px] text-accent hover:underline">
                     Open on Google Flights
                   </a>
                 </div>

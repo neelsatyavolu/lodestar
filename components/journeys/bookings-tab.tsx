@@ -32,7 +32,7 @@ function CopyCode({ code }: { code: string }) {
         });
       }}
       aria-label={`Copy confirmation ${code}`}
-      className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-hairline-hover bg-card px-2.5 font-mono text-[13px] text-ink hover:border-hairline-hover"
+      className="inline-flex h-8 pointer-coarse:h-11 cursor-pointer items-center gap-2 rounded-md border border-hairline-hover bg-card px-3 font-mono text-[13px] text-ink hover:border-hairline-hover"
     >
       {code}
       {copied ? <Check size={12} className="text-ok" aria-hidden /> : <Copy size={12} className="text-ash" aria-hidden />}
@@ -78,8 +78,8 @@ export function BookingsTab({ trip, onOpenItem, onAdd }: { trip: TripDetail; onO
               {g.items.map((i) => {
                 const cancelled = i.status === "cancelled";
                 return (
-                  <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:flex-nowrap">
-                    <button type="button" onClick={() => onOpenItem(i.id)} className="min-w-0 flex-1 cursor-pointer text-left">
+                  <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:flex-nowrap">
+                    <button type="button" onClick={() => onOpenItem(i.id)} className="min-w-0 flex-1 cursor-pointer text-left pointer-coarse:min-h-11">
                       <span className={`block truncate text-[14px] ${cancelled ? "text-ash line-through" : "text-ink"}`}>{i.title}</span>
                       <span className="tnum block truncate text-[12px] text-mute">
                         {[when(i), i.details.provider ?? i.details.airline, cancelled ? "Cancelled" : null].filter(Boolean).join(" · ")}

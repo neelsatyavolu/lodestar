@@ -22,7 +22,7 @@ export function MoreMenu({ items, label }: { items: MenuItem[]; label: string })
   }, [open]);
   return (
     <div ref={root} className="relative">
-      <button type="button" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} className="inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-ash hover:bg-hover hover:text-ink">
+      <button type="button" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} className="inline-flex size-9 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-ash hover:bg-hover hover:text-ink">
         <MoreHorizontal size={16} />
       </button>
       {open && (
@@ -69,11 +69,11 @@ export function Collapsible({ title, sub, aside, menu, menuLabel = "More actions
   return (
     <section id={id} className="scroll-mt-32">
       <div className="flex items-start gap-1">
-        <button type="button" onClick={onToggle} aria-expanded={open} aria-controls={panel} className="group -ml-2 flex min-w-0 flex-1 cursor-pointer items-start gap-1.5 rounded-md px-2 py-1 text-left">
+        <button type="button" onClick={onToggle} aria-expanded={open} aria-controls={panel} className="group -ml-2 flex min-w-0 flex-1 cursor-pointer items-start gap-2 rounded-md px-2 py-1 text-left pointer-coarse:min-h-11">
           <ChevronDown size={18} className={`mt-[5px] shrink-0 text-ash transition-transform duration-200 ease-[var(--ease)] group-hover:text-ink ${open ? "" : "-rotate-90"}`} aria-hidden />
           <span className="min-w-0 flex-1">
             <span className={`block font-medium tracking-[-0.01em] text-ink [text-wrap:balance] ${size === "lg" ? "text-[18px] leading-7 sm:text-[20px]" : "text-[16px] leading-7"}`}>{title}</span>
-            {sub && <span className="mt-0.5 block truncate text-[13px] text-mute">{sub}</span>}
+            {sub && <span className="mt-1 block truncate text-[13px] text-mute">{sub}</span>}
           </span>
         </button>
         {aside && <div className="shrink-0 pt-1.5">{aside}</div>}

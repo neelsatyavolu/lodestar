@@ -22,10 +22,10 @@ function Calendar({ value, range, inline, alignEnd = false, onPick, onDone }: { 
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[12px] text-charcoal">{range ? (value.start && !value.end ? "Now pick the last day" : "Pick the first day") : "Pick a day"}</span>
         <div className="flex gap-1">
-          <button type="button" aria-label="Previous month" onClick={() => setView(addMonths(view, -1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink">
+          <button type="button" aria-label="Previous month" onClick={() => setView(addMonths(view, -1))} className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink">
             <ChevronLeft size={16} />
           </button>
-          <button type="button" aria-label="Next month" onClick={() => setView(addMonths(view, 1))} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink">
+          <button type="button" aria-label="Next month" onClick={() => setView(addMonths(view, 1))} className="inline-flex size-8 pointer-coarse:size-11 cursor-pointer items-center justify-center rounded-md text-charcoal hover:bg-hover hover:text-ink">
             <ChevronRight size={16} />
           </button>
         </div>
@@ -36,7 +36,7 @@ function Calendar({ value, range, inline, alignEnd = false, onPick, onDone }: { 
             <div className="mb-2 text-center text-sm font-medium text-ink">{monthLabel(month)}</div>
             <div className="grid grid-cols-7 text-center text-[12px] text-ash">
               {WEEKDAYS.map((w, k) => (
-                <div key={k} className="pb-1.5">
+                <div key={k} className="pb-2">
                   {w}
                 </div>
               ))}
@@ -57,7 +57,7 @@ function Calendar({ value, range, inline, alignEnd = false, onPick, onDone }: { 
                         aria-pressed={isStart || isEnd}
                         onClick={() => onPick(day)}
                         onMouseEnter={() => setHover(day)}
-                        className={`flex h-10 w-full cursor-pointer items-center justify-center rounded-md text-[13px] tnum max-sm:h-11 ${isStart || isEnd ? "bg-primary text-primary-on" : "text-ink hover:bg-hover"}`}
+                        className={`flex h-10 w-full cursor-pointer items-center justify-center rounded-md text-[13px] tnum pointer-coarse:h-11 ${isStart || isEnd ? "bg-primary text-primary-on" : "text-ink hover:bg-hover"}`}
                       >
                         <span className={day === now && !isStart && !isEnd ? "underline decoration-accent decoration-2 underline-offset-4" : ""}>{dayOfMonth(day)}</span>
                       </button>
@@ -97,7 +97,7 @@ function usePopover() {
 
 const fieldClass = "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-hairline-hover bg-card px-3 text-left text-[14px] text-ink hover:border-hairline-hover max-sm:h-12";
 
-const compactClass = "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] text-charcoal hover:bg-hover hover:text-ink";
+const compactClass = "inline-flex h-9 pointer-coarse:h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] text-charcoal hover:bg-hover hover:text-ink";
 
 /**
  * One date. `inline` opens the calendar in place (inside dialogs, where a

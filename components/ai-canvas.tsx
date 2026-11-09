@@ -232,16 +232,16 @@ export function AiCanvas({
         />
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
           {connectedList.length > 1 && (
-            <div className="inline-flex rounded-md border border-hairline-strong p-0.5">
+            <div className="inline-flex rounded-md border border-hairline-strong p-1 pointer-coarse:p-0">
               {connectedList.map((p) => (
-                <button key={p} type="button" onClick={() => setActive(p)} className={`h-7 cursor-pointer rounded-sm px-3 text-[13px] ${use === p ? "bg-elevated text-ink" : "text-mute"}`}>
+                <button key={p} type="button" onClick={() => setActive(p)} className={`h-7 cursor-pointer rounded-sm px-3 pointer-coarse:h-11 text-[13px] ${use === p ? "bg-elevated text-ink" : "text-mute"}`}>
                   {PROVIDER_NAME[p]}
                 </button>
               ))}
             </div>
           )}
           {use && models.length > 0 && (
-            <select value={model} onChange={(e) => setModel(e.target.value)} aria-label="Model" className="h-8 cursor-pointer rounded-md border border-hairline-strong bg-card px-2 text-[13px] text-ink outline-none">
+            <select value={model} onChange={(e) => setModel(e.target.value)} aria-label="Model" className="h-8 pointer-coarse:h-11 cursor-pointer rounded-md border border-hairline-strong bg-card px-2 text-[13px] text-ink outline-none">
               <option value="">Default model</option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -422,7 +422,7 @@ export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollo
           {board.hacks.length > 0 && (
             <div className="rounded-lg border border-hairline-strong bg-card p-4">
               <h3 className="mb-2 text-sm text-ink">Hacks the searches found</h3>
-              <ul className="space-y-1.5 text-[13px] text-mute">
+              <ul className="space-y-2 text-[13px] text-mute">
                 {board.hacks.map((h) => (
                   <li key={`${h.search}-${h.title}`}>
                     <span className="text-ink tnum">−{money(h.saving)}</span> <span className="text-body">{h.title}</span> ({h.search}). {h.detail}
@@ -432,7 +432,7 @@ export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollo
             </div>
           )}
           {canvas.tips.length > 0 && (
-            <ul className="space-y-1.5 text-[13px] text-mute">
+            <ul className="space-y-2 text-[13px] text-mute">
               {canvas.tips.map((t) => (
                 <li key={t}>— {t}</li>
               ))}
@@ -441,7 +441,7 @@ export function BoardView({ board, latest, checks, onCheck, trustedOnly, onFollo
           {latest && canvas.followups.length > 0 && !board.running && (
             <div className="flex flex-wrap gap-2">
               {canvas.followups.map((f) => (
-                <button key={f} type="button" onClick={() => onFollowup(f)} className="h-8 cursor-pointer rounded-full border border-hairline-strong px-3 text-[13px] text-charcoal hover:text-ink">
+                <button key={f} type="button" onClick={() => onFollowup(f)} className="h-8 pointer-coarse:h-11 cursor-pointer rounded-full border border-hairline-strong px-3 text-[13px] text-charcoal hover:text-ink">
                   {f}
                 </button>
               ))}

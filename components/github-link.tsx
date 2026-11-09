@@ -17,7 +17,7 @@ export function GitHubLink() {
       rel="noopener noreferrer"
       aria-label="Lodestar source code on GitHub"
       title="Open source on GitHub (MIT)"
-      className="inline-flex size-8 items-center justify-center rounded-md text-charcoal hover:text-ink max-sm:size-10"
+      className="inline-flex size-8 items-center justify-center rounded-md text-charcoal hover:text-ink pointer-coarse:size-11"
     >
       <GitHubMark />
     </a>

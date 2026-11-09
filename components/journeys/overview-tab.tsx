@@ -52,14 +52,14 @@ export function OverviewTab({ trip, gen, selectedId, onOpenItem, onTab, onAdd, o
   const warnings = found.filter((f) => f.level === "warn").length;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <section aria-labelledby="res-head" className="rounded-xl border border-hairline-strong bg-card p-4">
           <div className="flex items-baseline justify-between gap-3">
             <h3 id="res-head" className="text-[15px] font-medium text-ink">
               Reservations
             </h3>
-            <button type="button" onClick={() => onTab("bookings")} className="shrink-0 cursor-pointer text-[12px] text-accent hover:underline">
+            <button type="button" onClick={() => onTab("bookings")} className="shrink-0 cursor-pointer text-[12px] text-accent hover:underline pointer-coarse:min-h-11">
               {booked.length} booked{pending ? ` · ${pending} to book` : ""}
             </button>
           </div>
@@ -68,7 +68,7 @@ export function OverviewTab({ trip, gen, selectedId, onOpenItem, onTab, onAdd, o
               const n = r.count(booked);
               return (
                 <li key={r.label}>
-                  <button type="button" onClick={() => onAdd(r.preset)} aria-label={`Add ${r.label.toLowerCase()}${n ? `, ${n} booked` : ""}`} className="flex h-16 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg text-charcoal transition-transform duration-150 hover:bg-hover hover:text-ink active:scale-[0.96]">
+                  <button type="button" onClick={() => onAdd(r.preset)} aria-label={`Add ${r.label.toLowerCase()}${n ? `, ${n} booked` : ""}`} className="flex h-16 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg text-charcoal transition-transform duration-150 hover:bg-hover hover:text-ink active:scale-[0.96]">
                     <span className="relative">
                       <r.icon size={18} aria-hidden />
                       {n > 0 && <span className="tnum absolute -right-3.5 -top-2 min-w-[17px] rounded-full bg-accent px-1 text-center text-[10px] font-semibold leading-[17px] text-accent-on">{n}</span>}
@@ -85,8 +85,8 @@ export function OverviewTab({ trip, gen, selectedId, onOpenItem, onTab, onAdd, o
             Budget
           </h3>
           <p className="tnum mt-2 text-[28px] font-medium leading-none tracking-[-0.02em] text-ink">{b.total ? amount(b.total, b.currency) : amount(0, b.currency)}</p>
-          <p className="tnum mt-1.5 text-[12px] text-mute">{b.total ? `${amount(b.paid, b.currency)} paid${b.perPerson ? ` · ${amount(b.perPerson, b.currency)} each` : ""}` : "Nothing priced yet"}</p>
-          <button type="button" onClick={() => onTab("budget")} className="mt-auto cursor-pointer self-start pt-3 text-[13px] text-accent hover:underline">
+          <p className="tnum mt-2 text-[12px] text-mute">{b.total ? `${amount(b.paid, b.currency)} paid${b.perPerson ? ` · ${amount(b.perPerson, b.currency)} each` : ""}` : "Nothing priced yet"}</p>
+          <button type="button" onClick={() => onTab("budget")} className="mt-auto cursor-pointer self-start pt-3 text-[13px] text-accent hover:underline pointer-coarse:min-h-11">
             View details
           </button>
         </section>

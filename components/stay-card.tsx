@@ -20,7 +20,7 @@ function OfferRow({ offer, nights }: { offer: VerifiedOffer; nights: number }) {
       <Logo src={offer.logo} name={offer.seller} size={28} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm text-ink">{offer.seller}</div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
           <Pill dot={TIER_DOT[offer.tier]} className="!bg-transparent !px-0 !py-0 text-[12px] !text-charcoal">
             {STAY_TIER_LABEL[offer.tier]}
           </Pill>
@@ -39,7 +39,7 @@ function OfferRow({ offer, nights }: { offer: VerifiedOffer; nights: number }) {
           target="_blank"
           rel="noopener noreferrer"
           title={`Continue to ${offer.seller} through Google Hotels`}
-          className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] text-ink hover:border-hairline-hover max-sm:h-10"
+          className="inline-flex h-8 items-center gap-1 rounded-md border border-hairline-strong bg-elevated px-3 text-[13px] text-ink hover:border-hairline-hover pointer-coarse:h-11"
         >
           Book <ArrowUpRight size={13} />
         </a>
@@ -141,7 +141,7 @@ export function StayCard({
         ) : (
           <span className="h-16 w-20 shrink-0 rounded-md bg-elevated sm:h-24 sm:w-36" />
         )}
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-2">
           <h3 className="text-[15px] font-medium leading-snug text-ink">{hotel.name}</h3>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-mute">
             {hotel.rating !== null && (

@@ -52,7 +52,7 @@ export function HackCards({ hacks, onAction }: { hacks: Hack[]; onAction: (h: Ha
               </div>
             </div>
             <div className="mt-auto pt-3 pl-7">
-              <button type="button" onClick={() => onAction(h)} className="cursor-pointer text-[13px] text-accent hover:underline">
+              <button type="button" onClick={() => onAction(h)} className="cursor-pointer text-[13px] text-accent hover:underline pointer-coarse:min-h-11">
                 {ACTION[h.kind]} →
               </button>
             </div>
@@ -69,11 +69,11 @@ export function DateStrip({ days, selected, onPick }: { days: DayPrice[]; select
   const min = Math.min(...days.map((d) => d.price));
   return (
     <section aria-label="Prices on nearby dates" className="rounded-lg border border-hairline-strong bg-card p-4">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h3 className="text-sm text-ink">Nearby dates</h3>
         <span className="text-xs text-ash">Lowest fare per departure day{days[0].return ? ", same trip length" : ""}</span>
       </div>
-      <div className="flex items-end gap-1.5 overflow-x-auto pb-1">
+      <div className="flex items-end gap-2 overflow-x-auto pb-1">
         {days.map((d) => {
           const isSel = d.depart === selected;
           const isMin = d.price === min;
@@ -83,7 +83,7 @@ export function DateStrip({ days, selected, onPick }: { days: DayPrice[]; select
               type="button"
               onClick={() => onPick(d)}
               aria-pressed={isSel}
-              className={`group flex min-w-16 flex-1 cursor-pointer flex-col items-center gap-1.5 rounded-md p-1.5 ${isSel ? "bg-elevated" : "hover:bg-hover"}`}
+              className={`group flex min-w-16 flex-1 cursor-pointer flex-col items-center gap-2 rounded-md p-2 ${isSel ? "bg-elevated" : "hover:bg-hover"}`}
             >
               <span className={`text-xs tnum ${isMin ? "text-accent" : isSel ? "text-ink" : "text-mute"}`}>{money(d.price)}</span>
               <span className="flex h-14 w-full items-end">
