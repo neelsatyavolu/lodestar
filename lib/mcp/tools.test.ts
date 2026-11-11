@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createPgliteDb, type Db } from "../db/client";
 import { getJourney } from "../db/journeys";
+import { savePreferences } from "../db/preferences";
+import { DEFAULT_PREFERENCES } from "../preferences";
 import { migrate } from "../db/schema";
 import { insertUser } from "../db/users";
 import { runTool, TOOLS, type ToolCtx } from "./tools";
@@ -82,5 +84,15 @@ describe("Trips tools", () => {
     expect(bad.ok).toBe(false);
     expect((bad as { message: string }).message).toMatch(/^items\.0\.kind/);
     expect(await call("update_trip", { tripId, changes: { startDate: "2026-12-10", endDate: "2026-12-01" } })).toMatchObject({ ok: false });
+  });
+
+  it("get_preferences returns the account's own food taste and home airports", async () => {
+    await savePreferences(db, ada, { ...DEFAULT_PREFERENCES, cuisines: ["Japanese", "Seafood"], dietary: ["Vegetarian"], diningBudget: "$$", homeAirports: ["SFO", "SJC"], cabin: "BUSINESS" }, 1);
+    const mine = await okData("get_preferences", {});
+    expect(mine.data).toEqual({ cuisines: ["Japanese", "Seafood"], dietary: ["Vegetarian"], diningBudget: "$$", homeAirports: ["SFO", "SJC"] });
+    expect(mine.text).toContain("Cuisines: Japanese, Seafood");
+    expect(mine.text).toContain("Dining budget: $$");
+    expect(await okData("get_preferences", {}, bob)).toMatchObject({ data: { cuisines: [], dietary: [], diningBudget: null, homeAirports: [] } });
+    expect((await okData("get_preferences", {}, bob)).text).toContain("Dining budget: not set");
   });
 });

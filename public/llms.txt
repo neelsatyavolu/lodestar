@@ -8,7 +8,7 @@ Work through the MCP server rather than clicking around the page when you can. I
 
 - Server: /api/mcp (Streamable HTTP). Sign in with OAuth; clients find it through /.well-known/oauth-protected-resource/api/mcp.
 - No OAuth? The traveller can make a personal token on the site (robot icon in the header, "Agents"). Send it as `Authorization: Bearer lsp_...`.
-- Tools: list_trips, get_trip, create_trip, update_trip, delete_trip, add_items, update_item, remove_item, add_tasks, update_task, remove_task, set_note, remove_note, add_cost, update_cost, remove_cost.
+- Tools: list_trips, get_trip, create_trip, update_trip, delete_trip, add_items, update_item, remove_item, add_tasks, update_task, remove_task, set_note, remove_note, add_cost, update_cost, remove_cost, get_preferences.
 
 ## Driving the page (computer use or a browser agent)
 

@@ -34,7 +34,7 @@ REST (session cookie):
 
 ## Agents (MCP + OAuth)
 
-- `POST /api/mcp`: `mcp-handler` 2.x, wrapped in `withMcpAuth`. Tools: `list_trips`, `get_trip`, `create_trip`, `update_trip`, `delete_trip`, `add_items`, `update_item`, `remove_item`, `add_tasks`, `update_task`, `remove_task`, `set_note`, `remove_note`, `add_cost`, `remove_cost`.
+- `POST /api/mcp`: `mcp-handler` 2.x, wrapped in `withMcpAuth`. Tools: `list_trips`, `get_trip`, `create_trip`, `update_trip`, `delete_trip`, `add_items`, `update_item`, `remove_item`, `add_tasks`, `update_task`, `remove_task`, `set_note`, `remove_note`, `add_cost`, `remove_cost`, `get_preferences` (read-only: cuisines, dietary, dining budget and home airports, for other apps like Forage).
 - Authorization server on the same origin: RFC 8414 metadata, RFC 9728 protected-resource metadata, `/oauth/authorize` consent page (Lodestar sign-in required), `/api/oauth/token` (authorization code + PKCE S256, rotating refresh tokens), `/api/oauth/register` (dynamic registration) and Client ID Metadata Documents (https `client_id`, fetched with SSRF guards). Public clients only.
 - Tokens are opaque, stored as SHA-256 hashes. Access 1 h, refresh 30 days. Personal tokens (for Claude Code, Codex) are made in the account's "Agents" panel, shown once, revocable; connected apps are listed and revocable there too.
 

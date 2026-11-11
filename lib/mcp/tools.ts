@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Db } from "../db/client";
 import { listJourneys } from "../db/journeys";
+import { getPreferences } from "../db/preferences";
 import { PlanError } from "../journeys/errors";
 import { CostPatchSchema, ItemPatchSchema, JourneyPatchSchema, NewCostSchema, NewItemSchema, NewJourneySchema, NewTaskSchema, NoteSchema, TaskPatchSchema } from "../journeys/input";
 import { budget, issues, nights, toBook } from "../journeys/plan";
@@ -222,6 +223,19 @@ export const TOOLS: ToolDef[] = [
     run: async ({ db, userId }, { costId }) => {
       await removeCost(db, userId, costId);
       return { text: "Removed it from the budget." };
+    },
+  }),
+  tool({
+    name: "get_preferences",
+    title: "Get food preferences",
+    description: "The traveller's saved taste for eating out: cuisines they like, dietary needs, a usual dining budget ($ to $$$$, or null if not set) and home airports (IATA codes). Empty lists mean nothing is saved. Read-only.",
+    input: z.object({}),
+    annotations: { readOnlyHint: true },
+    run: async ({ db, userId }) => {
+      const { cuisines, dietary, diningBudget, homeAirports } = await getPreferences(db, userId);
+      const list = (xs: string[]) => (xs.length ? xs.join(", ") : "none saved");
+      const text = [`Cuisines: ${list(cuisines)}`, `Dietary: ${list(dietary)}`, `Dining budget: ${diningBudget ?? "not set"}`, `Home airports: ${list(homeAirports)}`].join("\n");
+      return { text, data: { cuisines, dietary, diningBudget, homeAirports } };
     },
   }),
 ];
