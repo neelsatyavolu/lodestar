@@ -52,7 +52,7 @@ ios/scripts/release.sh --no-upload  # archive and export ios/build/Lodestar.ipa 
 node ios/scripts/asc-builds.mjs     # the latest builds and their processing state
 ```
 
-The script needs the release Xcode (not a beta), XcodeGen and the 1Password CLI. It reads the Apple Distribution certificate from 1Password into a temporary keychain (deleted on exit) and signs automatically with the App Store Connect API key in `~/.appstoreconnect/private_keys/`. The marketing version comes from `MARKETING_VERSION` in `project.yml`. New builds go to the internal TestFlight group automatically.
+The script needs the release Xcode (not a beta) and XcodeGen, and signs automatically with the App Store Connect API key in `~/.appstoreconnect/private_keys/`. When the 1Password CLI is already signed in it imports the Apple Distribution certificate into a temporary keychain (deleted on exit); otherwise, or with `LODESTAR_CLOUD_SIGNING=1`, it uses App Store Connect cloud-managed distribution signing. It never prompts. The marketing version comes from `MARKETING_VERSION` in `project.yml`. New builds go to the internal TestFlight group automatically.
 
 ## Test
 
