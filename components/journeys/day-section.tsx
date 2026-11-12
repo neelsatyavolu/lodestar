@@ -81,7 +81,17 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
   const near = searchCenter(journey.items, date);
   const summary = daySummary(journey, date);
   // No drive across a flight: SFO to PHX is a plane ride, not 11 hours in the car.
-  const flown = new Set(stops.filter((s, k) => stops[k + 1] && flightBetween(journey.items, date, s, stops[k + 1])).map((s) => s.id));
+  const flown = new Set(
+    stops
+      .filter((s, k) => {
+        const next = stops[k + 1];
+        // Into a flight, across one, or from the plane to a stop folded into its card.
+        return next && (next.kind === "flight" || flightBetween(journey.items, date, s, next) || (s.kind === "flight" && folded.has(next.id)));
+      })
+      .map((s) => s.id),
+  );
+  // The hotel you sleep in ends the route: on a day you didn't check in, show it under the last stop.
+  const night = stops.length > 1 && stops.at(-1)!.kind === "stay" && !evening.some((s) => s.id === stops.at(-1)!.id) ? stops.at(-1)! : null;
   const drive = driveTotal(legs, flown);
   const empty = firm.length === 0 && ideas.length === 0;
 
@@ -136,7 +146,7 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
             i.kind === "flight" && groups.has(i.id) ? (
               <Fragment key={i.id}>
                 <FlightSegment group={groups.get(i.id)!} v={flightView(groups.get(i.id)!, flights.byId[i.id])} pins={pins} selectedId={selectedId} onOpen={onOpen} onChanged={onReplace} onRemoved={() => onDrop(i.id)} />
-                {groups.get(i.id)!.arrival?.startDate === date && legAfter(groups.get(i.id)!.arrival!)}
+                {stops.includes(groups.get(i.id)!.arrival!) ? legAfter(groups.get(i.id)!.arrival!) : legAfter(i)}
               </Fragment>
             ) : i.kind === "note" ? (
               <NoteCard key={i.id} item={i} inLeg={betweenStops(k)} onOpen={() => onOpen(i.id)} onRemoved={() => onDrop(i.id)} />
@@ -150,6 +160,7 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
           {evening.map((s) => (
             <StayRow key={s.id} stay={s} date={date} onOpen={() => onOpen(s.id)} />
           ))}
+          {night && <StayRow key={`night-${night.id}`} stay={night} date={date} onOpen={() => onOpen(night.id)} />}
           {ideas.length > 0 && <li className="pt-2 text-[12px] font-medium text-mute">Ideas for this day</li>}
           {ideas.map((i) => (
             <StopCard key={i.id} item={i} pin={pins.get(i.id)} selected={i.id === selectedId} onOpen={() => onOpen(i.id)} onChanged={onReplace} onRemoved={() => onDrop(i.id)} />

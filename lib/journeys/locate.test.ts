@@ -27,3 +27,28 @@ describe("a day note between two stops", () => {
     expect(dayStops([dinner, drive, spa], "2026-11-22").map((i) => i.id)).toEqual(["spa", "dinner"]);
   });
 });
+
+describe("a day's route", () => {
+  const hotel = item("hotel", { kind: "stay", status: "booked", startDate: "2026-11-21", endDate: "2026-11-24", startTime: "16:00", details: { lat: 32.4, lng: -111.1 } });
+  const flight = item("flight", { kind: "flight", startTime: "10:20", details: { lat: 33.43, lng: -112.01 } });
+
+  it("starts at the hotel you woke up in and ends at the one you sleep in", () => {
+    expect(dayStops([dinner, hotel, spa], "2026-11-22").map((i) => i.id)).toEqual(["hotel", "spa", "dinner", "hotel"]);
+  });
+  it("ends at the new hotel on check-in day, and has no hotel stop on the last morning only", () => {
+    expect(dayStops([{ ...spa, startDate: "2026-11-21" }, hotel], "2026-11-21").map((i) => i.id)).toEqual(["spa", "hotel"]);
+    expect(dayStops([{ ...spa, startDate: "2026-11-24" }, hotel], "2026-11-24").map((i) => i.id)).toEqual(["hotel", "spa"]);
+  });
+  it("puts a flight where it lands and skips a day with no stops", () => {
+    expect(dayStops([flight, spa], "2026-11-22").map((i) => i.id)).toEqual(["flight", "spa"]);
+    expect(dayStops([hotel], "2026-11-22")).toEqual([]);
+  });
+});
+
+describe("searchTitle", () => {
+  it("keeps the name and drops the details", async () => {
+    const { searchTitle } = await import("./locate");
+    expect(searchTitle("Alamo rental · Intermediate (Toyota Corolla or similar) · $442.48")).toBe("Alamo rental");
+    expect(searchTitle("Pizzeria Bianco")).toBe("Pizzeria Bianco");
+  });
+});

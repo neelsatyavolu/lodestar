@@ -29,8 +29,8 @@ function Ends({ e, align }: { e: FlightEnd; align: "left" | "right" }) {
       <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-mute">{right ? "Arrive" : "Depart"}</div>
       <div className="mt-2 font-mono text-[30px] font-medium leading-none text-ink sm:text-[34px]">{e.code ?? "—"}</div>
       <div className="tnum mt-2.5 whitespace-nowrap font-mono text-[20px] font-medium leading-tight text-ink sm:text-[22px]">
-        {clock(e.time)}
-        {e.zone && <small className="ml-1 text-[12px] font-normal text-mute">{e.zone}</small>}
+        {e.time ? clock(e.time) : <span className="text-[14px] font-normal text-mute">Time not saved</span>}
+        {e.time && e.zone && <small className="ml-1 text-[12px] font-normal text-mute">{e.zone}</small>}
       </div>
       <div className="tnum min-h-4 font-mono text-[12px] text-mute line-through">{e.was ? clock(e.was) : null}</div>
       {(e.city ?? e.name) && <div className="mt-1 truncate text-[13px] text-body">{e.city ?? e.name}</div>}

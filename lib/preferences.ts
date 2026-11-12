@@ -21,6 +21,8 @@ export const HOTEL_PRIORITY_CHOICES = ["Walkable location", "Near transit", "Qui
 const Taste = z.string().trim().min(1).max(40).regex(/^[\p{L}\p{N}\s&'’,.()/-]+$/u, "Use plain words.");
 
 export const PreferencesSchema = z.object({
+  /** What the header calls you; empty means the email's name, capitalized. */
+  displayName: z.string().trim().max(60).default(""),
   homeAirports: unique(Iata, 4).default([]),
   alliances: unique(z.enum(ALLIANCES), 3).default([]),
   preferredAirlines: unique(AirlineCode, 10).default([]),
@@ -47,6 +49,12 @@ export const PreferencesSchema = z.object({
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;
+
+/** "Neel Satyavolu" as typed, else "neel.s@x.com" → "Neel.s". */
+export function displayName(name: string, email: string): string {
+  const local = email.split("@")[0] ?? email;
+  return name.trim() || local.charAt(0).toUpperCase() + local.slice(1);
+}
 export const DEFAULT_PREFERENCES: Preferences = PreferencesSchema.parse({});
 
 /** Stored JSON may predate a field; anything unreadable falls back to defaults field by field. */

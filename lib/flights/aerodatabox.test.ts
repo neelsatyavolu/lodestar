@@ -87,12 +87,25 @@ describe("flightStatus", () => {
     expect(s?.departure.code).toBe("SFO");
   });
 
+  it("returns nothing when no leg matches the trip's airports", async () => {
+    const other = { ...wn4623, departure: { ...wn4623.departure, airport: { ...wn4623.departure.airport, iata: "BNA" } } };
+    expect(await flightStatus("k", { ...q, to: "PHX" }, 0, async () => reply(200, [other]))).toBeNull();
+  });
+
   it("returns null for an unknown flight and keeps the last answer when over quota", async () => {
     expect(await flightStatus("k", q, 0, async () => reply(204))).toBeNull();
     clearFlightCache();
     const now = departs - 2 * HOUR;
     await flightStatus("k", q, now, async () => reply(200, [wn4623]));
-    expect((await flightStatus("k", q, now + 10 * 60_000, async () => reply(429)))?.departure.code).toBe("SFO");
+    expect((await flightStatus("k", q, now + 10 * 60_000, async () => reply(429), async () => {}))?.departure.code).toBe("SFO");
+  });
+
+  it("waits and tries once more when rate-limited", async () => {
+    const replies = [reply(429), reply(200, [wn4623])];
+    const waited: number[] = [];
+    const s = await flightStatus("k", q, 0, async () => replies.shift()!, async (ms) => void waited.push(ms));
+    expect(s?.departure.code).toBe("SFO");
+    expect(waited).toEqual([1_100]);
   });
 
   it("throws when the key is refused", async () => {

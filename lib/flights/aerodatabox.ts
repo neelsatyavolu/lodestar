@@ -111,29 +111,38 @@ export function freshFor(departsAt: number, now: number): number {
   return 12 * HOUR;
 }
 
-export type Lookup = { airline: string; number: string; date: string; from: string | null };
+export type Lookup = { airline: string; number: string; date: string; from: string | null; to?: string | null };
 
 const cache = new Map<string, { at: number; until: number; status: FlightStatus | null }>();
 const MISS_MS = 30 * 60_000;
+/** RapidAPI's free plan takes about one request a second; a 429 waits this long and tries once more. */
+const RETRY_AFTER_MS = 1_100;
 const MAX_CACHED = 2000;
 
 /** The status of one flight on one day, or null when AeroDataBox doesn't know it. Throws only when the key is refused. */
-export async function flightStatus(key: string, q: Lookup, now = Date.now(), fetcher: typeof fetch = fetch): Promise<FlightStatus | null> {
+export async function flightStatus(key: string, q: Lookup, now = Date.now(), fetcher: typeof fetch = fetch, wait = (ms: number) => new Promise((r) => setTimeout(r, ms))): Promise<FlightStatus | null> {
   const id = `${q.airline}${q.number}/${q.date}/${q.from ?? ""}`;
   const hit = cache.get(id);
   if (hit && now < hit.until) return hit.status;
   const url = `https://${HOST}/flights/number/${q.airline}${q.number}/${q.date}?withAircraftImage=false&withLocation=false`;
   let status: FlightStatus | null = null;
   try {
-    const res = await fetcher(url, { headers: { "X-RapidAPI-Key": key, "X-RapidAPI-Host": HOST }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const ask = () => fetcher(url, { headers: { "X-RapidAPI-Key": key, "X-RapidAPI-Host": HOST }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    let res = await ask();
+    if (res.status === 429) {
+      await wait(RETRY_AFTER_MS);
+      res = await ask();
+    }
     if (res.status === 401 || res.status === 403) throw new Error(`AeroDataBox refused the key (${res.status})`);
     // 204: no such flight that day. Anything else that isn't ok (429 over quota, 5xx) keeps the last answer for now.
     if (res.status !== 204 && !res.ok) return hit?.status ?? null;
     const body: unknown = res.status === 204 ? [] : await res.json();
     const list = Array.isArray(body) ? body : [];
     const flights = list.map((f) => toStatus(f, now)).filter((s): s is FlightStatus => s !== null);
-    // A number can fly several legs a day; take the one leaving the airport the trip says.
-    status = flights.find((s) => q.from && s.departure.code === q.from) ?? flights[0] ?? null;
+    // A number flies several legs a day: take the trip's own. When the trip names airports and no
+    // leg matches them, it's another flight that shares the number, not this one.
+    const ours = (s: FlightStatus) => (!q.from || s.departure.code === q.from) && (!q.to || s.arrival.code === q.to);
+    status = flights.find(ours) ?? null;
   } catch (err) {
     if (err instanceof Error && err.message.startsWith("AeroDataBox refused")) throw err;
     return hit?.status ?? null;

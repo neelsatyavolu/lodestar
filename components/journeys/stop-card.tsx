@@ -50,19 +50,22 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
   const { place } = usePlace(item.details.placeId, seen);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const suggested = item.status === "suggested";
   const cancelled = item.status === "cancelled";
   const when = timeRange(item);
   const sub = [place?.category ?? item.details.cuisine, item.kind === "flight" ? null : (item.details.address ?? item.place), item.confirmation ? `Conf. ${item.confirmation}` : null].filter(Boolean).join(" · ");
   const photo = place?.photos[0];
 
-  const patch = async (body: Record<string, unknown>) => {
+  const patch = async (body: Record<string, unknown>): Promise<boolean> => {
     setBusy(true);
     setError(null);
     try {
       onChanged(await patchItem(item.id, body));
+      return true;
     } catch (err) {
       setError(errorText(err, "Couldn't update it."));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -80,6 +83,7 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
   };
 
   const menu: MenuItem[] = [
+    { label: "Edit", onSelect: () => setEditing(true) },
     ...(item.status === "planned" && !item.details.reserve ? [{ label: "Needs booking", onSelect: () => patch({ facts: { reserve: true } }) }] : []),
     ...(item.status === "planned" && item.details.reserve ? [{ label: "Doesn't need booking", onSelect: () => patch({ facts: { reserve: null, bookBy: null } }) }] : []),
     ...(item.status === "planned" ? [{ label: "Mark booked", onSelect: () => patch({ status: "booked" }) }] : []),
@@ -94,6 +98,9 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
       className={`group relative flex cursor-pointer gap-3 rounded-xl border px-3 py-3 transition-colors duration-150 sm:px-4 ${selected ? "border-hairline-hover bg-elevated" : suggested ? "border-dashed border-hairline-strong hover:bg-hover" : "border-hairline-strong bg-card hover:border-hairline-hover"}`}
     >
       <Teardrop pin={pin} kind={item.kind} dashed={suggested} />
+      {editing ? (
+        <StopEditor item={item} busy={busy} error={error} onCancel={() => (setEditing(false), setError(null))} onSave={async (body) => void ((await patch(body)) && setEditing(false))} />
+      ) : (
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <button type="button" onClick={(e) => (e.stopPropagation(), onOpen())} className={`cursor-pointer text-left text-[15px] font-semibold leading-snug hover:underline ${cancelled ? "text-ash line-through" : "text-ink"}`}>
@@ -124,16 +131,53 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
         </div>
         {error && <p className="mt-1 text-[12px] text-danger">{error}</p>}
       </div>
-      {photo && (
+      )}
+      {photo && !editing && (
         // eslint-disable-next-line @next/next/no-img-element -- a redirect to Google's image host; next/image can't proxy it.
         <img src={photoUrl(photo, 320)} alt="" loading="lazy" className="hidden aspect-[4/3] w-28 shrink-0 self-start rounded-lg bg-elevated object-cover outline outline-1 -outline-offset-1 outline-hairline-strong sm:block" />
       )}
-      {!suggested && (
+      {!suggested && !editing && (
         <div onClick={(e) => e.stopPropagation()} className="-mr-1.5 -mt-1 shrink-0 self-start">
           <MoreMenu items={menu} label={`Actions for ${item.title}`} />
         </div>
       )}
     </li>
+  );
+}
+
+/** The card's title and note, edited in place. The note is what shows under the title. */
+function StopEditor({ item, busy, error, onSave, onCancel }: { item: Item; busy: boolean; error: string | null; onSave: (body: { title?: string; note?: string | null }) => Promise<void>; onCancel: () => void }) {
+  const [title, setTitle] = useState(item.title);
+  const was = item.details.note ?? item.details.why ?? "";
+  const [note, setNote] = useState(was);
+  const save = () => {
+    const body: { title?: string; note?: string | null } = {};
+    if (title.trim() && title.trim() !== item.title) body.title = title.trim();
+    if (note.trim() !== was) body.note = note.trim() || null;
+    return Object.keys(body).length ? onSave(body) : onCancel();
+  };
+  return (
+    <form className="min-w-0 flex-1 space-y-2" onClick={(e) => e.stopPropagation()} onSubmit={(e) => (e.preventDefault(), save())} onKeyDown={(e) => e.key === "Escape" && onCancel()}>
+      <input value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Title" maxLength={160} autoFocus className="h-10 w-full rounded-md border border-hairline-hover bg-card px-3 text-[15px] font-semibold text-ink outline-none focus:border-accent" />
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        aria-label="Note"
+        rows={Math.min(8, Math.max(3, note.split("\n").length + 1))}
+        maxLength={2000}
+        placeholder="What to order, who's coming, how to get there"
+        className="w-full resize-y rounded-md border border-hairline-hover bg-card px-3 py-2 text-[15px] leading-relaxed text-body outline-none placeholder:text-mute focus:border-accent"
+      />
+      {error && <p className="text-[12px] text-danger">{error}</p>}
+      <div className="flex gap-2">
+        <Button size="sm" variant="primary" type="submit" disabled={busy}>
+          Save
+        </Button>
+        <Button size="sm" variant="quiet" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }
 

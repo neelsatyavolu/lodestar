@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ALLIANCES, ALLIANCE_LABEL, type Preferences } from "@/lib/preferences";
+import { ALLIANCES, ALLIANCE_LABEL, displayName, type Preferences } from "@/lib/preferences";
 import type { Cabin, MaxStops } from "@/lib/types";
 import { AirportField } from "./airport-field";
 import { Dialog, Field } from "./dialog";
@@ -29,6 +29,8 @@ export function PreferencesDialog({
   onSave,
   onCreateAccount,
   onSignOut,
+  aiName,
+  onDisconnectAi,
 }: {
   open: boolean;
   onClose: () => void;
@@ -39,6 +41,9 @@ export function PreferencesDialog({
   onSave: (prefs: Preferences) => Promise<string | null>;
   onCreateAccount: (prefs: Preferences) => void;
   onSignOut: () => void;
+  /** The connected AI's name ("ChatGPT"), or null. */
+  aiName: string | null;
+  onDisconnectAi: () => void;
 }) {
   const [p, setP] = useState<Preferences>(value);
   const [busy, setBusy] = useState(false);
@@ -66,6 +71,11 @@ export function PreferencesDialog({
           <div className="flex flex-wrap items-center justify-end gap-2">
             {!signedIn && <span className="mr-auto text-xs text-ash">These apply now. Create an account to keep them.</span>}
             {signedIn && email && <span className="mr-auto truncate text-xs text-ash">Signed in as {email}</span>}
+            {aiName && (
+              <Button variant="ghost" onClick={onDisconnectAi}>
+                Disconnect {aiName}
+              </Button>
+            )}
             {signedIn && (
               <Button
                 variant="ghost"
@@ -96,6 +106,21 @@ export function PreferencesDialog({
       }
     >
       <div className="space-y-5 p-5">
+        {signedIn && (
+          <Section title="You">
+            <Field label="Your name">
+              <input
+                id="display-name"
+                value={p.displayName}
+                onChange={(e) => set("displayName", e.target.value)}
+                maxLength={60}
+                autoComplete="name"
+                placeholder={email ? displayName("", email) : "Your name"}
+                className="h-10 w-full rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none placeholder:text-mute focus:border-accent max-sm:h-12"
+              />
+            </Field>
+          </Section>
+        )}
         <Section title="Where you fly from">
           <AirportField bare label="Home airports (filled in for new searches)" value={p.homeAirports} onChange={(v) => set("homeAirports", v)} placeholder="City or airport" />
         </Section>

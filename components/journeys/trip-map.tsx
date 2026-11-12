@@ -147,6 +147,9 @@ export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }:
   useEffect(() => {
     let cancelled = false;
     let instance: MlMap | null = null;
+    // The map follows its box, not just the window: dragging the divider resizes it.
+    const resized = new ResizeObserver(() => instance?.resize());
+    if (box.current) resized.observe(box.current);
     import("maplibre-gl").then(({ Map: MapClass, NavigationControl, setWorkerUrl }) => {
       if (cancelled || !box.current) return;
       // Served from public/ (scripts/copy-maplibre-worker.mjs); the bundled path doesn't resolve.
@@ -169,6 +172,7 @@ export function TripMap({ items, selectedId, day, onSelect, panelOpen = false }:
     });
     return () => {
       cancelled = true;
+      resized.disconnect();
       instance?.remove();
       map.current = null;
     };

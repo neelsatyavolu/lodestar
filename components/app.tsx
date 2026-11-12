@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { safeReturnPath } from "@/lib/account/return-path";
 import { ApiError, api, post } from "@/lib/client";
 import { money } from "@/lib/format";
 import { flexHack, type Hack } from "@/lib/hacks";
-import { ALLIANCE_LABEL, DEFAULT_PREFERENCES, type Preferences } from "@/lib/preferences";
+import { ALLIANCE_LABEL, DEFAULT_PREFERENCES, displayName, type Preferences } from "@/lib/preferences";
 import type { SearchResult } from "@/lib/search";
 import type { DayPrice, Itinerary } from "@/lib/types";
 import type { Verified } from "@/lib/verify";
@@ -125,8 +125,30 @@ function formToUrl(f: FormState): string {
   return `?${p}`;
 }
 
+/** Set while signed in, so the Trips tab shows before the account check answers. */
+const SIGNED_IN_KEY = "lodestar:signed-in";
+const readRemembered = () => {
+  try {
+    return localStorage.getItem(SIGNED_IN_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+const noSubscribe = () => () => {};
+const remember = (on: boolean) => {
+  try {
+    if (on) localStorage.setItem(SIGNED_IN_KEY, "1");
+    else localStorage.removeItem(SIGNED_IN_KEY);
+  } catch {
+    // Storage blocked: the tab shows once the account check answers.
+  }
+};
+
 export function App() {
   const [mode, setMode] = useState<Mode>("search");
+  // Until the account check answers, trust the last visit: the Trips tab shows straight away.
+  const remembered = useSyncExternalStore(noSubscribe, readRemembered, () => false);
+  const [accountChecked, setAccountChecked] = useState(false);
   // The saved trip to show in Trips, from an alert email's link or a fresh save.
   const [focusTrip, setFocusTrip] = useState<string | null>(null);
   // Set by Flint's pairing page link (/?connect=flint): opens Trips with the Connect Flint steps.
@@ -238,6 +260,7 @@ export function App() {
     api<{ user: Account | null; preferences: Preferences | null }>("/api/account")
       .then((res) => {
         setAccount(res.user);
+        remember(Boolean(res.user));
         const trip = new URLSearchParams(window.location.search).get("trip");
         if (res.user && trip) {
           setFocusTrip(trip);
@@ -268,6 +291,7 @@ export function App() {
       })
       .catch(() => {})
       .finally(() => {
+        setAccountChecked(true);
         // Development only: /?welcome replays the sign-up onboarding and tour.
         if (process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).has("welcome")) {
           setOnboarding((o) => ({ open: true, key: o.key + 1 }));
@@ -294,6 +318,7 @@ export function App() {
 
   const signedIn = (a: Account, p: Preferences, created: boolean) => {
     setAccount(a);
+    remember(true);
     adoptPreferences(p, true);
     refreshAi();
     if (afterSignIn.current) {
@@ -313,6 +338,7 @@ export function App() {
   const signOut = async () => {
     await post("/api/account/logout", {}).catch(() => {});
     setAccount(null);
+    remember(false);
     setMode((m) => (m === "trips" ? "search" : m));
     adoptPreferences(DEFAULT_PREFERENCES, false);
     refreshAi();
@@ -372,7 +398,7 @@ export function App() {
             <span className="text-[18px] font-medium tracking-[-0.02em] max-md:sr-only">Lodestar</span>
           </Link>
           <nav className="ml-1 inline-flex min-w-0 overflow-x-auto rounded-full bg-elevated p-1 text-[13px] [scrollbar-width:none] pointer-coarse:p-0 sm:ml-2" aria-label="Mode">
-            {((account ? ["search", "stays", "ai", "trips"] : ["search", "stays", "ai"]) as Mode[]).map((m) => (
+            {((account || (remembered && !accountChecked) ? ["search", "stays", "ai", "trips"] : ["search", "stays", "ai"]) as Mode[]).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-2 pointer-coarse:h-11 md:px-4 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
                 {MODE_LABEL[m]}
               </button>
@@ -400,21 +426,15 @@ export function App() {
             )}
             {account ? (
               <button type="button" onClick={() => setPrefsDialog((d) => ({ open: true, key: d.key + 1 }))} title={`Signed in as ${account.email}`} data-tour="account" className="shrink-0 cursor-pointer max-sm:hidden">
-                <Pill>{account.email.split("@")[0]}</Pill>
+                <Pill>{displayName(prefs.displayName, account.email)}</Pill>
               </button>
             ) : (
               <Button size="sm" variant="quiet" onClick={() => setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }))}>
                 Sign in
               </Button>
             )}
-            {provider ? (
-              <button type="button" onClick={() => disconnect(provider)} title="Disconnect" data-tour="connect" className="cursor-pointer">
-                <Pill dot="ok">
-                  <span className="sm:hidden">{PROVIDER_NAME[provider]}</span>
-                  <span className="max-sm:hidden">{PROVIDER_NAME[provider]} connected</span>
-                </Pill>
-              </button>
-            ) : (
+            {/* Once connected the AI needs no badge; it's disconnected from the preferences dialog. */}
+            {!provider && ai && (
               <Button size="sm" onClick={() => setConnectOpen(true)} data-tour="connect" className="max-sm:hidden">
                 Connect AI
               </Button>
@@ -601,6 +621,8 @@ export function App() {
         email={account?.email ?? null}
         onSave={savePreferences}
         onSignOut={signOut}
+        aiName={provider ? PROVIDER_NAME[provider] : null}
+        onDisconnectAi={() => provider && disconnect(provider)}
         onCreateAccount={(p) => {
           adoptPreferences(p, true);
           setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }));

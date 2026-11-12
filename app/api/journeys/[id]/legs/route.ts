@@ -29,7 +29,8 @@ export function GET(req: Request, ctx: TripCtx) {
     if (gate instanceof Response) return gate;
     const now = Date.now();
     if (!g) return ok({ legs: await freeLegs(stops.slice(0, MAX_LEGS + 1), now) });
-    const pairs = stops.slice(0, MAX_LEGS + 1).slice(1).map((to, i) => ({ from: stops[i], to }));
+    // Nobody drives to the airport a flight lands at: that leg is the flight.
+    const pairs = stops.slice(0, MAX_LEGS + 1).slice(1).map((to, i) => ({ from: stops[i], to })).filter((p) => p.to.kind !== "flight");
     const legs = await Promise.all(
       pairs.map(async ({ from, to }) => {
         const a = { lat: from.details.lat!, lng: from.details.lng! };

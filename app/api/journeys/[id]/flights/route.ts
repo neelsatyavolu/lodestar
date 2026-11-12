@@ -34,10 +34,11 @@ export function GET(req: Request, ctx: TripCtx) {
       .slice(0, MAX_FLIGHTS)
       .flatMap((i) => {
         const code = flightCode(i);
-        return code ? [{ id: i.id, q: { ...code, date: i.startDate, from: flightAirports(i).from } }] : [];
+        return code ? [{ id: i.id, q: { ...code, date: i.startDate, ...flightAirports(i) } }] : [];
       });
+    // One at a time: the free plan refuses a second request in the same second.
     const flights: Record<string, FlightStatus | null> = {};
-    await Promise.all(asks.map(async ({ id, q }) => (flights[id] = await flightStatus(key, q))));
+    for (const { id, q } of asks) flights[id] = await flightStatus(key, q);
     return ok({ live: true, flights }, { headers: { "cache-control": "private, max-age=60" } });
   });
 }

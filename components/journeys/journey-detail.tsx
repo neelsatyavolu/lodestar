@@ -26,6 +26,7 @@ import { ToBookTab } from "./to-book-tab";
 import { TripCover } from "./trip-cover";
 import { TripMap } from "./trip-map";
 import { useFlights } from "./use-flights";
+import { SplitHandle, useMapWidth } from "./split-handle";
 import { askConfirm } from "../confirm";
 
 // One trip: a header with the destination's photo, tabs for each part of the
@@ -74,6 +75,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   const gen = useGenerate(tripId, provider, onConnectAi, setTrip);
   const draft = useDraftRun(gen, autoDraft, loaded, onAutoDraftStarted);
   const flights = useFlights(tripId, trip.items);
+  const [mapWidth, setMapWidth] = useMapWidth();
 
   useEffect(() => {
     const mq = window.matchMedia(WIDE);
@@ -215,7 +217,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   return (
     // Wide screens break out of the page column: plan left, map right.
     <section className="pt-6 sm:pt-12 lg:relative lg:left-1/2 lg:-ml-[50vw] lg:w-screen lg:pt-0">
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,42%)]">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,42%)]" style={wide && mapWidth ? { gridTemplateColumns: `minmax(0,1fr) ${mapWidth}px` } : undefined}>
         <div className="w-full lg:ml-auto lg:max-w-[780px] lg:px-6 lg:pb-24 lg:pt-8">
           <TripCover journey={trip} onBack={() => (writeLocation(null, null), onBack())} onEdit={() => openDialog("edit")} onShare={() => openDialog("share")} onDelete={del} />
           {draft.state && (
@@ -262,7 +264,8 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
         </div>
 
         {wide && (
-          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] overflow-hidden border-l border-hairline [contain:paint] lg:block">
+          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] overflow-hidden [contain:paint] lg:block">
+            <SplitHandle onWidth={setMapWidth} />
             <TripMap items={trip.items} selectedId={selectedId} day={tab === "itinerary" ? activeDay : null} onSelect={fromMap} panelOpen={Boolean(panel)} />
             {panel && <div className="absolute inset-x-3 bottom-3 z-10 max-h-[66%] overflow-hidden rounded-xl border border-hairline-strong bg-card">{panel}</div>}
           </aside>

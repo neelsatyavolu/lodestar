@@ -226,7 +226,7 @@ describe("map pins", () => {
     ];
     expect(dayStops(items, "2026-11-22").map((i) => i.id)).toEqual(["a", "b"]);
     // A stay with no time is check-in: it ends the day.
-    expect(dayStops([...items, base({ id: "hotel", kind: "stay", details: { lat: 7, lng: 8 } }), base({ id: "added", details: { lat: 9, lng: 9 } })], "2026-11-22").map((i) => i.id)).toEqual(["a", "b", "added", "hotel"]);
+    expect(dayStops([...items, base({ id: "hotel", kind: "stay", endDate: "2026-11-23", details: { lat: 7, lng: 8 } }), base({ id: "added", details: { lat: 9, lng: 9 } })], "2026-11-22").map((i) => i.id)).toEqual(["a", "b", "added", "hotel"]);
   });
 
   it("searches near the day's stops, never from the flight home", () => {

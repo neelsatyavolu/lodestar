@@ -89,7 +89,7 @@ export function flightBetween(items: Item[], date: string, a: Item, b: Item): bo
   const lo = minutes(a.startTime);
   const hi = minutes(b.startTime);
   return items.some((f) => {
-    if (f.kind !== "flight" || !live(f) || f.startDate !== date) return false;
+    if (f.kind !== "flight" || !live(f) || f.startDate !== date || f.id === a.id) return false;
     const t = minutes(f.startTime);
     // Without times, the itinerary order (a before b) is all there is: any flight that day counts.
     return t === null || lo === null || hi === null ? true : t >= lo && t <= hi;

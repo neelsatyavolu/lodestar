@@ -64,8 +64,8 @@ function Leg({ e, stop, kind, onOpen }: { e: FlightEnd; stop: Item | null; kind:
 function Clock({ e }: { e: FlightEnd }) {
   return (
     <div className="tnum whitespace-nowrap font-mono text-[20px] font-medium leading-7 text-ink">
-      {clock(e.time)}
-      {e.zone && <small className="block text-[11px] font-normal leading-[14px] tracking-[0.04em] text-mute max-sm:ml-1 max-sm:inline">{e.zone}</small>}
+      {e.time ? clock(e.time) : <span className="text-[13px] font-normal leading-7 text-mute">Time not saved</span>}
+      {e.time && e.zone && <small className="block text-[11px] font-normal leading-[14px] tracking-[0.04em] text-mute max-sm:ml-1 max-sm:inline">{e.zone}</small>}
       {e.was && <small className="block text-[11px] font-normal leading-[14px] text-mute line-through">{clock(e.was)}</small>}
     </div>
   );

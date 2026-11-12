@@ -38,3 +38,11 @@ describe("preferences", () => {
     expect(await getPreferences(db, id)).toEqual({ ...prefs, cabin: "FIRST" });
   });
 });
+
+describe("displayName", () => {
+  it("uses the saved name, else the email's name capitalized", async () => {
+    const { displayName } = await import("./preferences");
+    expect(displayName("Neel Satyavolu", "neel@example.com")).toBe("Neel Satyavolu");
+    expect(displayName("  ", "neel@example.com")).toBe("Neel");
+  });
+});
