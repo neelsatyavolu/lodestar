@@ -30,6 +30,7 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
   const rating = place?.rating ?? stay.details.rating ?? null;
   const address = place?.address ?? stay.details.address ?? stay.place;
   const phone = place?.phone ?? stay.details.phone;
+  const site = place?.website ?? stay.details.url;
   const n = nightCount(stay);
   const price = stay.details.price ?? stay.details.estimate;
   const cancelled = stay.status === "cancelled";
@@ -37,20 +38,22 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
 
   return (
     <article ref={ref} className="grid overflow-hidden rounded-xl border border-hairline-strong bg-card sm:grid-cols-[220px_minmax(0,1fr)]">
-      <button type="button" onClick={onOpen} className="relative min-h-36 cursor-pointer bg-elevated sm:min-h-full" aria-label={`Details for ${stay.title}`}>
+      <div onClick={onOpen} className="relative min-h-36 cursor-pointer bg-elevated sm:min-h-full" aria-hidden>
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element -- a redirect to Google's image host; next/image can't proxy it.
           <img src={photoUrl(photo, 480)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
         ) : (
           <BedDouble size={28} className="absolute inset-0 m-auto text-stone" aria-hidden />
         )}
-      </button>
+      </div>
       <div className="grid min-w-0 gap-4 p-4 sm:p-5">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {rating !== null && (
               <span className="tnum inline-flex items-center gap-1 font-mono text-[12px] text-body">
                 <Star size={12} className="fill-warn text-warn" aria-hidden /> {rating.toFixed(1)}
+                {place?.ratingCount ? <span className="text-mute">({place.ratingCount.toLocaleString("en-US")})</span> : null}
+                {place?.priceLevel ? <span className="text-mute"> · {place.priceLevel}</span> : null}
               </span>
             )}
             {stay.status === "booked" && <Pill dot="ok">Booked</Pill>}
@@ -61,6 +64,7 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
             {stay.title}
           </button>
           {address && <p className="mt-1 text-[13px] text-mute">{address}</p>}
+          {(place?.summary ?? stay.details.note) && <p className="mt-2 max-w-[60ch] whitespace-pre-line text-[14px] leading-relaxed text-body [text-wrap:pretty]">{place?.summary ?? stay.details.note}</p>}
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-md bg-elevated px-3.5 py-3">
@@ -86,7 +90,7 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
           <Fact label={stay.details.price !== undefined ? "Total" : "Estimate"}>{price !== undefined ? amount(price, stay.details.currency) : "—"}</Fact>
         </div>
 
-        {(maps || phone || stay.details.url) && (
+        {(maps || phone || site) && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
             {maps && (
               <a href={maps} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
@@ -98,9 +102,9 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
                 {phone}
               </a>
             )}
-            {stay.details.url && (
-              <a href={stay.details.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
-                Booking <ExternalLink size={11} aria-hidden />
+            {site && (
+              <a href={site} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+                {place?.website ? "Website" : "Booking"} <ExternalLink size={11} aria-hidden />
               </a>
             )}
           </div>

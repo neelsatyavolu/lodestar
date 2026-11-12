@@ -40,6 +40,9 @@ export function needsLocation(item: Item, now: number, finder: Finder = "osm"): 
   const failedRecently = failedAt >= now - RETRY_FAILED_MS && !(failedAt < LOOKUPS_IMPROVED_AT && searchTitle(item.title) !== item.title);
   if (failedRecently && (finder === "osm" || d.locateFailedWith === "google")) return false;
   if (!located(item)) return true;
+  // With Google on hand, a hotel, meal or outing pinned another way (OpenStreetMap, an agent's
+  // coordinates) is looked up once more, so it gets Google's photos, rating and description.
+  if (finder === "google" && !d.placeId?.startsWith("g:") && (item.kind === "stay" || item.kind === "dining" || item.kind === "activity")) return true;
   return d.placeId?.startsWith("g:") === true && (d.locatedAt ?? 0) < now - LOCATION_TTL_MS;
 }
 

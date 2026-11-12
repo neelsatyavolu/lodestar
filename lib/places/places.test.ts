@@ -211,6 +211,15 @@ describe("map pins", () => {
     expect(needsLocation(base({ details: { locateFailedAt: recent, locateFailedWith: "google" } }), now, "osm")).toBe(false);
   });
 
+  it("gives a hotel pinned another way one Google lookup for its photos and rating", () => {
+    const now = Date.now();
+    const osmHotel = base({ kind: "stay", details: { lat: 1, lng: 2, placeId: "osm:N1" } });
+    expect(needsLocation(osmHotel, now, "google")).toBe(true);
+    expect(needsLocation(osmHotel, now, "osm")).toBe(false);
+    expect(needsLocation({ ...osmHotel, details: { ...osmHotel.details, locateFailedAt: now - 1000, locateFailedWith: "google" } }, now, "google")).toBe(false);
+    expect(needsLocation(base({ kind: "transport", details: { lat: 1, lng: 2 } }), now, "google")).toBe(false);
+  });
+
   it("looks Google coordinates up again after 30 days", () => {
     const now = Date.now();
     expect(needsLocation(base({ details: { lat: 1, lng: 2, placeId: "g:x", locatedAt: now - 31 * 86_400_000 } }), now)).toBe(true);
