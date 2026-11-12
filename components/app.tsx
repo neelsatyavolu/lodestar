@@ -420,7 +420,7 @@ export function App() {
     <>
       <header className="sticky top-0 z-40 border-b border-hairline bg-canvas">
         <div className="mx-auto flex h-16 max-w-[1120px] items-center gap-1 px-4 sm:gap-4 sm:px-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2 pointer-coarse:min-h-11" aria-label="Lodestar home">
+          <Link href="/" className="flex shrink-0 items-center gap-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11" aria-label="Lodestar home">
             <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
               <path d="M11 1.5 L12.6 9.4 L20.5 11 L12.6 12.6 L11 20.5 L9.4 12.6 L1.5 11 L9.4 9.4 Z" fill="currentColor" />
             </svg>

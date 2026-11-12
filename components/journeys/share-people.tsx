@@ -78,9 +78,9 @@ export function SharePeople({ journeyId }: { journeyId: string }) {
             placeholder="name@example.com"
             autoComplete="email"
             aria-label="Email address"
-            className="h-10 min-w-0 flex-1 rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none placeholder:text-mute focus:border-accent max-sm:h-12"
+            className="h-10 min-w-0 flex-1 rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none placeholder:text-mute focus:border-accent pointer-coarse:h-11 max-sm:h-12"
           />
-          <Button variant="primary" type="submit" disabled={busy || !email.trim()}>
+          <Button variant="primary" type="submit" disabled={busy || !email.trim()} className="!h-auto">
             <UserPlus size={14} /> Invite
           </Button>
         </div>

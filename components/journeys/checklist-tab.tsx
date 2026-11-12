@@ -45,7 +45,7 @@ function AddTask({ journeyId, sections, onAdded }: { journeyId: string; sections
             <option key={s} value={s} />
           ))}
         </datalist>
-        <Button type="submit" variant="ghost" disabled={busy || !title.trim()}>
+        <Button type="submit" variant="ghost" disabled={busy || !title.trim()} className="max-sm:!h-12 sm:!h-auto">
           <Plus size={14} /> Add
         </Button>
       </div>

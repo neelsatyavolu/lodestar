@@ -44,12 +44,12 @@ export function ShareDialog({ open, onClose, journeyId, token, onToken }: { open
         <p className="text-[14px] leading-relaxed text-body">Anyone with the link can see the plan: the days, what&apos;s booked and what still needs booking, the checklist and notes. Confirmation numbers, prices and the budget stay private.</p>
         <Toggle checked={Boolean(token)} onChange={(on) => !busy && set(on)} label={token ? "Link is on" : "Link is off"} />
         {url && (
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-hairline-hover bg-card px-3">
+          <div className="flex gap-2">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border border-hairline-hover bg-card px-3 pointer-coarse:h-11">
               <Link2 size={14} className="shrink-0 text-ash" aria-hidden />
               <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Share link" className="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-ink outline-none" />
             </div>
-            <Button variant="primary" onClick={copy}>
+            <Button variant="primary" onClick={copy} className="!h-auto">
               {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied" : "Copy"}
             </Button>
           </div>

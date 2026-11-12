@@ -53,7 +53,7 @@ function AddCost({ journeyId, currency, onAdded }: { journeyId: string; currency
           ))}
         </select>
         <input value={value} onChange={(e) => setValue(e.target.value)} inputMode="decimal" placeholder={`Amount (${currency})`} aria-label="Amount" className={`${inputClass} tnum`} />
-        <Button type="submit" variant="ghost" disabled={busy}>
+        <Button type="submit" variant="ghost" disabled={busy} className="max-sm:!h-12 sm:!h-auto">
           <Plus size={14} /> Add
         </Button>
       </div>
@@ -146,7 +146,9 @@ export function BudgetTab({ trip, gen, onOpenItem, onCosts }: { trip: TripDetail
           <ul className="divide-y divide-hairline rounded-xl border border-hairline-strong bg-card">
             {trip.costs.map((c) => (
               <li key={c.id} className="group flex items-center gap-3 px-4 py-3">
-                <input type="checkbox" checked={c.paid} onChange={(e) => patch(c, { paid: e.target.checked })} aria-label={`${c.label} paid`} className="size-4 shrink-0 cursor-pointer accent-[var(--accent)]" />
+                <label className="-mx-2.5 inline-grid size-9 shrink-0 cursor-pointer place-items-center pointer-coarse:-mx-3.5 pointer-coarse:size-11">
+                  <input type="checkbox" checked={c.paid} onChange={(e) => patch(c, { paid: e.target.checked })} aria-label={`${c.label} paid`} className="size-4 cursor-pointer accent-[var(--accent)]" />
+                </label>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] text-ink">{c.label}</span>
                   <span className="block text-[12px] text-ash">

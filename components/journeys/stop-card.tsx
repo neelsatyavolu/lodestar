@@ -244,7 +244,7 @@ export function LegRow({ leg, directions }: { leg: Leg | undefined | null; direc
       <span className="h-6 border-l border-dashed border-hairline-hover" aria-hidden />
       <Icon size={14} className="ml-4 shrink-0 text-ash" aria-hidden />
       {leg && <span className="tnum">{legLabel(leg)}</span>}
-      <a href={directions} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-charcoal hover:text-ink">
+      <a href={directions} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-charcoal hover:text-ink pointer-coarse:min-h-11">
         Directions <ExternalLink size={11} aria-hidden />
       </a>
     </li>

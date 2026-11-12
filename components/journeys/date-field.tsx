@@ -110,7 +110,7 @@ export function DateField({ value, onChange, placeholder = "Pick a day", label, 
     <div ref={root} className="relative">
       <button type="button" aria-label={value ? `${label}: ${shortLabel(value)}` : label} aria-expanded={open} onClick={() => setOpen(!open)} className={compact ? compactClass : fieldClass}>
         {icon ?? <CalendarDays size={14} className="shrink-0 text-ash" />}
-        {compact ? <span>{value ? `${label} ${shortLabel(value)}` : label}</span> : <span className={value ? "tnum" : "text-stone"}>{value ? shortLabel(value) : placeholder}</span>}
+        {compact ? <span>{value ? `${label} ${shortLabel(value)}` : label}</span> : <span className={value ? "tnum" : "text-mute"}>{value ? shortLabel(value) : placeholder}</span>}
       </button>
       {open && (
         <Calendar
@@ -143,7 +143,7 @@ export function DateRangeField({ start, end, onChange, label, inline = false }: 
     <div ref={root} className="relative">
       <button type="button" aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)} className={fieldClass}>
         <CalendarDays size={14} className="shrink-0 text-ash" />
-        <span className={start ? "tnum" : "text-stone"}>{text}</span>
+        <span className={start ? "tnum" : "text-mute"}>{text}</span>
       </button>
       {open && <Calendar value={{ start, end }} range inline={inline} onPick={pick} onDone={() => setOpen(false)} />}
     </div>

@@ -87,7 +87,7 @@ function BookCard({ item, onOpen, onBook, onChanged, onError }: { item: Item; on
     <li className="rounded-xl border border-hairline-strong bg-card">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2 px-5 pb-3 pt-4">
         <div className="min-w-0 flex-1">
-          <button type="button" onClick={onOpen} className="cursor-pointer text-left text-[15px] font-medium text-ink hover:underline">
+          <button type="button" onClick={onOpen} className="relative cursor-pointer text-left text-[15px] font-medium text-ink hover:underline pointer-coarse:after:absolute pointer-coarse:after:-inset-y-3 pointer-coarse:after:inset-x-0">
             {item.title}
           </button>
           <p className="mt-1 text-[13px] text-mute">
@@ -100,7 +100,7 @@ function BookCard({ item, onOpen, onBook, onChanged, onError }: { item: Item; on
         </div>
       </div>
       {(d.note || d.why) && <p className="max-w-[65ch] px-5 pb-3 text-[13px] leading-relaxed text-body [text-wrap:pretty]">{d.note ?? d.why}</p>}
-      <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-t border-hairline px-5 py-3">
         <Button size="sm" variant="primary" disabled={busy} onClick={onBook}>
           <Check size={14} /> Mark booked
         </Button>

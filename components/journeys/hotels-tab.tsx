@@ -60,7 +60,7 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
             {stay.status === "planned" && <Pill dot="warn">{stay.details.reserve ? "To book" : "Planned"}</Pill>}
             {cancelled && <Pill dot="danger">Cancelled</Pill>}
           </div>
-          <button type="button" onClick={onOpen} className={`mt-1.5 block cursor-pointer text-left font-serif text-[22px] leading-tight hover:underline ${cancelled ? "text-ash line-through" : "text-ink"}`}>
+          <button type="button" onClick={onOpen} className={`relative mt-1.5 block cursor-pointer text-left pointer-coarse:after:absolute pointer-coarse:after:-inset-y-2 pointer-coarse:after:inset-x-0 font-serif text-[22px] leading-tight hover:underline ${cancelled ? "text-ash line-through" : "text-ink"}`}>
             {stay.title}
           </button>
           {address && <p className="mt-1 text-[13px] text-mute">{address}</p>}
@@ -93,17 +93,17 @@ function HotelCard({ stay, onOpen }: { stay: Item; onOpen: () => void }) {
         {(maps || phone || site) && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
             {maps && (
-              <a href={maps} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+              <a href={maps} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline pointer-coarse:min-h-11">
                 Directions <ExternalLink size={11} aria-hidden />
               </a>
             )}
             {phone && (
-              <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="tnum text-accent hover:underline">
+              <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="tnum inline-flex items-center text-accent hover:underline pointer-coarse:min-h-11">
                 {phone}
               </a>
             )}
             {site && (
-              <a href={site} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+              <a href={site} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline pointer-coarse:min-h-11">
                 {place?.website ? "Website" : "Booking"} <ExternalLink size={11} aria-hidden />
               </a>
             )}
