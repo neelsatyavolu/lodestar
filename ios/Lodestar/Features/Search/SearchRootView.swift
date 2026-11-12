@@ -34,7 +34,7 @@ private struct SearchScreen: View {
                     VStack(alignment: .leading, spacing: Spacing.xl) {
                         if model.result == nil {
                             HeroTitle(line1: "Lower fares.", line2: "Sellers you can trust.", paragraph: SearchCopy.hero)
-                                .padding(.top, Spacing.xl)
+                                .padding(.top, Spacing.screenTop)
                         }
                         SearchFormView(form: $model.form, isSearching: model.isSearching, onSubmit: runSearch)
                         preferenceRow

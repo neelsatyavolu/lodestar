@@ -25,8 +25,9 @@ struct TripsHomeView: View {
                     TripsMessages(error: model.error, notice: model.notice)
                     content
                 }
-                .padding(Spacing.gutter)
-                .padding(.bottom, Spacing.xxl)
+                .padding(.horizontal, Spacing.gutter)
+                .padding(.top, Spacing.screenTop)
+                .padding(.bottom, Spacing.xxl + Spacing.gutter)
             }
             .task(id: model.app.focusedSavedTripID) { await focusSavedTrip(proxy) }
         }

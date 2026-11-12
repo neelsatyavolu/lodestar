@@ -14,6 +14,8 @@ enum Spacing {
     static let band: CGFloat = 128
     /// Phone side gutter.
     static let gutter: CGFloat = 16
+    /// Space above a top-level screen's hero, below the safe area. The same on every tab.
+    static let screenTop: CGFloat = 24
 }
 
 /// Ink & Instrument radii: 4 pt controls, 6 pt cards and panels; nothing above 6 except pills.
@@ -32,7 +34,10 @@ enum Radius {
 /// Control sizes (iOS touch sizes where the web is smaller).
 enum Sizes {
     static let button: CGFloat = 44
-    static let buttonSmall: CGFloat = 32
+    /// Drawn height of a small button; its tap area still reaches `minTap`.
+    static let buttonSmall: CGFloat = 36
+    /// The HIG's 44 pt minimum touch target.
+    static let minTap: CGFloat = 44
     static let input: CGFloat = 48
     static let chip: CGFloat = 40
     static let statusDot: CGFloat = 8

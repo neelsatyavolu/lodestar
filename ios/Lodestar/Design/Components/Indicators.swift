@@ -83,7 +83,8 @@ struct Chip: View {
                 .frame(minHeight: Sizes.chip)
                 .background(isOn ? Color.elevated : Color.clear, in: Capsule())
                 .overlay(Capsule().strokeBorder(isOn ? Color.hairlineHover : Color.hairlineStrong, lineWidth: Sizes.hairline))
-                .contentShape(Capsule())
+                .padding(.vertical, (Sizes.minTap - Sizes.chip) / 2)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isOn ? .isSelected : [])

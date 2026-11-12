@@ -23,7 +23,7 @@ struct TripHotelsTab: View {
                                actionTitle: model.journey.canEdit ? "Add stay" : nil) { present(.addItem(.stay, day)) }
             }
             ForEach(stays) { stay in
-                TripsHotelCard(model: model, stay: stay, present: present)
+                TripsHotelCard(model: model, stay: stay, present: present).id(stay.id)
             }
             if !stays.isEmpty, let gaps = TripsHotels.gapLine(start: model.journey.startDate, end: model.journey.endDate, items: model.trip.items) {
                 Text(gaps)

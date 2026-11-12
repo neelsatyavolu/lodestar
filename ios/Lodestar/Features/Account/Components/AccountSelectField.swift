@@ -26,8 +26,8 @@ struct AccountSelectField<Value: Hashable>: View {
                 }
                 .padding(.horizontal, Spacing.md)
                 .frame(minHeight: Sizes.input)
-                .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
-                .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineStrong, lineWidth: Sizes.hairline))
+                .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
+                .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineHover, lineWidth: Sizes.hairline))
                 .contentShape(RoundedRectangle(cornerRadius: Radius.md))
             }
             .accessibilityLabel(label)

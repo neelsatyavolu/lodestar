@@ -25,6 +25,7 @@ struct TripItineraryTab: View {
                 }
                 ForEach(days, id: \.self) { day in
                     TripsDaySection(model: model, day: day, index: days.firstIndex(of: day) ?? 0, present: present)
+                        .id(day.string)
                 }
                 if model.trip.items.contains(where: { $0.kind == .dining && $0.status == .suggested }) {
                     Text("Meal ideas come from the AI's knowledge, not live listings. Check hours and book ahead.")

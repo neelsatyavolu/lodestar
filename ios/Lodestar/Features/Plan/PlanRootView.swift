@@ -45,7 +45,8 @@ private struct PlanScreen: View {
                         if !model.hasStarted { examples }
                     }
                     .padding(.horizontal, Spacing.gutter)
-                    .padding(.vertical, Spacing.xl)
+                    .padding(.top, Spacing.screenTop)
+                    .padding(.bottom, Spacing.xl)
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: model.turns.last?.id) { _, id in

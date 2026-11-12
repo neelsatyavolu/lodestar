@@ -64,5 +64,21 @@ struct TripsHomeScreen: View {
                     }
                 }
         }
+        #if DEBUG
+        .task { await openDebugTrip() }
+        #endif
     }
+
+    #if DEBUG
+    /// `-LodestarTrip <id> -LodestarTripTab flights` opens a trip on a tab, for simulator screenshots.
+    private func openDebugTrip() async {
+        let defaults = UserDefaults.standard
+        guard let id = defaults.string(forKey: "LodestarTrip"), path.isEmpty else { return }
+        let tab = defaults.string(forKey: "LodestarTripTab").flatMap(TripsTab.init(rawValue:)) ?? .overview
+        for _ in 0..<40 where model.journey(id: id) == nil {
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+        if model.journey(id: id) != nil { path.append(TripsRoute(id: id, tab: tab)) }
+    }
+    #endif
 }

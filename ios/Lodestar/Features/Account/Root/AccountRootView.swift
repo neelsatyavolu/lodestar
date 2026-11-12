@@ -14,7 +14,8 @@ struct AccountRootView: View {
                     AccountAppearanceSection()
                 }
                 .padding(.horizontal, Spacing.gutter)
-                .padding(.vertical, Spacing.xl)
+                .padding(.top, Spacing.screenTop)
+                .padding(.bottom, Spacing.xl)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .canvasBackground()

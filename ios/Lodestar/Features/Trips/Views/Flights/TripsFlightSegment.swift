@@ -12,6 +12,7 @@ struct TripsFlightSegment: View {
     let present: (TripsTripSheet) -> Void
 
     @State private var confirmRemove = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var flight: TripItem { group.flight }
 
@@ -58,11 +59,15 @@ struct TripsFlightSegment: View {
                 title
                 let sub = TripsFlightText.segmentSubtitle(view, guests: flight.details.guests)
                 if !sub.isEmpty {
-                    Text(sub).font(.geist(.mono, size: 12, relativeTo: .caption)).monospacedDigit().foregroundStyle(Color.mute).lineLimit(1)
+                    Text(sub).font(.geist(.mono, size: 12, relativeTo: .caption)).monospacedDigit().foregroundStyle(Color.mute)
+                        .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                 }
+                // At accessibility sizes the badge drops under the title so the name keeps its width.
+                if typeSize.isAccessibilitySize { TripsFlightStatusBadge(view: view).padding(.top, Spacing.xs) }
             }
+            .layoutPriority(1)
             Spacer(minLength: Spacing.xs)
-            TripsFlightStatusBadge(view: view)
+            if !typeSize.isAccessibilitySize { TripsFlightStatusBadge(view: view) }
             if model.journey.canEdit { menu }
         }
         .padding(.leading, Spacing.md)
@@ -82,7 +87,7 @@ struct TripsFlightSegment: View {
             + Text(route).font(.geist(.sans, size: 15, relativeTo: .callout)).foregroundStyle(Color.bodyText))
             .foregroundStyle(cancelled ? Color.ash : Color.ink)
             .strikethrough(cancelled)
-            .lineLimit(2)
+            .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
     }
 
     private var menu: some View {

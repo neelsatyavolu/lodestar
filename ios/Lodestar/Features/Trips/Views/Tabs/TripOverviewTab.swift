@@ -11,7 +11,8 @@ struct TripOverviewTab: View {
                 TripsMapCard(model: model, day: nil) { present(.map) }
             }
             reservations
-            budgetCard
+            // A view-only member gets no budget (the server strips it).
+            if model.journey.canEdit { budgetCard }
             TripsIssuesCard(model: model, present: present)
             TripsNotesCard(model: model, present: present)
             TripsLodgingCard(model: model, present: present)
@@ -153,6 +154,7 @@ struct TripsNotesCard: View {
                     .card()
                 }
                 .buttonStyle(.plain)
+                .disabled(!model.journey.canEdit)
             }
         }
     }

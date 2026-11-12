@@ -56,10 +56,18 @@ private struct StyledButton: View {
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: Radius.md))
+        // Small and text buttons draw shorter than 44 pt; their tap area doesn't.
+        .padding(.vertical, tapInset)
+        .contentShape(Rectangle())
         .animation(Motion.fast, value: pressed)
     }
 
     private var hasChrome: Bool { kind != .quiet && kind != .link }
+
+    private var tapInset: CGFloat {
+        guard hasChrome else { return 0 }
+        return max(0, (Sizes.minTap - (small ? Sizes.buttonSmall : Sizes.button)) / 2)
+    }
 
     private func foreground(pressed: Bool) -> Color {
         if !isEnabled { return .stone }

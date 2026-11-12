@@ -147,14 +147,13 @@ struct TripsFlightEnd: View {
         VStack(alignment: align, spacing: Spacing.xs) {
             Text(arriving ? "Arrive" : "Depart").font(.geist(.mono, size: 12, relativeTo: .caption)).foregroundStyle(Color.mute)
             Text(end.code ?? "—").font(.geist(.monoMedium, size: 32, relativeTo: .largeTitle)).foregroundStyle(Color.ink)
+                .lineLimit(1).minimumScaleFactor(0.6)
                 .padding(.top, Spacing.xs)
             time
             Text(end.was.map(ClockText.time12) ?? " ")
                 .font(.geist(.mono, size: 12, relativeTo: .caption)).strikethrough(end.was != nil).foregroundStyle(Color.mute)
                 .accessibilityLabel(end.was.map { "was \(ClockText.time12($0))" } ?? "")
-            if let place = end.city ?? end.name {
-                Text(place).textStyle(.bodySM).foregroundStyle(Color.bodyText).lineLimit(1)
-            }
+            Text(end.city ?? end.name ?? " ").textStyle(.bodySM).foregroundStyle(Color.bodyText).lineLimit(1)
             Text(TripsFlightText.gateLine(end) ?? "Gate posted on travel day")
                 .font(.geist(.mono, size: 12, relativeTo: .caption)).foregroundStyle(Color.mute)
                 .multilineTextAlignment(arriving ? .trailing : .leading)

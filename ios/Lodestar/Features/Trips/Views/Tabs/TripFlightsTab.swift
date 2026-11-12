@@ -29,8 +29,8 @@ struct TripFlightsTab: View {
                 let status = model.flightStatus(flight.id)
                 TripsFlightCard(item: flight, view: TripsFlightView(group: group, status: status), travelers: model.journey.travelers,
                                 checkedAt: status?.checkedAt, liveOn: model.flights.live) { present(.place(flight.id)) }
+                    .id(flight.id)
             }
         }
-        .task(id: list.map(\.id).joined(separator: "|")) { await model.pollFlights() }
     }
 }

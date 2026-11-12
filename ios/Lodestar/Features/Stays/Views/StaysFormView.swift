@@ -69,8 +69,8 @@ struct StaysFormView: View {
                 }
                 .padding(.horizontal, 14)
                 .frame(minHeight: Sizes.input)
-                .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
-                .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineStrong, lineWidth: Sizes.hairline))
+                .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
+                .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineHover, lineWidth: Sizes.hairline))
             }
             .accessibilityLabel("Guests, \(plural(adults, "adult"))")
         }
@@ -109,10 +109,8 @@ private struct StaysDateField: View {
             .tint(Color.accent)
             .environment(\.timeZone, Self.utcCalendar.timeZone)
             .environment(\.calendar, Self.utcCalendar)
+            // The system date button stands alone, as on Search: no field box around it.
             .frame(maxWidth: .infinity, minHeight: Sizes.input, alignment: .leading)
-            .padding(.horizontal, Spacing.sm)
-            .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
-            .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineStrong, lineWidth: Sizes.hairline))
         }
         .frame(maxWidth: .infinity)
     }

@@ -43,10 +43,10 @@ struct AirportFieldView: View {
             .padding(.horizontal, Spacing.md)
         }
         .frame(minHeight: Sizes.input)
-        .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
+        .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
         .overlay(
             RoundedRectangle(cornerRadius: Radius.md)
-                .strokeBorder(focused ? Color.accent : Color.hairlineStrong, lineWidth: Sizes.hairline)
+                .strokeBorder(focused ? Color.accent : Color.hairlineHover, lineWidth: Sizes.hairline)
         )
         .contentShape(Rectangle())
         .onTapGesture { focused = true }
