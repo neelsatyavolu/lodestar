@@ -5,6 +5,8 @@
 export const TABS = [
   { id: "overview", label: "Overview" },
   { id: "itinerary", label: "Itinerary" },
+  { id: "flights", label: "Flights" },
+  { id: "hotels", label: "Hotels" },
   { id: "book", label: "To book" },
   { id: "bookings", label: "Bookings" },
   { id: "budget", label: "Budget" },

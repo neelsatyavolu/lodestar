@@ -19,7 +19,7 @@ const GROUP: Record<Kind, { label: string; icon: typeof Plane }> = {
   note: { label: "Other", icon: Ticket },
 };
 
-function CopyCode({ code }: { code: string }) {
+export function CopyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button

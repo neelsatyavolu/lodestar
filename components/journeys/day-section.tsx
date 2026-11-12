@@ -2,14 +2,18 @@ import { Car, Plus } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { byItinerary, dayStops, searchCenter } from "@/lib/journeys/locate";
+import { flightView } from "@/lib/journeys/flight-view";
+import { flightBetween, flightGroups, foldedIds } from "@/lib/journeys/flights";
 import { daySummary } from "@/lib/journeys/plan";
 import type { Item, JourneyWithItems } from "@/lib/journeys/types";
 import { directionsUrl, type Leg } from "@/lib/places/types";
 import { AddPlace } from "./add-place";
 import { Collapsible } from "./collapsible";
+import { FlightSegment } from "./flight-segment";
 import { dayColor, pinsOf } from "./pins";
 import { longDay } from "./shared";
 import { LegRow, NoteCard, StayRow, StopCard } from "./stop-card";
+import type { Flights } from "./use-flights";
 
 // One day of a trip: a big date heading with the day in a line under it and
 // the day's total driving, the night's stay, the stops in order with the
@@ -24,6 +28,7 @@ type Props = {
   selectedId: string | null;
   onFocusDay: () => void;
   onOpen: (id: string) => void;
+  flights: Flights;
   onReplace: (i: Item) => void;
   onDrop: (id: string) => void;
   onAdded: () => void;
@@ -47,18 +52,21 @@ function useLegs(journeyId: string, date: string, stops: Item[]) {
   return legs.key === key ? legs.byFrom : new Map<string, Leg | null>();
 }
 
-function driveTotal(legs: Map<string, Leg | null>): string | null {
-  const seconds = [...legs.values()].reduce((s, l) => s + (l?.seconds ?? 0), 0);
+function driveTotal(legs: Map<string, Leg | null>, skip: Set<string>): string | null {
+  const seconds = [...legs].reduce((s, [from, l]) => s + (skip.has(from) ? 0 : (l?.seconds ?? 0)), 0);
   if (!seconds) return null;
   const m = Math.max(1, Math.round(seconds / 60));
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} hr${m % 60 ? ` ${m % 60} min` : ""}`;
 }
 
-export function DaySection({ journey, date, active, selectedId, onFocusDay, onOpen, onReplace, onDrop, onAdded }: Props) {
+export function DaySection({ journey, date, active, selectedId, onFocusDay, onOpen, flights, onReplace, onDrop, onAdded }: Props) {
   const [open, setOpen] = useState(true);
   const [adding, setAdding] = useState(false);
   const items = journey.items.filter((i) => i.startDate === date && !(i.kind === "stay" && i.status === "suggested"));
-  const firm = items.filter((i) => i.status !== "suggested" && i.kind !== "stay").sort(byItinerary);
+  // A flight draws its own card with the airport stops around it folded in.
+  const groups = new Map(flightGroups(journey.items).map((g) => [g.flight.id, g]));
+  const folded = foldedIds([...groups.values()]);
+  const firm = items.filter((i) => i.status !== "suggested" && i.kind !== "stay" && !folded.has(i.id)).sort(byItinerary);
   const ideas = items.filter((i) => i.status === "suggested").sort(byItinerary);
   // The stay you wake up in or check out of opens the day; the one you check into closes it.
   const stays = journey.items.filter((i) => i.kind === "stay" && (i.status === "booked" || i.status === "planned") && i.startDate <= date && (i.endDate ?? i.startDate) >= date);
@@ -72,13 +80,15 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
   const color = dayColor(journey.items, date);
   const near = searchCenter(journey.items, date);
   const summary = daySummary(journey, date);
-  const drive = driveTotal(legs);
+  // No drive across a flight: SFO to PHX is a plane ride, not 11 hours in the car.
+  const flown = new Set(stops.filter((s, k) => stops[k + 1] && flightBetween(journey.items, date, s, stops[k + 1])).map((s) => s.id));
+  const drive = driveTotal(legs, flown);
   const empty = firm.length === 0 && ideas.length === 0;
 
   const legAfter = (i: Item) => {
     const k = stops.indexOf(i);
     const next = k >= 0 ? stops[k + 1] : undefined;
-    return next ? <LegRow key={`leg-${i.id}`} leg={legs.get(i.id)} directions={directionsUrl(point(i), point(next))} /> : null;
+    return next && !flown.has(i.id) ? <LegRow key={`leg-${i.id}`} leg={legs.get(i.id)} directions={directionsUrl(point(i), point(next))} /> : null;
   };
 
   // A note sits inside a drive when there's a stop before it (or the morning's stay starts the route) and one after it.
@@ -123,7 +133,12 @@ export function DaySection({ journey, date, active, selectedId, onFocusDay, onOp
             </Fragment>
           ))}
           {firm.map((i, k) =>
-            i.kind === "note" ? (
+            i.kind === "flight" && groups.has(i.id) ? (
+              <Fragment key={i.id}>
+                <FlightSegment group={groups.get(i.id)!} v={flightView(groups.get(i.id)!, flights.byId[i.id])} pins={pins} selectedId={selectedId} onOpen={onOpen} onChanged={onReplace} onRemoved={() => onDrop(i.id)} />
+                {groups.get(i.id)!.arrival?.startDate === date && legAfter(groups.get(i.id)!.arrival!)}
+              </Fragment>
+            ) : i.kind === "note" ? (
               <NoteCard key={i.id} item={i} inLeg={betweenStops(k)} onOpen={() => onOpen(i.id)} onRemoved={() => onDrop(i.id)} />
             ) : (
               <Fragment key={i.id}>

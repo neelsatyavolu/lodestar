@@ -17,6 +17,8 @@ const schema = z.object({
   RESEND_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
   // Google Places (New) + Routes. Without it Trips uses OpenStreetMap search and shows no ratings or drive times.
   GOOGLE_PLACES_KEY: z.string().min(20).optional(),
+  // AeroDataBox through RapidAPI: live flight status, gates and delays. Without it flights show their booked times only.
+  AERODATABOX_KEY: z.string().min(20).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -35,6 +37,7 @@ export function env(): Env {
     INBOUND_DOMAIN: process.env.INBOUND_DOMAIN || undefined,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET || undefined,
     GOOGLE_PLACES_KEY: process.env.GOOGLE_PLACES_KEY || undefined,
+    AERODATABOX_KEY: process.env.AERODATABOX_KEY || undefined,
   });
   if (!parsed.success) throw new Error(`Server misconfigured: ${parsed.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
   cached = parsed.data;

@@ -17,12 +17,15 @@ import { ItineraryTab } from "./itinerary-tab";
 import { OverviewTab, type AddPreset } from "./overview-tab";
 import { PlacePanel } from "./place-panel";
 import type { DraftRequest } from "./quick-start";
+import { FlightsTab } from "./flights-tab";
+import { HotelsTab } from "./hotels-tab";
 import { ShareDialog } from "./share-dialog";
 import { daysOf, errorText, fullTrip, today, type PlanTrip } from "./shared";
 import { readLocation, TabBar, TABS, writeLocation, type Tab } from "./tabs";
 import { ToBookTab } from "./to-book-tab";
 import { TripCover } from "./trip-cover";
 import { TripMap } from "./trip-map";
+import { useFlights } from "./use-flights";
 import { askConfirm } from "../confirm";
 
 // One trip: a header with the destination's photo, tabs for each part of the
@@ -70,6 +73,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   const setTrip = useCallback((t: TripDetail) => onChanged(() => t), [onChanged]);
   const gen = useGenerate(tripId, provider, onConnectAi, setTrip);
   const draft = useDraftRun(gen, autoDraft, loaded, onAutoDraftStarted);
+  const flights = useFlights(tripId, trip.items);
 
   useEffect(() => {
     const mq = window.matchMedia(WIDE);
@@ -201,7 +205,12 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
 
   const open_ = toBook(trip.items).length;
   const done = trip.tasks.filter((t) => t.done).length;
-  const counts: Partial<Record<Tab, string>> = { ...(open_ ? { book: String(open_) } : {}), ...(trip.tasks.length ? { checklist: `${done}/${trip.tasks.length}` } : {}) };
+  const flightCount = trip.items.filter((i) => i.kind === "flight" && i.status !== "suggested" && i.status !== "cancelled").length;
+  const stayCount = trip.items.filter((i) => i.kind === "stay" && i.status !== "suggested" && i.status !== "cancelled").length;
+  const counts: Partial<Record<Tab, string>> = {
+    ...(flightCount ? { flights: String(flightCount) } : {}),
+    ...(stayCount ? { hotels: String(stayCount) } : {}),
+    ...(open_ ? { book: String(open_) } : {}), ...(trip.tasks.length ? { checklist: `${done}/${trip.tasks.length}` } : {}) };
 
   return (
     // Wide screens break out of the page column: plan left, map right.
@@ -233,6 +242,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
                 onSuggest={suggest}
                 onFocusDay={setActiveDay}
                 onOpen={open}
+                flights={flights}
                 onReplace={replace}
                 onDrop={drop}
                 onAdded={reloadOrError}
@@ -241,6 +251,8 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
                 onMap={() => setMobileMap(true)}
               />
             )}
+            {tab === "flights" && <FlightsTab trip={trip} flights={flights} onOpenItem={open} onAdd={() => openDialog("add", { kind: "flight" })} />}
+            {tab === "hotels" && <HotelsTab trip={trip} onOpenItem={open} onAdd={() => openDialog("add", { kind: "stay" })} />}
             {tab === "book" && <ToBookTab trip={trip} gen={gen} onOpenItem={open} onReplace={replace} />}
             {tab === "bookings" && <BookingsTab trip={trip} onOpenItem={open} onAdd={() => openDialog("add")} />}
             {tab === "budget" && <BudgetTab trip={trip} gen={gen} onOpenItem={open} onCosts={(u) => change((t) => ({ ...t, costs: u(t.costs) }))} />}

@@ -36,6 +36,7 @@ const TripId = z.uuid().describe("The trip's id, from list_trips or create_trip.
 
 const PLANNING_GUIDE = `How a good Lodestar plan is built:
 - Itinerary: add_items with one item per thing on its day, with startTime when it has one. Kinds: flight, stay (startDate = check-in, endDate = check-out), dining, activity, transport, note.
+- Flights: one item of kind "flight" per flight, with details.flightNumber ("WN 4623"), details.airline, details.from and details.to as IATA codes, startTime the departure and endTime the arrival (each in its own airport's local time), and endDate when it lands another day. Lodestar draws the departure and arrival itself and shows live status, gate and delays on travel day, so don't add separate stops for the airport you leave from, the flight or landing.
 - Day notes: anything that isn't a place, like when to leave, a drive, parking, free time or a tip, is kind "note" with a startTime. It sits between the stops by that time, shows its time, and isn't a stop. Don't make an activity for it: a drive card has no place to pin and gets in the way of the drive times. Lodestar works out and shows the drive between consecutive stops on its own.
 - Booked vs planned: status "booked" only for things already reserved (put the code in confirmation and the cost in details.price). Everything else is "planned".
 - To book: a planned item that needs a reservation gets details.reserve = true and details.bookBy (the last sensible day to book), plus details.url or details.phone so the traveller can book it.

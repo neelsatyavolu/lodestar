@@ -4,6 +4,7 @@ import { Button, Spinner } from "../ui";
 import { AiButton, AiStatus, EmptyState, TabHead, type Generator } from "./ai-draft";
 import { DaySection } from "./day-section";
 import { ItemRow } from "./item-row";
+import type { Flights } from "./use-flights";
 
 // Day by day: every stop in order with drive times, numbered like the map.
 
@@ -17,6 +18,7 @@ type Props = {
   onSuggest: (kind: "dining" | "hotels") => void;
   onFocusDay: (d: string) => void;
   onOpen: (id: string) => void;
+  flights: Flights;
   onReplace: (i: Item) => void;
   onDrop: (id: string) => void;
   onAdded: () => void;
@@ -81,7 +83,7 @@ export function ItineraryTab(p: Props) {
           )}
           <ol className="space-y-12">
             {days.map((d) => (
-              <DaySection key={d} journey={trip} date={d} active={d === p.activeDay} selectedId={p.selectedId} onFocusDay={() => p.onFocusDay(d)} onOpen={p.onOpen} onReplace={p.onReplace} onDrop={p.onDrop} onAdded={p.onAdded} />
+              <DaySection key={d} journey={trip} date={d} active={d === p.activeDay} selectedId={p.selectedId} onFocusDay={() => p.onFocusDay(d)} onOpen={p.onOpen} flights={p.flights} onReplace={p.onReplace} onDrop={p.onDrop} onAdded={p.onAdded} />
             ))}
           </ol>
         </>
