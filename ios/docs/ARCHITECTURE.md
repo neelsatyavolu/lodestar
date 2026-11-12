@@ -44,7 +44,8 @@ ios/
       Trips/    TripsRootView.swift           (Trips agent)
       Account/  AccountRootView.swift, SignInSheet.swift,
                 PreferencesSheet.swift, OnboardingView.swift         (Account agent)
-    Resources/                 Assets.xcassets, Fonts/ (Geist TTFs, OFL licence)
+    Resources/                 Assets.xcassets, Fonts/ (Geist, Geist Mono, Newsreader TTFs, OFL licences)
+  scripts/                     release.sh (TestFlight upload), asc-builds.mjs (build status)
   LodestarTests/               Swift Testing suites
   docs/                        This file and the API contracts
 ```
@@ -107,8 +108,9 @@ All in `Core/Models/`, immutable `let` structs (request bodies are `var` so you 
 | `Stays` | `StaySearchQuery`, `StayPricesQuery`, `StaySearchResult`, `Hotel`, `StayPrices`, `StayOffer`, `StayFlexResult`, `FlexSaving` |
 | `AIConnection` | `AIStatus` (`defaultProvider`), `AIModel`, `AISignInStart`, `AISignInComplete`, `AIConnected`, `AIDisconnected` |
 | `PlanCanvas` | `CanvasRequest`, `CanvasContext`, `CanvasTurn`, `CanvasDefaults`, `SearchFilters`, `CanvasEvent`, `SearchProgress`, `CanvasResult`, `CanvasOption`, `TripPlan` (the API's `Plan`), `PlannedSearch`, `Canvas`, `Pick` |
-| `Account`, `Preferences` | `AccountState`, `AccountProfile`, `AccountSession`, request bodies, `ResetRequest.token(fromLink:)`; `Preferences` (lenient decode, always encodes all 22 keys), `PriceLevel`, `Pace`, `TasteChoices` |
-| `Journey`, `JourneyEnums` | `Journey`, `JourneyWithItems`, `TripDetail` (`with(items:)`), `TripItem`, `ItemDetails`, `TripTask`, `TripNote`, `TripCost`, `MailSummary`; `ItemKind`, `ItemStatus`, `RecordSource`, `TripType`, `CostCategory`, `Meal`, `PlanPart`, `MailState`, `PlaceKind`, `GrantKind` |
+| `Account`, `Preferences` | `AccountState`, `AccountProfile`, `AccountSession`, request bodies, `ResetRequest.token(fromLink:)`; `Preferences` (lenient decode, always encodes all 23 keys, `displayName(_:email:)`), `PriceLevel`, `Pace`, `TasteChoices` |
+| `FlightStatus` | `FlightsResponse` (`GET /api/journeys/:id/flights`), `FlightStatus`, `FlightPhase`, `FlightEndpoint`, `FlightMoment` |
+| `Journey`, `JourneyEnums` | `Journey` (`access`, `canEdit`, `isOwned` for trips shared by email), `JourneyAccess`, `JourneyWithItems`, `TripDetail` (`with(items:)`), `TripItem`, `ItemDetails`, `TripTask`, `TripNote`, `TripCost`, `MailSummary`; `ItemKind`, `ItemStatus`, `RecordSource`, `TripType`, `CostCategory`, `Meal`, `PlanPart`, `MailState`, `PlaceKind`, `GrantKind` |
 | `JourneyRequests`, `JourneyResponses` | `NewJourney`, `JourneyPatch`, `NewItem`, `ItemPatch`, `ItemLocation`, `ItemFacts`, task/note/cost bodies and patches, `GenerateRequest`, `SuggestRequest`, `WanderlogImportRequest`; `JourneyList`, `CreatedID`, `JourneyResponse`, `GenerateResponse`, `ShareResponse`, `LegsResponse`, `LocateResponse`, `ReadMailResponse`, Wanderlog types |
 | `SavedTrips` | `SavedTrip` (the API's `TripSummary`), `FareBooking`, `Snapshot`, `SaveTripRequest`, `SavedTripPatch`, `Lossy<T>` |
 | `Places`, `Connectors` | `PlaceSearchResult`, `PlaceSuggestion`, `PlaceDetails`, `LatLng`; `ConnectorsState`, `FlintLink`, `FlintPairingCode`, `AgentsState`, `AgentGrant`, `AgentTokenCreated` |
@@ -151,11 +153,14 @@ answers that belong to an older request.
 The Trips tab exists only while signed in. Signing out resets preferences to defaults and leaves
 the Trips tab.
 
-## Design system (Blackletter)
+## Design system (Ink & Instrument, v3)
 
-Black canvas in dark mode, light by system setting (or `ThemePreference` stored under
-`@AppStorage(ThemePreference.storageKey)`; `LodestarApp` applies it). Blue is the only color. No
-shadows, gradients, blur or glass; depth is luminance steps plus 1 pt hairlines.
+The web's `app/globals.css` tokens: warm off-black canvas (#0E0E0D) in dark mode, paper (#F7F5EF) in
+light, by system setting (or `ThemePreference` stored under `@AppStorage(ThemePreference.storageKey)`;
+`LodestarApp` applies it). Blue is the only color (the flight card's airline livery is the one
+exception, as on the web). No shadows, gradients, blur or glass; depth is luminance steps plus 1 pt
+hairlines. Newsreader for what people read (heroes, trip and hotel names, empty states), Geist for
+UI, Geist Mono for numbers, codes, times and fact labels. Radii 4 pt (controls) and 6 pt (cards).
 
 - **Colors** (`Color.<token>`): `canvas card elevated deep ink bodyText charcoal mute ash stone
   hairline hairlineStrong hairlineHover pressedFill primaryFill primaryOn primaryPressed accent
@@ -164,11 +169,11 @@ shadows, gradients, blur or glass; depth is luminance steps plus 1 pt hairlines.
   `ok/warn/danger` only as status dots (and `danger` for error text).
 - **Type**: `.textStyle(.displayXL | .display | .headingMD | .headingSM | .bodyLG | .bodyMD |
   .bodySM | .button | .chip | .label | .caption | .hint | .code ...)` sets font, tracking and line
-  spacing with Dynamic Type. Serif styles (`displayXXL/XL/display`) are for heroes only. Codes,
+  spacing with Dynamic Type. Serif styles (`displayXXL/XL/display`, `headline`) are Newsreader: heroes and names only. Codes,
   IATA, PNRs and `$` levels use `.code`. Add `.monospacedDigit()` to numbers that line up.
-- **Metrics**: `Spacing.xs…band`, `Spacing.gutter` (16), `Radius.md` (8, controls) / `.lg`
-  (12, cards) / `.xl` (16, sheets), `Sizes.button` (44), `.input` (48), `.chip` (40),
-  `.hairline`. Motion: `Motion.fast`, `Motion.enter`, `.rise(delay:)` (honours Reduce Motion).
+- **Metrics**: `Spacing.xs…band`, `Spacing.gutter` (16), `Spacing.screenTop` (24, above every tab's hero), `Radius.md` (4,
+  controls) / `.lg` (6, cards) / `.xl` (6), `Sizes.button` (44), `.buttonSmall` (36 drawn, 44 tap),
+  `.minTap` (44), `.input` (48), `.chip` (40 drawn, 44 tap), `.hairline`. Motion: `Motion.fast`, `Motion.enter`, `.rise(delay:)` (honours Reduce Motion).
 - **Components** (`Design/Components/`):
   - `Button(...).buttonStyle(.lodestar(.primary | .accent | .ghost | .outline | .quiet | .link | .destructive, small:, fullWidth:, isLoading:))`; `IconButton`. One primary per screen.
   - `Card { }`, `.card(padding:featured:)`, `Hairline`, `SectionHeader`, `HeroTitle(line1:line2:paragraph:)`.
