@@ -4,13 +4,14 @@ import { addDays, day } from "@/lib/format";
 import { bookings, nights, toBook } from "@/lib/journeys/plan";
 import type { SharedTrip } from "@/lib/journeys/share";
 import type { Item, Kind } from "@/lib/journeys/types";
+import { time12 } from "../journeys/shared";
 import { ShareMap } from "./share-map";
 
 // The read-only page a share link opens: what family or friends need to follow
 // the trip. Server-rendered from data already stripped of anything private.
 
 const ICON: Record<Kind, typeof Plane> = { flight: Plane, stay: BedDouble, dining: UtensilsCrossed, activity: Ticket, transport: TrainFront, note: StickyNote };
-const KIND_HEADING: Record<Kind, string> = { flight: "Flights", stay: "Stays", transport: "Getting around", activity: "Activities", dining: "Dining", note: "Notes" };
+const KIND_HEADING: Record<Kind, string> = { flight: "Flights", stay: "Stays", transport: "Getting around", activity: "Activities", dining: "Restaurants", note: "Notes" };
 
 const short = (iso: string) => day(iso).replace(/^\w+, /, "");
 const span = (a: string | null, b: string | null) => (!a ? "Dates to be set" : !b || a === b ? `${short(a)}, ${a.slice(0, 4)}` : `${short(a)} – ${short(b)}, ${b.slice(0, 4)}`);
@@ -35,10 +36,10 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 function Stop({ item }: { item: Item }) {
   const Icon = ICON[item.kind];
-  const sub = [item.kind === "flight" && item.endTime ? `arrives ${item.endTime}` : null, item.kind === "stay" && item.endDate ? `check-out ${short(item.endDate)}` : null, item.details.address ?? item.place].filter(Boolean).join(" · ");
+  const sub = [item.kind === "flight" && item.endTime ? `arrives ${time12(item.endTime)}` : null, item.kind === "stay" && item.endDate ? `check-out ${short(item.endDate)}` : null, item.details.address ?? item.place].filter(Boolean).join(" · ");
   return (
     <li className="flex gap-3 py-3">
-      <span className="w-12 shrink-0 pt-0.5 font-mono text-[12px] text-ash">{item.startTime ?? ""}</span>
+      <span className="tnum w-16 shrink-0 whitespace-nowrap pt-0.5 font-mono text-[12px] text-ash">{item.startTime ? time12(item.startTime) : ""}</span>
       <Icon size={16} className="mt-0.5 shrink-0 text-charcoal" aria-hidden />
       <div className="min-w-0">
         <p className="text-[15px] text-ink">
@@ -78,7 +79,7 @@ export function SharedTripView({ trip, today, embedded = false, label, top }: { 
 
       <nav aria-label="Sections" className={`sticky ${embedded ? "top-16" : "top-0"} z-10 -mx-4 mt-8 flex gap-1 overflow-x-auto border-b border-hairline bg-canvas px-4 py-2 sm:-mx-6 sm:px-6`}>
         {nav.map(([id, label]) => (
-          <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full px-3 py-2 text-[13px] text-mute hover:bg-hover hover:text-ink">
+          <a key={id} href={`#${id}`} className="inline-flex h-9 items-center whitespace-nowrap rounded-full px-3 text-[13px] text-mute hover:bg-hover hover:text-ink pointer-coarse:h-11">
             {label}
           </a>
         ))}
@@ -148,7 +149,7 @@ export function SharedTripView({ trip, today, embedded = false, label, top }: { 
                     </span>
                   </div>
                   <p className="mt-1 flex flex-wrap gap-x-3 text-[13px] text-mute">
-                    <span>{[short(i.startDate), i.startTime, i.place].filter(Boolean).join(" · ")}</span>
+                    <span>{[short(i.startDate), i.startTime && time12(i.startTime), i.place].filter(Boolean).join(" · ")}</span>
                     {i.details.phone && (
                       <a href={`tel:${i.details.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1 text-accent hover:underline">
                         <Phone size={12} aria-hidden /> {i.details.phone}
@@ -171,7 +172,7 @@ export function SharedTripView({ trip, today, embedded = false, label, top }: { 
                     {g.items.map((i) => (
                       <li key={i.id} className="flex items-baseline justify-between gap-4 border-b border-hairline py-3 last:border-0">
                         <span className={`text-[15px] ${i.status === "cancelled" ? "text-ash line-through" : "text-ink"}`}>{i.title}</span>
-                        <span className="shrink-0 text-[13px] text-mute">{[short(i.startDate), i.startTime].filter(Boolean).join(" · ")}</span>
+                        <span className="shrink-0 text-[13px] text-mute">{[short(i.startDate), i.startTime && time12(i.startTime)].filter(Boolean).join(" · ")}</span>
                       </li>
                     ))}
                   </ul>
@@ -191,7 +192,7 @@ export function SharedTripView({ trip, today, embedded = false, label, top }: { 
                   <ul className="mt-2 space-y-2">
                     {tasks.map((t) => (
                       <li key={t.id} className="flex items-start gap-3 text-[14px]">
-                        <span className={`mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded border ${t.done ? "border-accent bg-accent text-accent-on" : "border-hairline-strong"}`} aria-label={t.done ? "Done" : "Not done"}>
+                        <span className={`mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded border ${t.done ? "border-accent bg-accent text-accent-on" : "border-hairline-strong"}`} role="img" aria-label={t.done ? "Done" : "Not done"}>
                           {t.done && <Check size={11} strokeWidth={3} />}
                         </span>
                         <span className={t.done ? "text-ash line-through" : "text-body"}>

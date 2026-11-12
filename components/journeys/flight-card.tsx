@@ -139,7 +139,7 @@ export function FlightCard({ item, v, travelers, checkedAt, liveOn, onOpen }: Pr
 
       <div className="mt-4 grid grid-cols-2 border-t border-hairline sm:grid-cols-4">
         <Fact label="Confirmation">{item.confirmation ? <CopyCode code={item.confirmation} /> : "—"}</Fact>
-        <Fact label="Travelers">{item.details.guests ?? travelers ?? "—"}</Fact>
+        <Fact label="Travellers">{item.details.guests ?? travelers ?? "—"}</Fact>
         <Fact label={`Be at ${v.from.code ?? "the airport"} by`}>{v.from.beThere ? clock(v.from.beThere) : "—"}</Fact>
         <Fact label="Baggage">{v.to.baggage ? `Carousel ${v.to.baggage}` : "—"}</Fact>
       </div>

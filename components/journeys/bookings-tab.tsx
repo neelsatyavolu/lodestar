@@ -13,7 +13,7 @@ import { amount, shortDate, time12, timeRange } from "./shared";
 const GROUP: Record<Kind, { label: string; icon: typeof Plane }> = {
   flight: { label: "Flights", icon: Plane },
   stay: { label: "Stays", icon: BedDouble },
-  transport: { label: "Cars and transfers", icon: TrainFront },
+  transport: { label: "Getting around", icon: TrainFront },
   activity: { label: "Activities", icon: Ticket },
   dining: { label: "Restaurants", icon: UtensilsCrossed },
   note: { label: "Other", icon: Ticket },
