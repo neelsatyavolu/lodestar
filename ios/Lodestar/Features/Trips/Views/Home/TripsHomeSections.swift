@@ -123,6 +123,7 @@ struct TripsJourneyCard: View {
             }
             Text([DateText.tripRange(j.startDate, j.endDate), TripsText.travellers(j.travelers)].compactMap { $0 }.joined(separator: " · "))
                 .textStyle(.bodySM).foregroundStyle(Color.mute)
+            if let access = j.access { Text(access.line).textStyle(.caption).foregroundStyle(Color.mute) }
             Text(TripsText.tally(journey.items)).textStyle(.caption).foregroundStyle(Color.bodyText)
             toBookLine(today: today)
             nextLine(today: today)

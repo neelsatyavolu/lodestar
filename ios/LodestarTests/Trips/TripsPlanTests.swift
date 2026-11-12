@@ -107,16 +107,33 @@ struct TripsPlanTests {
         #expect(TripsPlan.dayColorIndex(items) == [date("2026-11-21"): 0, date("2026-11-22"): 1])
     }
 
-    @Test func dayStopsSkipFlightsNotesIdeasAndUnpinned() {
+    @Test func dayStopsKeepFlightsAndSkipNotesIdeasAndUnpinned() {
         let pin = M.details { $0.lat = 1; $0.lng = 1 }
         let items = [
-            M.item("stop", day: "2026-11-21", details: pin),
-            M.item("flight", kind: .flight, day: "2026-11-21", details: pin),
+            M.item("stop", day: "2026-11-21", time: "09:00", details: pin),
+            M.item("flight", kind: .flight, day: "2026-11-21", time: "10:20", details: pin),
             M.item("idea", status: .suggested, day: "2026-11-21", details: pin),
             M.item("note", kind: .note, day: "2026-11-21", details: pin),
             M.item("loose", day: "2026-11-21"),
         ]
-        #expect(TripsPlan.dayStops(items, date: date("2026-11-21")).map(\.id) == ["stop"])
+        #expect(TripsPlan.dayStops(items, date: date("2026-11-21")).map(\.id) == ["stop", "flight"])
+    }
+
+    @Test func dayStopsRunFromTheMorningHotelToTheNightHotel() {
+        let pin = M.details { $0.lat = 1; $0.lng = 1 }
+        let items = [
+            M.item("night", kind: .stay, day: "2026-11-21", end: "2026-11-23", details: pin),
+            M.item("morning", kind: .stay, day: "2026-11-19", end: "2026-11-21", details: pin),
+            M.item("idea-hotel", kind: .stay, status: .suggested, day: "2026-11-20", end: "2026-11-22", details: pin),
+            M.item("stop", day: "2026-11-21", time: "11:00", details: pin),
+        ]
+        #expect(TripsPlan.dayStops(items, date: date("2026-11-21")).map(\.id) == ["morning", "stop", "night"])
+        #expect(TripsPlan.dayStops(items, date: date("2026-11-22")).isEmpty)
+    }
+
+    @Test func notesFollowAStopAtTheSameTime() {
+        let items = [M.item("note", kind: .note, day: "2026-11-21", time: "17:15"), M.item("stop", day: "2026-11-21", time: "17:15")]
+        #expect(TripsPlan.byItinerary(items).map(\.id) == ["stop", "note"])
     }
 
     @Test func placesToVisitAreUntimedOrSuggestedActivitiesAndDining() {

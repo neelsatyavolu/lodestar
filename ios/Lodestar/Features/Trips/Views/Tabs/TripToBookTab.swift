@@ -104,7 +104,7 @@ struct TripBookingsTab: View {
             if groups.isEmpty {
                 EmptyStateView(title: "No bookings yet",
                                message: "Forward confirmation emails to your Lodestar address, connect Flint, or add one by hand. Things you mark booked on To book show up here too.",
-                               actionTitle: "Add booking") { present(.addItem(.flight, day)) }
+                               actionTitle: model.journey.canEdit ? "Add booking" : nil) { present(.addItem(.flight, day)) }
             }
             ForEach(groups) { group in
                 VStack(alignment: .leading, spacing: Spacing.sm) {

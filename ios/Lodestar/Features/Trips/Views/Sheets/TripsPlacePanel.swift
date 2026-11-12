@@ -28,7 +28,11 @@ struct TripsPlacePanel: View {
                     VStack(alignment: .leading, spacing: Spacing.lg) {
                         TripsPlaceGooglePart(model: model, item: item, present: present)
                         Hairline()
-                        TripsPlaceTripPart(model: model, item: item, present: present) { dismiss() }
+                        if model.journey.canEdit {
+                            TripsPlaceTripPart(model: model, item: item, present: present) { dismiss() }
+                        } else if let note = item.details.note {
+                            Text(note).textStyle(.bodySM).foregroundStyle(Color.bodyText)
+                        }
                     }
                     .padding(Sizes.sheetPadding)
                     .id(item.id)

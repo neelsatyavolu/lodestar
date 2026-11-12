@@ -80,8 +80,8 @@ struct TripsPlaceTripPart: View {
                 .focused($noteFocused)
                 .textStyle(.bodySM)
                 .padding(Spacing.md)
-                .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
-                .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(noteFocused ? Color.accent : Color.hairlineStrong, lineWidth: Sizes.hairline))
+                .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
+                .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(noteFocused ? Color.accent : Color.hairlineHover, lineWidth: Sizes.hairline))
             if noteFocused {
                 Button("Save note") { noteFocused = false }.buttonStyle(.lodestar(.link))
             }

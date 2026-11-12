@@ -29,6 +29,11 @@ struct TripSheetContent: View {
         case .markBooked(let id):
             TripsMarkItemBookedSheet(model: model, itemId: id)
                 .presentationDetents([.medium])
+        case .editStop(let id):
+            if let item = model.item(id) {
+                TripsStopEditSheet(model: model, item: item)
+                    .presentationDetents([.medium, .large])
+            }
         case .web(let url):
             SafariView(url: url).ignoresSafeArea()
         }
@@ -83,8 +88,8 @@ struct TripsNoteSheet: View {
                     .font(TextStyle.bodySM.font)
                     .scrollContentBackground(.hidden)
                     .padding(Spacing.sm)
-                    .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
-                    .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineStrong, lineWidth: Sizes.hairline))
+                    .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineHover, lineWidth: Sizes.hairline))
                     .frame(minHeight: 200)
                     .accessibilityLabel("Note")
                 if let error { InlineError(message: error) }

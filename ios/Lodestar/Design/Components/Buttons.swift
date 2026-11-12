@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Blackletter buttons. One `.primary` (or `.accent`) per screen; `.ghost` next to it;
+/// Ink & Instrument buttons (4 pt radius, flat disabled states). One `.primary` (or `.accent`) per screen; `.ghost` next to it;
 /// `.quiet` for text links. Usage: `Button("Search") { … }.buttonStyle(.lodestar(.primary))`.
 struct LodestarButtonStyle: ButtonStyle {
     enum Kind: Sendable {
@@ -8,7 +8,7 @@ struct LodestarButtonStyle: ButtonStyle {
         case primary
         /// Blue fill, for the single most important action (sign up, connect).
         case accent
-        /// Elevated fill, strong hairline.
+        /// No fill, strong hairline; pressed fill on touch.
         case ghost
         /// Canvas fill, strong hairline.
         case outline
@@ -56,14 +56,22 @@ private struct StyledButton: View {
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: Radius.md))
-        .opacity(isEnabled ? 1 : 0.4)
+        // Small and text buttons draw shorter than 44 pt; their tap area doesn't.
+        .padding(.vertical, tapInset)
+        .contentShape(Rectangle())
         .animation(Motion.fast, value: pressed)
     }
 
     private var hasChrome: Bool { kind != .quiet && kind != .link }
 
+    private var tapInset: CGFloat {
+        guard hasChrome else { return 0 }
+        return max(0, (Sizes.minTap - (small ? Sizes.buttonSmall : Sizes.button)) / 2)
+    }
+
     private func foreground(pressed: Bool) -> Color {
-        switch kind {
+        if !isEnabled { return .stone }
+        return switch kind {
         case .primary: .primaryOn
         case .accent: .accentOn
         case .ghost, .outline: .ink
@@ -75,9 +83,9 @@ private struct StyledButton: View {
 
     private func background(pressed: Bool) -> Color {
         switch kind {
-        case .primary: pressed ? .primaryPressed : .primaryFill
-        case .accent: pressed ? .accentPressed : .accent
-        case .ghost, .destructive: .elevated
+        case .primary: isEnabled ? (pressed ? .primaryPressed : .primaryFill) : .pressedFill
+        case .accent: isEnabled ? (pressed ? .accentPressed : .accent) : .pressedFill
+        case .ghost, .destructive: pressed ? .pressedFill : .clear
         case .outline: pressed ? .pressedFill : .canvas
         case .quiet, .link: .clear
         }

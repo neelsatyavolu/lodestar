@@ -94,6 +94,15 @@ final class AppState {
     /// Loads the account and AI status. Call once at launch.
     func bootstrap() async {
         await refreshAccount()
+        #if DEBUG
+        // `-LodestarDebugEmail a@b.c -LodestarDebugPassword …` signs a dev-server test account in, for
+        // simulator screenshots. Debug builds only; never point it at production.
+        let defaults = UserDefaults.standard
+        if !isSignedIn, let email = defaults.string(forKey: "LodestarDebugEmail"), let password = defaults.string(forKey: "LodestarDebugPassword") {
+            try? await signIn(email: email, password: password)
+        }
+        if let tab = defaults.string(forKey: "LodestarTab").flatMap(AppTab.init(rawValue:)) { selectedTab = tab }
+        #endif
         await refreshAIStatus()
     }
 

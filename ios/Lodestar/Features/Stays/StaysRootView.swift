@@ -43,7 +43,7 @@ private struct StaysScreen: View {
             VStack(alignment: .leading, spacing: Spacing.xl) {
                 if model.results == nil {
                     HeroTitle(line1: StaysCopy.heroLine1, line2: StaysCopy.heroLine2, paragraph: StaysCopy.heroBody)
-                        .padding(.top, Spacing.xxxl)
+                        .padding(.top, Spacing.screenTop - Spacing.lg)
                         .rise()
                 }
                 StaysFormView(model: model)

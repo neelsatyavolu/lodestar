@@ -32,7 +32,8 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text(title).textStyle(.bodyMD).foregroundStyle(Color.ink)
+            Text(title).font(.geist(.serif, size: 20, relativeTo: .title3)).foregroundStyle(Color.bodyText)
+                .accessibilityAddTraits(.isHeader)
             if let message {
                 Text(message).textStyle(.bodySM).foregroundStyle(Color.mute)
             }

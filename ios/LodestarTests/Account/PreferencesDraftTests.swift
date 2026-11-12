@@ -124,12 +124,12 @@ struct PreferencesDraftTests {
         #expect(draft.error == nil)
     }
 
-    @Test func savedBodyAlwaysHasAll22Keys() throws {
+    @Test func savedBodyAlwaysHasAll23Keys() throws {
         let draft = PreferencesDraft(.default)
         draft.toggle(PriceLevel.one)
         draft.toggle(PriceLevel.one)
         let object = try jsonObject(draft.value)
-        #expect(object.count == 22)
+        #expect(object.count == 23)
         #expect(object["diningBudget"] is NSNull)
         #expect(object["hotelBudget"] is NSNull)
         #expect(object["stops"] as? String == "ANY")

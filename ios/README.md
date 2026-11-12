@@ -33,7 +33,26 @@ xcrun simctl install booted /tmp/lodestar-dd/Build/Products/Debug-iphonesimulato
 xcrun simctl launch booted co.xanom.lodestar
 ```
 
-Debug builds accept `-LodestarTab search|stays|plan|trips|account`, which opens the app on that tab. The screenshots in `docs/screenshots/` were taken with it.
+Debug builds accept launch arguments for simulator screenshots (the ones in `docs/screenshots/` were taken with them):
+
+| Argument | Does |
+| --- | --- |
+| `-LodestarTab search\|stays\|plan\|trips\|account` | Opens on that tab |
+| `-LodestarDebugEmail a@b.example -LodestarDebugPassword …` | Signs a dev-server test account in at launch |
+| `-LodestarTrip <id> -LodestarTripTab flights` | Opens that trip on a tab (`overview`, `itinerary`, `flights`, `hotels`, `book`, `bookings`, `budget`, `checklist`) |
+| `-LodestarScrollTo tabs\|<item id>\|<YYYY-MM-DD>` | Scrolls the trip page to the tab bar, an item's card or a day |
+
+Use the sign-in arguments only against a local dev server with a throwaway account.
+
+## Release to TestFlight
+
+```bash
+ios/scripts/release.sh              # archive, sign and upload (build number = UTC yyyymmddHHMM)
+ios/scripts/release.sh --no-upload  # archive and export ios/build/Lodestar.ipa only
+node ios/scripts/asc-builds.mjs     # the latest builds and their processing state
+```
+
+The script needs the release Xcode (not a beta) and XcodeGen, and signs automatically with the App Store Connect API key in `~/.appstoreconnect/private_keys/`. When the 1Password CLI is already signed in it imports the Apple Distribution certificate into a temporary keychain (deleted on exit); otherwise, or with `LODESTAR_CLOUD_SIGNING=1`, it uses App Store Connect cloud-managed distribution signing. It never prompts. The marketing version comes from `MARKETING_VERSION` in `project.yml`. New builds go to the internal TestFlight group automatically.
 
 ## Test
 

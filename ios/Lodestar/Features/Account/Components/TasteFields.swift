@@ -107,9 +107,9 @@ struct DoingFields: View {
                 .focused($budgetFocused)
                 .padding(.horizontal, 14)
                 .frame(width: 160, height: Sizes.input)
-                .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
+                .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
                 .overlay(RoundedRectangle(cornerRadius: Radius.md)
-                    .strokeBorder(budgetFocused ? Color.accent : Color.hairlineStrong, lineWidth: Sizes.hairline))
+                    .strokeBorder(budgetFocused ? Color.accent : Color.hairlineHover, lineWidth: Sizes.hairline))
                 .onChange(of: budgetFocused) { _, isFocused in if !isFocused { draft.commitHotelBudget() } }
         }
     }

@@ -9,7 +9,7 @@ struct TripItineraryTab: View {
         let days = model.days
         VStack(alignment: .leading, spacing: Spacing.lg) {
             SectionHeader(title: "Itinerary", detail: days.isEmpty ? nil : "Tap a stop for details. Numbers match the map.")
-            actions(hasDays: !days.isEmpty)
+            if model.journey.canEdit { actions(hasDays: !days.isEmpty) }
             if let kind = model.drafter.suggesting {
                 LoadingStateView(message: kind == .dining ? "Planning meals around your days…" : "Searching live hotel prices…")
             }
@@ -25,6 +25,7 @@ struct TripItineraryTab: View {
                 }
                 ForEach(days, id: \.self) { day in
                     TripsDaySection(model: model, day: day, index: days.firstIndex(of: day) ?? 0, present: present)
+                        .id(day.string)
                 }
                 if model.trip.items.contains(where: { $0.kind == .dining && $0.status == .suggested }) {
                     Text("Meal ideas come from the AI's knowledge, not live listings. Check hours and book ahead.")

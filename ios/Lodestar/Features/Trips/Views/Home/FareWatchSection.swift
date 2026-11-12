@@ -111,8 +111,8 @@ struct FareWatchCard: View {
                         .textStyle(.bodySM)
                         .frame(width: 96, height: 36)
                         .padding(.horizontal, Spacing.sm)
-                        .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
-                        .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineStrong, lineWidth: Sizes.hairline))
+                        .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineHover, lineWidth: Sizes.hairline))
                         .accessibilityLabel("Target price in dollars")
                     if trip.targetHit { Text("sent").textStyle(.hint).foregroundStyle(Color.ash) }
                     if targetFocused { Button("Save") { targetFocused = false }.buttonStyle(.lodestar(.link)) }

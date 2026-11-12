@@ -13,8 +13,12 @@ enum TripsPlan {
         item.startDate.string + (item.startTime ?? (item.kind == .stay ? "99:99" : "98:00"))
     }
 
+    /// At the same time a note follows the stop, so "leave at 5:15" can share its time and still sit after it.
     static func byItinerary(_ items: [TripItem]) -> [TripItem] {
-        stableSorted(items) { itineraryKey($0) < itineraryKey($1) }
+        stableSorted(items) { a, b in
+            let ka = itineraryKey(a), kb = itineraryKey(b)
+            return ka != kb ? ka < kb : (a.kind != .note && b.kind == .note)
+        }
     }
 
     static func byWhen(_ items: [TripItem]) -> [TripItem] {
@@ -102,11 +106,17 @@ enum TripsPlan {
         return byItinerary(pinned.filter { $0.kind == .flight }).first.flatMap { center([$0]) }
     }
 
-    /// A day's stops in order, for drive times: pinned, not cancelled, not ideas, not flights or notes.
+    /// A day's route, for drive times (`dayStops` in `locate.ts`): the hotel you woke up in, the
+    /// pinned stops in order (a flight stands at the airport it lands at), and the hotel you sleep in.
     static func dayStops(_ items: [TripItem], date: LocalDate) -> [TripItem] {
-        byItinerary(items.filter {
-            $0.startDate == date && $0.isLive && $0.kind != .flight && $0.kind != .note && $0.details.isPinned
+        let stops = byItinerary(items.filter {
+            $0.startDate == date && $0.isLive && $0.kind != .stay && $0.kind != .note && $0.details.isPinned
         })
+        guard !stops.isEmpty else { return [] }
+        let firmStay: (TripItem) -> Bool = { $0.kind == .stay && ($0.status == .booked || $0.status == .planned) && $0.details.isPinned }
+        let morning = items.first { firmStay($0) && $0.startDate < date && ($0.endDate ?? $0.startDate) >= date }
+        let night = items.first { firmStay($0) && $0.startDate <= date && ($0.endDate ?? $0.startDate) > date }
+        return [morning].compactMap { $0 } + stops + [night].compactMap { $0 }
     }
 
     /// Day colour index per distinct item start day (sorted, cycling through `Color.dayColors`).

@@ -10,6 +10,7 @@ enum TripsTripSheet: Identifiable, Hashable {
     case map
     case note(String?)
     case markBooked(String)
+    case editStop(String)
     case web(URL)
 
     var id: String {
@@ -22,6 +23,7 @@ enum TripsTripSheet: Identifiable, Hashable {
         case .map: "map"
         case .note(let id): "note-\(id ?? "new")"
         case .markBooked(let id): "booked-\(id)"
+        case .editStop(let id): "edit-stop-\(id)"
         case .web(let url): "web-\(url.absoluteString)"
         }
     }
@@ -32,6 +34,7 @@ struct TripDetailScreen: View {
     @State private var model: TripDetailModel
     @State private var sheet: TripsTripSheet?
     @State private var confirmDelete = false
+    @State private var confirmLeave = false
     @Environment(\.dismiss) private var dismiss
     private let route: TripsRoute
 
@@ -43,10 +46,11 @@ struct TripDetailScreen: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
-                TripCoverView(model: model, present: present, delete: { confirmDelete = true })
-                TripTabBar(model: model)
+                TripCoverView(model: model, present: present, delete: { confirmDelete = true }, leave: { confirmLeave = true })
+                TripTabBar(model: model).id("tabs")
                 if let line = model.drafter.runningLine { LoadingStateView(message: line) }
                 if model.drafter.isFullDraft || model.drafter.parts.count == 5 { TripsDraftProgress(runner: model.drafter) { part in Task { await model.draft(part) } } }
                 TripsMessages(error: model.error ?? model.loadError, notice: model.notice)
@@ -55,10 +59,21 @@ struct TripDetailScreen: View {
             .padding(Spacing.gutter)
             .padding(.bottom, Spacing.xxl)
         }
+        #if DEBUG
+        // `-LodestarScrollTo tabs|<item id>|<YYYY-MM-DD>` scrolls the page once loaded, for simulator screenshots.
+        .task(id: model.hasFullTrip) {
+            guard model.hasFullTrip, let target = UserDefaults.standard.string(forKey: "LodestarScrollTo") else { return }
+            try? await Task.sleep(for: .milliseconds(600))
+            proxy.scrollTo(target, anchor: .top)
+        }
+        #endif
+        }
         .canvasBackground()
         .navigationTitle(model.journey.title)
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await model.reload() }
+        // Live flight status for the Flights tab and the itinerary's flight cards alike.
+        .task(id: flightSignature) { await model.pollFlights() }
         .task {
             await model.load()
             if let wishes = route.draftWishes, model.drafter.parts.isEmpty {
@@ -76,7 +91,19 @@ struct TripDetailScreen: View {
         } message: {
             Text("Everything in it goes too: the itinerary, checklist, notes and budget.")
         }
+        .confirmationDialog("Leave \(model.journey.title)?", isPresented: $confirmLeave, titleVisibility: .visible) {
+            Button("Leave trip", role: .destructive) {
+                Task { if await model.leave() { dismiss() } }
+            }
+        } message: {
+            Text("You'll lose access until \(model.journey.access?.owner.isEmpty == false ? model.journey.access!.owner : "the owner") invites you again.")
+        }
         .onChange(of: model.isDeleted) { _, gone in if gone && model.loadError != nil { dismiss() } }
+    }
+
+    private var flightSignature: String {
+        model.trip.items.filter { $0.kind == .flight }
+            .map { "\($0.id):\($0.startDate.string):\($0.details.flightNumber ?? $0.title)" }.joined(separator: "|")
     }
 
     private func present(_ next: TripsTripSheet) {
@@ -84,9 +111,12 @@ struct TripDetailScreen: View {
     }
 
     @ViewBuilder private var tabContent: some View {
-        switch model.tab {
+        // A tab a view-only member can't see (from a deep link or the overview) falls back to Overview.
+        switch model.visibleTabs.contains(model.tab) ? model.tab : .overview {
         case .overview: TripOverviewTab(model: model, present: present)
         case .itinerary: TripItineraryTab(model: model, present: present)
+        case .flights: TripFlightsTab(model: model, present: present)
+        case .hotels: TripHotelsTab(model: model, present: present)
         case .book: TripToBookTab(model: model, present: present)
         case .bookings: TripBookingsTab(model: model, present: present)
         case .budget: TripBudgetTab(model: model)
@@ -102,7 +132,7 @@ struct TripTabBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(TripsTab.allCases) { tab in
+                ForEach(model.visibleTabs) { tab in
                     Chip(title: title(tab), isOn: model.tab == tab) {
                         withAnimation(Motion.fast) { model.tab = tab }
                     }

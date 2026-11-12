@@ -195,9 +195,16 @@ Journey {
   shareToken: string | null      // non-null = share link is on; 32 chars [A-Za-z0-9_-]
   source: Source
   createdAt: int ms
+  access?: { role: "editor" | "viewer", owner: string }   // only on trips someone shared with you
 }
 JourneyWithItems = Journey + { items: [Item] }
 ```
+Trips shared by email (web commit d9c1db4) come back from `GET /api/journeys` and
+`GET /api/journeys/:id` with `access`. Editors change everything except deleting the trip, sharing it
+and moving items between trips. Viewers get the trip with confirmations, prices, the budget and the
+share link stripped, and every change answers `403`. A member leaves with
+`POST /api/journeys/:id/leave` (body `{}`). iOS shows "Shared by <owner> · can edit / view only",
+hides edit, share and delete accordingly, and has no invite UI.
 
 ### 1.5 `Task`, `Note`, `Cost`, `TripDetail`
 ```
@@ -448,9 +455,18 @@ if you turn it on again."
 Drive time between consecutive stops on one day. Auth required; Places limit applies once there are
 2+ stops. Bad date -> `400 "Pick a day."`.
 `data`: `{ legs: [{ from: itemId, to: itemId, leg: Leg | null }] }` — `[]` with fewer than 2 stops;
-at most 12 legs. Stops = that day's items that are pinned (lat/lng), not cancelled, not suggested,
-not flight, not note, in itinerary order (11.4). `leg: null` = no route found.
+at most 12 legs. Stops (`dayStops` in `lib/journeys/locate.ts`) = the booked/planned pinned hotel
+you woke up in, that day's pinned items that are not cancelled, not suggested, not a stay and not a
+note (a flight stands at the airport it lands at), in itinerary order (11.4), then the hotel you sleep
+in. `leg: null` = no route found. No leg is shown into or across a flight (`TripsDayPlan`).
 Call it when a day has 2+ stops and re-call when that set of stops or their pins change.
+
+### 3.11b `GET /api/journeys/:id/flights`
+Live status per flight item (AeroDataBox; flights from yesterday to 30 days out, at most 12).
+`data`: `{ live: boolean, flights: { [itemId]: FlightStatus | null } }` (types: `lib/flights/types.ts`,
+Swift `FlightStatus.swift`). `live: false` = no status key on the server: show booked times. Ask once
+when the trip opens and every 4 minutes while a flight leaves within a day or landed under 12 hours
+ago. Errors are ignored (the cards keep the booked times).
 
 ### 3.12 `POST /api/journeys/:id/locate`
 Pins items that came from email/imports. Auth required; Places limit applies when there is work.

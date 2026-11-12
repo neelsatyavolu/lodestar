@@ -51,9 +51,9 @@ struct CodePickerField: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xs + 2)
         .frame(maxWidth: .infinity, minHeight: Sizes.input, alignment: .leading)
-        .background(Color.deep, in: RoundedRectangle(cornerRadius: Radius.md))
+        .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
         .overlay(RoundedRectangle(cornerRadius: Radius.md)
-            .strokeBorder(focused ? Color.accent : Color.hairlineStrong, lineWidth: Sizes.hairline))
+            .strokeBorder(focused ? Color.accent : Color.hairlineHover, lineWidth: Sizes.hairline))
         .contentShape(Rectangle())
         .onTapGesture { focused = true }
     }

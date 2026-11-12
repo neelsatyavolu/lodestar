@@ -5,6 +5,7 @@ struct TripCoverView: View {
     let model: TripDetailModel
     let present: (TripsTripSheet) -> Void
     let delete: () -> Void
+    var leave: () -> Void = {}
 
     @State private var photo: String?
 
@@ -19,21 +20,32 @@ struct TripCoverView: View {
             Text(j.title).textStyle(.display).foregroundStyle(Color.ink)
                 .accessibilityAddTraits(.isHeader)
             Text(facts(j)).textStyle(.bodySM).foregroundStyle(Color.mute)
+            if let access = j.access {
+                HStack(spacing: Spacing.md) {
+                    Text(access.line).textStyle(.caption).foregroundStyle(Color.mute)
+                    Button("Leave trip", action: leave).buttonStyle(.lodestar(.quiet, small: true))
+                }
+            }
             if let countdown = TripsText.countdown(start: j.startDate, end: j.endDate, today: .today()) {
                 Text(countdown).textStyle(.caption).foregroundStyle(Color.accent)
             }
-            HStack(spacing: Spacing.sm) {
-                Button("Edit") { present(.edit) }.buttonStyle(.lodestar(.ghost, small: true))
-                Button {
-                    present(.share)
-                } label: {
-                    Label(j.shareToken == nil ? "Share" : "Shared", systemImage: "square.and.arrow.up")
+            if j.canEdit {
+                HStack(spacing: Spacing.sm) {
+                    Button("Edit") { present(.edit) }.buttonStyle(.lodestar(.ghost, small: true))
+                    // Sharing and deleting are the owner's alone.
+                    if j.isOwned {
+                        Button {
+                            present(.share)
+                        } label: {
+                            Label(j.shareToken == nil ? "Share" : "Shared", systemImage: "square.and.arrow.up")
+                        }
+                        .buttonStyle(.lodestar(j.shareToken == nil ? .ghost : .accent, small: true))
+                        Spacer()
+                        Button(action: delete) { Label("Delete", systemImage: "trash") }
+                            .buttonStyle(.lodestar(.quiet, small: true))
+                            .accessibilityLabel("Delete \(j.title)")
+                    }
                 }
-                .buttonStyle(.lodestar(j.shareToken == nil ? .ghost : .accent, small: true))
-                Spacer()
-                Button(action: delete) { Label("Delete", systemImage: "trash") }
-                    .buttonStyle(.lodestar(.quiet, small: true))
-                    .accessibilityLabel("Delete \(j.title)")
             }
         }
         .task(id: j.destination) {
