@@ -6,7 +6,7 @@ import { LocateResultsSchema } from "@/lib/places/locate-osm";
 import { osmSearch } from "@/lib/places/osm";
 import type { LatLng } from "@/lib/places/types";
 import { google, placesUser } from "@/lib/server/places";
-import { tripOwner, type TripCtx } from "@/lib/server/trip-owner";
+import { tripAccess, type TripCtx } from "@/lib/server/trip-owner";
 
 export const maxDuration = 60;
 
@@ -20,7 +20,7 @@ const BUDGET_MS = 35_000;
 // times out from our servers, so the page looks the items up itself and sends {results}.
 export function POST(req: Request, ctx: TripCtx) {
   return handle(req, "map pins", async () => {
-    const who = await tripOwner(ctx);
+    const who = await tripAccess(ctx, "edit");
     if (who instanceof Response) return who;
     const db = await getDb();
     const journey = await getJourney(db, who.userId, who.id);

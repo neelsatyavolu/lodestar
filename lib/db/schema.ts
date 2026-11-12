@@ -214,6 +214,20 @@ const STATEMENTS = [
     created_at timestamptz NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS agent_tokens_grant ON agent_tokens (grant_id)`,
+  // People a trip is shared with by email. The invite link's token (stored hashed) is what joins
+  // them: email addresses aren't verified, so a matching address alone never grants access.
+  `CREATE TABLE IF NOT EXISTS journey_members (
+    id uuid PRIMARY KEY,
+    journey_id uuid NOT NULL REFERENCES journeys (id) ON DELETE CASCADE,
+    email text NOT NULL,
+    user_id uuid REFERENCES users (id) ON DELETE CASCADE,
+    can_edit boolean NOT NULL DEFAULT false,
+    token_hash text UNIQUE,
+    invited_at timestamptz NOT NULL,
+    joined_at timestamptz
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS journey_members_email ON journey_members (journey_id, email)`,
+  `CREATE INDEX IF NOT EXISTS journey_members_user ON journey_members (user_id)`,
 ];
 
 export async function migrate(db: Queryable): Promise<void> {

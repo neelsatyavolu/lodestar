@@ -6,7 +6,7 @@ import { flightStatus } from "@/lib/flights/aerodatabox";
 import type { FlightStatus } from "@/lib/flights/types";
 import { flightAirports, flightCode } from "@/lib/journeys/flights";
 import { env } from "@/lib/server/env";
-import { tripOwner, type TripCtx } from "@/lib/server/trip-owner";
+import { tripAccess, type TripCtx } from "@/lib/server/trip-owner";
 
 // GET /api/journeys/:id/flights: live status for each flight in the trip,
 // keyed by item id. Only flights from yesterday to 30 days out are asked
@@ -19,7 +19,7 @@ export function GET(req: Request, ctx: TripCtx) {
   return handle(req, "flight status", async () => {
     const limited = rateLimited(req, "flights", 30);
     if (limited) return limited;
-    const who = await tripOwner(ctx);
+    const who = await tripAccess(ctx, "view");
     if (who instanceof Response) return who;
     const key = env().AERODATABOX_KEY;
     const journey = await getJourney(await getDb(), who.userId, who.id);

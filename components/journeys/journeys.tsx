@@ -220,7 +220,7 @@ export function Journeys({ provider, onConnectAi, pairFlint, onPairShown, watchi
                     className="mt-2 h-9 pointer-coarse:h-11 max-w-56 rounded-md border border-hairline-hover bg-card px-2 text-[13px] text-ink"
                   >
                     <option value="">Move to…</option>
-                    {data.journeys.map((j) => (
+                    {data.journeys.filter((j) => !j.access).map((j) => (
                       <option key={j.id} value={j.id}>
                         {j.title}
                       </option>
@@ -328,6 +328,11 @@ function JourneyCard({ journey, onOpen }: { journey: PlanTrip; onOpen: () => voi
             </span>
           )}
         </p>
+        {journey.access && (
+          <p className="mt-1 text-[12px] text-mute">
+            Shared by {journey.access.owner} · {journey.access.role === "editor" ? "can edit" : "view only"}
+          </p>
+        )}
         <p className="mt-3 text-[13px] text-body">{tally(journey.items)}</p>
         {open.length > 0 && (
           <p className={`mt-1 inline-flex items-center gap-2 text-[12px] ${due?.tone === "danger" ? "text-danger" : due?.tone === "warn" ? "text-warn" : "text-mute"}`}>

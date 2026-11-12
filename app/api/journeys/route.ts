@@ -1,7 +1,9 @@
 import { fail, handle, ok, readJson } from "@/lib/api";
 import { getDb } from "@/lib/db/client";
 import { mailNeedingAttention } from "@/lib/db/inbound";
-import { listJourneys } from "@/lib/db/journeys";
+import { getJourney, listJourneys } from "@/lib/db/journeys";
+import { sharedWith } from "@/lib/db/members";
+import { viewerTrip } from "@/lib/journeys/share";
 import { NewJourneySchema } from "@/lib/journeys/input";
 import { currentUserId, ipKey } from "@/lib/server/auth";
 import { allow } from "@/lib/server/limits";
@@ -13,8 +15,19 @@ export function GET(req: Request) {
     const userId = await currentUserId();
     if (!userId) return fail("Sign in to see your trips.", 401);
     const db = await getDb();
-    const [{ journeys, unfiled }, mail] = await Promise.all([listJourneys(db, userId), mailNeedingAttention(db, userId)]);
-    return ok({ journeys, unfiled, mail });
+    const [{ journeys, unfiled }, mail, shares] = await Promise.all([listJourneys(db, userId), mailNeedingAttention(db, userId), sharedWith(db, userId)]);
+    // Trips others shared with you, marked with your role and whose they are; a viewer's copy has no private details.
+    const shared = (
+      await Promise.all(
+        shares.map(async (s) => {
+          const t = await getJourney(db, s.ownerId, s.journeyId);
+          if (!t) return null;
+          const v = s.role === "viewer" ? viewerTrip(t) : t;
+          return { ...v, tasks: undefined, notes: undefined, costs: undefined, access: { role: s.role, owner: s.owner } };
+        }),
+      )
+    ).filter((t) => t !== null);
+    return ok({ journeys: [...journeys, ...shared], unfiled, mail });
   });
 }
 

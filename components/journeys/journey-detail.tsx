@@ -28,6 +28,8 @@ import { TripMap } from "./trip-map";
 import { useFlights } from "./use-flights";
 import { SplitHandle, useMapWidth } from "./split-handle";
 import { askConfirm } from "../confirm";
+import { SharedTripView } from "../share/shared-trip";
+import { publicTrip } from "@/lib/journeys/share";
 
 // One trip: a header with the destination's photo, tabs for each part of the
 // plan, and on wide screens a map on the right that stays in view. Opening a
@@ -122,7 +124,8 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   // the server asks the page to do the OpenStreetMap searches itself and save what it found.
   useEffect(() => {
     // Asked as Google would: the server knows which search it has and skips what that one can't find.
-    if (located.current || !loaded || !lookupsFor(journey, Date.now(), "google").length) return;
+    // Saving pins is a change: someone with view-only access leaves it to the owner.
+    if (located.current || !loaded || journey.access?.role === "viewer" || !lookupsFor(journey, Date.now(), "google").length) return;
     located.current = true;
     (async () => {
       type Located = { journey: TripDetail; settled: number; remaining: number; browser?: boolean };
@@ -205,6 +208,42 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
     <PlacePanel key={selected.id} item={selected} near={searchCenter(trip.items, selected.startDate)} bare={!wide} pager={pager} onClose={() => setSelectedId(null)} onChanged={replace} onRemoved={() => drop(selected.id)} />
   );
 
+  const shared = trip.access;
+  const leave = async () => {
+    if (!(await askConfirm(`Leave ${trip.title}?`, "Leave trip", `You'll lose access until ${shared?.owner || "the owner"} invites you again.`))) return;
+    try {
+      await post(`/api/journeys/${trip.id}/leave`, {});
+      writeLocation(null, null);
+      onDeleted();
+    } catch (err) {
+      setError(errorText(err, "Couldn't leave the trip."));
+    }
+  };
+  const sharedLine = shared && (
+    <p className="flex flex-wrap items-center gap-x-3 text-[13px] text-mute">
+      <span>
+        Shared by {shared.owner || "a friend"} · {shared.role === "editor" ? "you can edit" : "view only"}
+      </span>
+      <button type="button" onClick={leave} className="cursor-pointer text-charcoal hover:text-ink">
+        Leave trip
+      </button>
+    </p>
+  );
+
+  if (shared?.role === "viewer") {
+    const back = (
+      <button type="button" onClick={() => (writeLocation(null, null), onBack())} className="mb-4 inline-flex h-9 cursor-pointer items-center gap-2 text-[13px] text-charcoal hover:text-ink pointer-coarse:h-11">
+        ← All trips
+      </button>
+    );
+    return (
+      <>
+        <SharedTripView trip={publicTrip(trip)} today={today()} embedded top={back} label={`Shared by ${shared.owner || "a friend"} · view only`} />
+        <div className="mx-auto max-w-3xl">{sharedLine}</div>
+      </>
+    );
+  }
+
   const open_ = toBook(trip.items).length;
   const done = trip.tasks.filter((t) => t.done).length;
   const flightCount = trip.items.filter((i) => i.kind === "flight" && i.status !== "suggested" && i.status !== "cancelled").length;
@@ -219,7 +258,14 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
     <section className="pt-6 sm:pt-12 lg:relative lg:left-1/2 lg:-ml-[50vw] lg:w-screen lg:pt-0">
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,36%)]" style={wide && mapWidth ? { gridTemplateColumns: `minmax(0,1fr) ${mapWidth}px` } : undefined}>
         <div className="w-full lg:ml-auto lg:max-w-[860px] lg:px-6 lg:pb-24 lg:pt-8">
-          <TripCover journey={trip} onBack={() => (writeLocation(null, null), onBack())} onEdit={() => openDialog("edit")} onShare={() => openDialog("share")} onDelete={del} />
+          <TripCover
+            journey={trip}
+            onBack={() => (writeLocation(null, null), onBack())}
+            onEdit={() => openDialog("edit")}
+            onShare={shared ? undefined : () => openDialog("share")}
+            onDelete={shared ? undefined : del}
+            extra={sharedLine}
+          />
           {draft.state && (
             <div className="mt-5">
               <DraftProgress run={draft} gen={gen} />

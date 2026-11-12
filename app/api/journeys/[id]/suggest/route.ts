@@ -13,7 +13,7 @@ import { DraftItemSchema, type DraftItem, type JourneyWithItems } from "@/lib/jo
 import { MAX_NIGHTS, StaysSearchSchema } from "@/lib/stays/types";
 import { aiTokens, senderKey } from "@/lib/server/journeys";
 import { allow } from "@/lib/server/limits";
-import { tripOwner, type TripCtx } from "@/lib/server/trip-owner";
+import { tripAccess, type TripCtx } from "@/lib/server/trip-owner";
 
 // A live hotel search plus one model call; allow a couple of minutes.
 export const maxDuration = 300;
@@ -47,18 +47,18 @@ async function hotelSuggestions(j: JourneyWithItems, tastes: string, ai: { provi
 // POST /api/journeys/:id/suggest {provider, kind: "dining" | "hotels"}: replace this trip's suggestions of that kind with fresh ones.
 export function POST(req: Request, ctx: TripCtx) {
   return handle(req, "suggestions", async () => {
-    const who = await tripOwner(ctx);
+    const who = await tripAccess(ctx, "edit");
     if (who instanceof Response) return who;
     const body = SuggestSchema.parse(await readJson(req));
     const provider = body.provider as Provider;
-    if (!(await allow("journeysAi", senderKey("user", who.userId)))) return fail("That's a lot of AI calls. Try again in a few minutes.", 429);
+    if (!(await allow("journeysAi", senderKey("user", who.actorId)))) return fail("That's a lot of AI calls. Try again in a few minutes.", 429);
     const db = await getDb();
     const journey = await getJourney(db, who.userId, who.id);
     if (!journey) return fail("That trip doesn't exist.", 404);
     if (!tripDays(journey).length) return fail("Give the trip dates first.", 400);
     const tokens = await aiTokens(provider);
     if (tokens instanceof Response) return tokens;
-    const tastes = describeTastes(await getPreferences(db, who.userId));
+    const tastes = describeTastes(await getPreferences(db, who.actorId));
     const model = await resolveModel(provider, undefined, body.kind === "dining" ? "main" : "fast");
 
     let items: DraftItem[] | string;

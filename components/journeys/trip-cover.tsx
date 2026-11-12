@@ -51,7 +51,8 @@ function useCover(destination: string | null): string | null {
   return photo?.for === destination ? photo.name : null;
 }
 
-type Props = { journey: Journey; onBack: () => void; onEdit: () => void; onShare: () => void; onDelete: () => void; extra?: ReactNode };
+/** Share and Delete are the owner's: leave them out for a trip someone shared with you. */
+type Props = { journey: Journey; onBack: () => void; onEdit: () => void; onShare?: () => void; onDelete?: () => void; extra?: ReactNode };
 
 export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }: Props) {
   const photo = useCover(journey.destination);
@@ -78,12 +79,16 @@ export function TripCover({ journey, onBack, onEdit, onShare, onDelete, extra }:
         <Button size="sm" variant="quiet" onClick={onEdit}>
           <Pencil size={14} /> Edit
         </Button>
-        <Button size="sm" variant={journey.shareToken ? "ghost" : "quiet"} onClick={onShare}>
-          <Share2 size={14} /> {journey.shareToken ? "Shared" : "Share"}
-        </Button>
-        <Button size="sm" variant="quiet" onClick={onDelete} aria-label="Delete trip">
-          <Trash2 size={14} />
-        </Button>
+        {onShare && (
+          <Button size="sm" variant={journey.shareToken ? "ghost" : "quiet"} onClick={onShare}>
+            <Share2 size={14} /> {journey.shareToken ? "Shared" : "Share"}
+          </Button>
+        )}
+        {onDelete && (
+          <Button size="sm" variant="quiet" onClick={onDelete} aria-label="Delete trip">
+            <Trash2 size={14} />
+          </Button>
+        )}
       </div>
       {extra && <div className="w-full">{extra}</div>}
     </div>

@@ -87,6 +87,8 @@ export type Journey = {
   tripType: TripType | null;
   /** The secret share link's token, when sharing is on. */
   shareToken: string | null;
+  /** Set on a trip someone else shared with you: your role and the owner's name. */
+  access?: { role: "editor" | "viewer"; owner: string };
   source: Source;
   createdAt: number;
 };

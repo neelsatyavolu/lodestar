@@ -3,6 +3,7 @@ import { useState } from "react";
 import { post } from "@/lib/client";
 import { Dialog } from "../dialog";
 import { Button, Toggle } from "../ui";
+import { SharePeople } from "./share-people";
 import { errorText } from "./shared";
 
 // A read-only link for the people going: anyone with it can see the plan,
@@ -36,8 +37,10 @@ export function ShareDialog({ open, onClose, journeyId, token, onToken }: { open
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="Share this trip" width={480}>
+    <Dialog open={open} onClose={onClose} title="Share this trip" width={520}>
       <div className="space-y-4 p-5">
+        {open && <SharePeople journeyId={journeyId} />}
+        <h3 className="border-t border-hairline pt-4 text-[13px] font-medium text-ink">Link</h3>
         <p className="text-[14px] leading-relaxed text-body">Anyone with the link can see the plan: the days, what&apos;s booked and what still needs booking, the checklist and notes. Confirmation numbers, prices and the budget stay private.</p>
         <Toggle checked={Boolean(token)} onChange={(on) => !busy && set(on)} label={token ? "Link is on" : "Link is off"} />
         {url && (

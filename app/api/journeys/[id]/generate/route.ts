@@ -12,7 +12,7 @@ import { GenerateSchema, type PlanPart } from "@/lib/journeys/input";
 import { aiTokens, senderKey } from "@/lib/server/journeys";
 import { allow } from "@/lib/server/limits";
 import { addItems, addTripCost, addTripTasks, patchItem, writeNote } from "@/lib/server/plan-ops";
-import { tripOwner, type TripCtx } from "@/lib/server/trip-owner";
+import { tripAccess, type TripCtx } from "@/lib/server/trip-owner";
 
 // One model call, which can take a while on a long trip.
 export const maxDuration = 300;
@@ -57,11 +57,11 @@ async function apply(db: Db, userId: string, part: PlanPart, text: string, c: Pl
 // POST /api/journeys/:id/generate {provider, part, wishes?}: the traveller's own ChatGPT or Grok drafts one part of the plan.
 export function POST(req: Request, ctx: TripCtx) {
   return handle(req, "plan draft", async () => {
-    const who = await tripOwner(ctx);
+    const who = await tripAccess(ctx, "edit");
     if (who instanceof Response) return who;
     const body = GenerateSchema.parse(await readJson(req, 4_000));
     const provider = body.provider as Provider;
-    if (!(await allow("journeysAi", senderKey("user", who.userId)))) return fail("That's a lot of AI calls. Try again in a few minutes.", 429);
+    if (!(await allow("journeysAi", senderKey("user", who.actorId)))) return fail("That's a lot of AI calls. Try again in a few minutes.", 429);
     const db = await getDb();
     const trip = await getJourney(db, who.userId, who.id);
     if (!trip) return fail("That trip doesn't exist.", 404);
@@ -70,7 +70,7 @@ export function POST(req: Request, ctx: TripCtx) {
     const tokens = await aiTokens(provider);
     if (tokens instanceof Response) return tokens;
 
-    const c: PlanContext = { trip, tastes: describeTastes(await getPreferences(db, who.userId)), wishes: body.wishes ?? null, today: new Date().toISOString().slice(0, 10) };
+    const c: PlanContext = { trip, tastes: describeTastes(await getPreferences(db, who.actorId)), wishes: body.wishes ?? null, today: new Date().toISOString().slice(0, 10) };
     const prompt = PART_PROMPTS[body.part];
     let text: string;
     try {

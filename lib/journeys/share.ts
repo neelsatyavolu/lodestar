@@ -17,3 +17,9 @@ export function publicTrip(t: TripDetail): SharedTrip {
     });
   return { title: t.title, destination: t.destination, startDate: t.startDate, endDate: t.endDate, travelers: t.travelers, items, tasks: t.tasks, notes: t.notes };
 }
+
+/** A trip as a view-only member sees it: the full shape the trip page uses, with the private parts emptied. */
+export function viewerTrip(t: TripDetail): TripDetail {
+  const shared = publicTrip(t);
+  return { ...t, items: shared.items, costs: [], shareToken: null, source: "manual" };
+}

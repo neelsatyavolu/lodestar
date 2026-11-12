@@ -154,6 +154,8 @@ export function App() {
   // Set by Flint's pairing page link (/?connect=flint): opens Trips with the Connect Flint steps.
   const [pairFlint, setPairFlint] = useState(false);
   const pairAfterSignIn = useRef(false);
+  // An invite link (/?invite=…) opened signed out: joined right after signing in.
+  const inviteAfterSignIn = useRef<string | null>(null);
   const [form, setForm] = useState<FormState>(defaultForm);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searched, setSearched] = useState<FormState | null>(null);
@@ -253,6 +255,17 @@ export function App() {
     if (fillForm) setForm((f) => applyPreferences(f, p));
   }, []);
 
+  /** Joins the trip an invite link is for and opens it. */
+  const joinInvite = useCallback(async (token: string) => {
+    try {
+      const { journeyId } = await post<{ journeyId: string }>("/api/invites/accept", { token });
+      window.history.replaceState(null, "", `/?trip=${journeyId}`);
+      setMode("trips");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't open that invite.");
+    }
+  }, []);
+
   useEffect(() => {
     refreshAi();
     const fromUrl = formFromUrl();
@@ -281,6 +294,16 @@ export function App() {
           }
         }
         const query = new URLSearchParams(window.location.search);
+        const invite = query.get("invite");
+        if (invite) {
+          // Out of the address bar first: the token works once and shouldn't sit in history.
+          window.history.replaceState(null, "", window.location.pathname);
+          if (res.user) joinInvite(invite);
+          else {
+            inviteAfterSignIn.current = invite;
+            setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }));
+          }
+        }
         if (query.has("agents") && res.user) setAgentsOpen(true);
         if (query.has("signin") && !res.user) {
           const next = query.get("next");
@@ -301,7 +324,7 @@ export function App() {
           search(fromUrl);
         }
       });
-  }, [refreshAi, search, adoptPreferences]);
+  }, [refreshAi, search, adoptPreferences, joinInvite]);
 
   const savePreferences = async (p: Preferences): Promise<string | null> => {
     if (account) {
@@ -323,6 +346,12 @@ export function App() {
     refreshAi();
     if (afterSignIn.current) {
       window.location.assign(afterSignIn.current);
+      return;
+    }
+    if (inviteAfterSignIn.current) {
+      const token = inviteAfterSignIn.current;
+      inviteAfterSignIn.current = null;
+      joinInvite(token);
       return;
     }
     if (pairAfterSignIn.current) {

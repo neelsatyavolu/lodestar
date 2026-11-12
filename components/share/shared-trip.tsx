@@ -53,7 +53,8 @@ function Stop({ item }: { item: Item }) {
   );
 }
 
-export function SharedTripView({ trip, today }: { trip: SharedTrip; today: string }) {
+/** `embedded`: inside the app (under its header) for someone the trip was shared with view-only; `label` replaces the "shared from Lodestar" line. */
+export function SharedTripView({ trip, today, embedded = false, label, top }: { trip: SharedTrip; today: string; embedded?: boolean; label?: string; top?: React.ReactNode }) {
   const runs = nights(trip);
   const open = toBook(trip.items);
   const booked = bookings(trip.items);
@@ -67,14 +68,15 @@ export function SharedTripView({ trip, today }: { trip: SharedTrip; today: strin
   ];
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-24 sm:px-6">
-      <header className="pt-12 sm:pt-16">
-        <p className="text-[13px] text-mute">A trip shared from Lodestar · read only</p>
+    <main className={`mx-auto w-full max-w-3xl flex-1 pb-24 ${embedded ? "" : "px-4 sm:px-6"}`}>
+      <header className={embedded ? "pt-6" : "pt-12 sm:pt-16"}>
+        {top}
+        <p className="text-[13px] text-mute">{label ?? "A trip shared from Lodestar · read only"}</p>
         <h1 className="mt-3 font-display text-[clamp(34px,6vw,52px)] leading-tight text-ink">{trip.title}</h1>
         <p className="mt-2 text-[16px] text-body">{[trip.destination, span(trip.startDate, trip.endDate), trip.travelers ? `${trip.travelers} ${trip.travelers === 1 ? "traveller" : "travellers"}` : null].filter(Boolean).join(" · ")}</p>
       </header>
 
-      <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 mt-8 flex gap-1 overflow-x-auto border-b border-hairline bg-canvas px-4 py-2 sm:-mx-6 sm:px-6">
+      <nav aria-label="Sections" className={`sticky ${embedded ? "top-16" : "top-0"} z-10 -mx-4 mt-8 flex gap-1 overflow-x-auto border-b border-hairline bg-canvas px-4 py-2 sm:-mx-6 sm:px-6`}>
         {nav.map(([id, label]) => (
           <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full px-3 py-2 text-[13px] text-mute hover:bg-hover hover:text-ink">
             {label}

@@ -6,7 +6,7 @@ import { IsoDate } from "@/lib/journeys/types";
 import { osrmLegs } from "@/lib/places/osrm";
 import type { Leg } from "@/lib/places/types";
 import { google, placesUser } from "@/lib/server/places";
-import { tripOwner, type TripCtx } from "@/lib/server/trip-owner";
+import { tripAccess, type TripCtx } from "@/lib/server/trip-owner";
 
 // Drives between the same two points barely change; keep them a while to save Routes calls.
 const cache = new Map<string, { at: number; leg: Leg | null; legs?: (Leg | null)[] }>();
@@ -16,7 +16,7 @@ const MAX_LEGS = 12;
 // GET /api/journeys/:id/legs?date=YYYY-MM-DD: drive time and distance between each pair of stops that day.
 export function GET(req: Request, ctx: TripCtx) {
   return handle(req, "drive times", async () => {
-    const who = await tripOwner(ctx);
+    const who = await tripAccess(ctx, "view");
     if (who instanceof Response) return who;
     const date = IsoDate.safeParse(new URL(req.url).searchParams.get("date"));
     if (!date.success) return fail("Pick a day.", 400);
