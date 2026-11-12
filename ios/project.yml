@@ -28,7 +28,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: co.xanom.lodestar
         PRODUCT_NAME: Lodestar
         TARGETED_DEVICE_FAMILY: "1"
-        MARKETING_VERSION: "1.0"
+        MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Lodestar/Info.plist
@@ -61,7 +61,8 @@ targets:
           - Geist-SemiBold.ttf
           - GeistMono-Regular.ttf
           - GeistMono-Medium.ttf
-          - GeistSerif-Regular.ttf
+          - Newsreader-Regular.ttf
+          - Newsreader-Medium.ttf
         # The base URL can point at a dev server on localhost (see ARCHITECTURE.md).
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true

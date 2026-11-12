@@ -7,14 +7,17 @@ enum FontFace: String, CaseIterable {
     case sansSemibold = "Geist-SemiBold"
     case mono = "GeistMono-Regular"
     case monoMedium = "GeistMono-Medium"
-    /// Hero and section openers only, 40 pt and up.
-    case serif = "GeistSerif-Regular"
+    /// Newsreader: what people read (heroes, trip and hotel names). Has optical sizes per weight file.
+    case serif = "Newsreader-Regular"
+    case serifMedium = "Newsreader-Medium"
 }
 
-/// Blackletter type scale (docs/api-account.md 10.2). Apply with `.textStyle(_:)`, which sets
+/// Ink & Instrument type scale (~/DESIGN.md v3: Newsreader display, Geist UI, Geist Mono numbers). Apply with `.textStyle(_:)`, which sets
 /// the font (Dynamic Type aware), tracking and line spacing together.
 enum TextStyle: CaseIterable {
     case displayXXL, displayXL, display, displayLG
+    /// Newsreader 22: a hotel's or trip's name inside a card.
+    case headline
     case headingMD, headingSM, subtitle
     case bodyLG, bodyMD, bodySM
     case button, buttonSmall, chip, label, caption, hint
@@ -22,7 +25,7 @@ enum TextStyle: CaseIterable {
 
     var face: FontFace {
         switch self {
-        case .displayXXL, .displayXL, .display: .serif
+        case .displayXXL, .displayXL, .display, .headline: .serif
         case .headingMD, .headingSM, .button, .buttonSmall: .sansMedium
         case .code, .codeSmall: .mono
         default: .sans
@@ -31,10 +34,11 @@ enum TextStyle: CaseIterable {
 
     var size: CGFloat {
         switch self {
-        case .displayXXL: 96
-        case .displayXL: 72
+        case .displayXXL: 72
+        case .displayXL: 56
         case .display: 44
         case .displayLG: 48
+        case .headline: 22
         case .headingMD: 22
         case .headingSM: 18
         case .subtitle: 19
@@ -54,8 +58,9 @@ enum TextStyle: CaseIterable {
     /// Line height as a multiple of the size (CSS `line-height`).
     var lineHeight: CGFloat {
         switch self {
-        case .displayXXL, .displayXL, .display: 1.0
+        case .displayXXL, .displayXL, .display: 1.04
         case .displayLG: 1.1
+        case .headline: 1.2
         case .headingMD: 1.4
         case .headingSM: 1.35
         case .subtitle: 1.45
@@ -71,7 +76,7 @@ enum TextStyle: CaseIterable {
     /// Tracking in em.
     var trackingEm: CGFloat {
         switch self {
-        case .displayXXL, .displayXL, .display: -0.02
+        case .displayXXL, .displayXL, .display: -0.015
         case .displayLG: -0.04
         case .headingMD: -0.01
         default: 0
@@ -81,7 +86,7 @@ enum TextStyle: CaseIterable {
     var relativeTo: Font.TextStyle {
         switch self {
         case .displayXXL, .displayXL, .display, .displayLG: .largeTitle
-        case .headingMD: .title2
+        case .headingMD, .headline: .title2
         case .headingSM, .subtitle: .title3
         case .bodyLG: .body
         case .bodyMD, .bodySM, .button, .buttonSmall, .chip: .callout
@@ -115,7 +120,7 @@ private struct TextStyleModifier: ViewModifier {
 }
 
 extension View {
-    /// Applies a Blackletter type style. Numbers that line up should also get `.monospacedDigit()`.
+    /// Applies an Ink & Instrument type style. Numbers that line up should also get `.monospacedDigit()`.
     func textStyle(_ style: TextStyle) -> some View {
         modifier(TextStyleModifier(style: style))
     }
