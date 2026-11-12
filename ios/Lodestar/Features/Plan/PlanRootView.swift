@@ -124,31 +124,19 @@ private struct PlanScreen: View {
     }
 }
 
-/// Which AI is connected, with Disconnect; or the Connect button (web header pill).
+/// The Connect button while no AI is connected. Once one is, the row goes away (as the web's
+/// header badge did); disconnecting lives in Account.
 private struct PlanConnectionRow: View {
     @Environment(AppState.self) private var app
 
     var body: some View {
-        let status = app.aiStatus
-        HStack(spacing: Spacing.sm) {
-            if status.anyConnected {
-                ForEach([AIProvider.codex, .grok].filter(status.isConnected), id: \.self) { provider in
-                    Menu {
-                        Button("Disconnect \(provider.displayName)", role: .destructive) {
-                            Task { await app.disconnectAI(provider) }
-                        }
-                    } label: {
-                        Pill(text: "\(provider.displayName) connected", dot: .ok)
-                    }
-                }
-                if !(status.connected.codex && status.connected.grok) {
-                    Button("Connect another") { app.present(.connectAI) }.buttonStyle(.lodestar(.link)).textStyle(.caption)
-                }
-            } else {
+        if !app.aiStatus.anyConnected {
+            HStack(spacing: Spacing.sm) {
                 Pill(text: "No AI connected", dot: .neutral)
                 Button("Connect AI") { app.present(.connectAI) }.buttonStyle(.lodestar(.link)).textStyle(.caption)
+                    .frame(minHeight: Sizes.button)
+                Spacer()
             }
-            Spacer()
         }
     }
 }

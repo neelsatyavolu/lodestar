@@ -21,6 +21,11 @@ extension API {
             Endpoint(method: .delete, path: "/api/journeys/\(id)")
         }
 
+        /// A member (editor or viewer) stops seeing a trip someone shared with them.
+        static func leave(_ id: String) -> Endpoint<EmptyResponse> {
+            Endpoint(method: .post, path: "/api/journeys/\(id)/leave")
+        }
+
         /// Answers the stored item's id; reload the trip afterwards.
         static func addItem(journeyId: String, _ item: NewItem) -> Endpoint<CreatedID> {
             Endpoint(method: .post, path: "/api/journeys/\(journeyId)/items", body: item)
@@ -72,6 +77,11 @@ extension API {
 
         static func share(_ id: String, on: Bool) -> Endpoint<ShareResponse> {
             Endpoint(method: .post, path: "/api/journeys/\(id)/share", body: ShareRequest(on: on))
+        }
+
+        /// Live flight status per flight item (AeroDataBox, server-cached). Never fatal: on error show booked times.
+        static func flights(_ id: String) -> Endpoint<FlightsResponse> {
+            Endpoint(method: .get, path: "/api/journeys/\(id)/flights")
         }
 
         static func legs(_ id: String, date: LocalDate) -> Endpoint<LegsResponse> {

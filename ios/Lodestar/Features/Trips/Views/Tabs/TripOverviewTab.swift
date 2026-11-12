@@ -41,6 +41,7 @@ struct TripOverviewTab: View {
         return Card(title: "Reservations") {
             Button("\(booked) booked · \(model.toBook.count) to book") { model.tab = .bookings }
                 .buttonStyle(.lodestar(.link))
+            if model.journey.canEdit {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: Spacing.sm)], spacing: Spacing.sm) {
                 ForEach(choices, id: \.0) { choice, label, icon in
                     Button { present(.addItem(choice, firstDay)) } label: {
@@ -55,6 +56,7 @@ struct TripOverviewTab: View {
                     .buttonStyle(.lodestar(.ghost, small: true, fullWidth: true))
                     .accessibilityLabel("Add \(label.lowercased())")
                 }
+            }
             }
         }
     }
@@ -77,9 +79,11 @@ struct TripOverviewTab: View {
         let places = TripsPlan.placesToVisit(model.trip.items)
         VStack(alignment: .leading, spacing: Spacing.md) {
             TripsSectionHead(title: "Places to visit") {
-                Button("Suggest places") { Task { await model.suggest(.dining) } }
-                    .buttonStyle(.lodestar(.ghost, small: true, isLoading: model.drafter.suggesting == .dining))
-                    .disabled(model.drafter.isBusy || !model.canPlanMeals)
+                if model.journey.canEdit {
+                    Button("Suggest places") { Task { await model.suggest(.dining) } }
+                        .buttonStyle(.lodestar(.ghost, small: true, isLoading: model.drafter.suggesting == .dining))
+                        .disabled(model.drafter.isBusy || !model.canPlanMeals)
+                }
             }
             if places.isEmpty {
                 Text("Ideas without a time land here: places to eat and things to do you might fit in.")
@@ -126,14 +130,16 @@ struct TripsNotesCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             TripsSectionHead(title: "Notes") {
-                Menu {
-                    Button("Add a note") { present(.note(nil)) }
-                    Button("Write notes with AI") { Task { await model.draft(.notes) } }
-                } label: {
-                    Image(systemName: "ellipsis").frame(width: Sizes.button, height: Sizes.buttonSmall)
+                if model.journey.canEdit {
+                    Menu {
+                        Button("Add a note") { present(.note(nil)) }
+                        Button("Write notes with AI") { Task { await model.draft(.notes) } }
+                    } label: {
+                        Image(systemName: "ellipsis").frame(width: Sizes.button, height: Sizes.button)
+                    }
+                    .disabled(model.drafter.isBusy)
+                    .accessibilityLabel("Notes actions")
                 }
-                .disabled(model.drafter.isBusy)
-                .accessibilityLabel("Notes actions")
             }
             if model.trip.notes.isEmpty {
                 Text("Nothing written yet.").textStyle(.bodySM).foregroundStyle(Color.mute)
@@ -187,7 +193,9 @@ struct TripsLodgingCard: View {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 Text("No stay yet").textStyle(.bodyMD).foregroundStyle(Color.ink)
                 Text(dates).textStyle(.caption).foregroundStyle(Color.ash)
-                Button("Add a place to stay") { present(.addItem(.stay, run.from)) }.buttonStyle(.lodestar(.ghost, small: true))
+                if model.journey.canEdit {
+                    Button("Add a place to stay") { present(.addItem(.stay, run.from)) }.buttonStyle(.lodestar(.ghost, small: true))
+                }
             }
             .padding(Sizes.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)

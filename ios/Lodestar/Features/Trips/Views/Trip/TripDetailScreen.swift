@@ -10,6 +10,7 @@ enum TripsTripSheet: Identifiable, Hashable {
     case map
     case note(String?)
     case markBooked(String)
+    case editStop(String)
     case web(URL)
 
     var id: String {
@@ -22,6 +23,7 @@ enum TripsTripSheet: Identifiable, Hashable {
         case .map: "map"
         case .note(let id): "note-\(id ?? "new")"
         case .markBooked(let id): "booked-\(id)"
+        case .editStop(let id): "edit-stop-\(id)"
         case .web(let url): "web-\(url.absoluteString)"
         }
     }
@@ -32,6 +34,7 @@ struct TripDetailScreen: View {
     @State private var model: TripDetailModel
     @State private var sheet: TripsTripSheet?
     @State private var confirmDelete = false
+    @State private var confirmLeave = false
     @Environment(\.dismiss) private var dismiss
     private let route: TripsRoute
 
@@ -45,7 +48,7 @@ struct TripDetailScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
-                TripCoverView(model: model, present: present, delete: { confirmDelete = true })
+                TripCoverView(model: model, present: present, delete: { confirmDelete = true }, leave: { confirmLeave = true })
                 TripTabBar(model: model)
                 if let line = model.drafter.runningLine { LoadingStateView(message: line) }
                 if model.drafter.isFullDraft || model.drafter.parts.count == 5 { TripsDraftProgress(runner: model.drafter) { part in Task { await model.draft(part) } } }
@@ -76,6 +79,13 @@ struct TripDetailScreen: View {
         } message: {
             Text("Everything in it goes too: the itinerary, checklist, notes and budget.")
         }
+        .confirmationDialog("Leave \(model.journey.title)?", isPresented: $confirmLeave, titleVisibility: .visible) {
+            Button("Leave trip", role: .destructive) {
+                Task { if await model.leave() { dismiss() } }
+            }
+        } message: {
+            Text("You'll lose access until \(model.journey.access?.owner.isEmpty == false ? model.journey.access!.owner : "the owner") invites you again.")
+        }
         .onChange(of: model.isDeleted) { _, gone in if gone && model.loadError != nil { dismiss() } }
     }
 
@@ -87,6 +97,8 @@ struct TripDetailScreen: View {
         switch model.tab {
         case .overview: TripOverviewTab(model: model, present: present)
         case .itinerary: TripItineraryTab(model: model, present: present)
+        case .flights: TripFlightsTab(model: model, present: present)
+        case .hotels: TripHotelsTab(model: model, present: present)
         case .book: TripToBookTab(model: model, present: present)
         case .bookings: TripBookingsTab(model: model, present: present)
         case .budget: TripBudgetTab(model: model)
@@ -102,7 +114,7 @@ struct TripTabBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(TripsTab.allCases) { tab in
+                ForEach(model.visibleTabs) { tab in
                     Chip(title: title(tab), isOn: model.tab == tab) {
                         withAnimation(Motion.fast) { model.tab = tab }
                     }

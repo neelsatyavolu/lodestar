@@ -3,7 +3,7 @@ import Observation
 
 /// Tabs of the trip page, in the web's order.
 enum TripsTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, itinerary, book, bookings, budget, checklist
+    case overview, itinerary, flights, hotels, book, bookings, budget, checklist
 
     var id: String { rawValue }
 
@@ -11,6 +11,8 @@ enum TripsTab: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .overview: "Overview"
         case .itinerary: "Itinerary"
+        case .flights: "Flights"
+        case .hotels: "Hotels"
         case .book: "To book"
         case .bookings: "Bookings"
         case .budget: "Budget"
@@ -40,6 +42,8 @@ final class TripDetailModel {
 
     /// Drive times per day, keyed by the stops they were fetched for.
     private(set) var legs: [LocalDate: (stops: [String], legs: [StopLeg])] = [:]
+    /// Live flight status by item id (empty until loaded, or when the server has no status key).
+    private(set) var flights = FlightsResponse.empty
     let places: TripsPlaceCache
     let drafter: TripsDraftRunner
 
@@ -70,6 +74,11 @@ final class TripDetailModel {
 
     func item(_ id: String) -> TripItem? { trip.items.first { $0.id == id } }
 
+    /// A view-only member gets no budget (the server strips it) and nothing to book.
+    var visibleTabs: [TripsTab] {
+        journey.canEdit ? TripsTab.allCases : TripsTab.allCases.filter { $0 != .budget && $0 != .book }
+    }
+
     // MARK: - Loading
 
     /// `GET /api/journeys/:id`, then the locate loop once.
@@ -92,7 +101,8 @@ final class TripDetailModel {
 
     /// Pins items from email and imports: up to 6 rounds, errors ignored (as the web does).
     func locateIfNeeded(now: Date = .now) async {
-        guard !located else { return }
+        // Saving pins is a change: a view-only member leaves it to the owner.
+        guard !located, journey.canEdit else { return }
         located = true
         let ms = EpochMillis.from(now)
         guard trip.items.contains(where: { TripsPlan.needsLocation($0, now: ms) }) else { return }
@@ -121,6 +131,30 @@ final class TripDetailModel {
         legs[day]?.legs.first { $0.from == from && $0.to == to }
     }
 
+    /// Live status for the trip's flights. Status is extra: on any error the cards keep the booked times.
+    func loadFlights() async {
+        guard trip.items.contains(where: { $0.kind == .flight }) else { return }
+        do {
+            flights = try await app.api.send(API.Journeys.flights(id))
+        } catch {
+            _ = app.handle(error)  // signs out on a revoked session; the message isn't shown
+        }
+    }
+
+    /// Asks again every few minutes while a flight is close (the server caches harder further out).
+    func pollFlights() async {
+        await loadFlights()
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(4 * 60))
+            guard !Task.isCancelled else { return }
+            if TripsFlights.leavesSoon(trip.items, now: .now) { await loadFlights() }
+        }
+    }
+
+    func flightStatus(_ itemId: String) -> FlightStatus? {
+        flights.flights[itemId] ?? nil
+    }
+
     // MARK: - The trip itself
 
     /// Edit. Returns the error to show in the sheet.
@@ -131,6 +165,19 @@ final class TripDetailModel {
             return nil
         } catch {
             return app.handle(error)
+        }
+    }
+
+    /// Leaves a trip shared with you; it drops off the list like a deleted one.
+    func leave() async -> Bool {
+        do {
+            _ = try await app.api.send(API.Journeys.leave(id))
+            isDeleted = true
+            onChange?(nil)
+            return true
+        } catch {
+            self.error = app.handle(error)
+            return false
         }
     }
 
@@ -154,7 +201,7 @@ final class TripDetailModel {
             let answer = try await app.api.send(API.Journeys.share(id, on: on))
             let j = journey
             let next = Journey(id: j.id, title: j.title, destination: j.destination, startDate: j.startDate, endDate: j.endDate,
-                               travelers: j.travelers, tripType: j.tripType, shareToken: answer.token, source: j.source, createdAt: j.createdAt)
+                               travelers: j.travelers, tripType: j.tripType, shareToken: answer.token, source: j.source, createdAt: j.createdAt, access: j.access)
             adopt(TripDetail(journey: next, items: trip.items, tasks: trip.tasks, notes: trip.notes, costs: trip.costs))
         } catch {
             self.error = app.handle(error)

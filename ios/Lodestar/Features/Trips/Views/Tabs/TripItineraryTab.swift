@@ -9,7 +9,7 @@ struct TripItineraryTab: View {
         let days = model.days
         VStack(alignment: .leading, spacing: Spacing.lg) {
             SectionHeader(title: "Itinerary", detail: days.isEmpty ? nil : "Tap a stop for details. Numbers match the map.")
-            actions(hasDays: !days.isEmpty)
+            if model.journey.canEdit { actions(hasDays: !days.isEmpty) }
             if let kind = model.drafter.suggesting {
                 LoadingStateView(message: kind == .dining ? "Planning meals around your days…" : "Searching live hotel prices…")
             }

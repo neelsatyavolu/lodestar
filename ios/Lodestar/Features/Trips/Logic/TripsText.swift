@@ -111,6 +111,13 @@ enum TripsText {
         }
     }
 
+    /// A stay's row on a day (`StayRow`): "Check in 3:00 PM", "Check out 11:00 AM", or nil mid-stay.
+    static func stayLine(_ stay: TripItem, on day: LocalDate) -> String? {
+        if stay.startDate == day { return "Check in" + (stay.startTime.map { " \(ClockText.time12($0))" } ?? "") }
+        if stay.endDate == day { return "Check out" + (stay.endTime.map { " \(ClockText.time12($0))" } ?? "") }
+        return nil
+    }
+
     /// Total driving for a day: "1 hr 5 min", "36 min".
     static func driveTotal(seconds: Double) -> String {
         let total = max(1, Int((seconds / 60).rounded()))

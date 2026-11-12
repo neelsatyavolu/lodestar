@@ -145,7 +145,7 @@ struct AccountModelTests {
 
     @Test func preferencesAlwaysEncodeEveryField() throws {
         let json = try jsonObject(Preferences.default)
-        #expect(json.count == 22)
+        #expect(json.count == 23)
         #expect(json["diningBudget"] is NSNull)
         #expect(json["hotelBudget"] is NSNull)
         #expect(json["stops"] as? String == "ANY")

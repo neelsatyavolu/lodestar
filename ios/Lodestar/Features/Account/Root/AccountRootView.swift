@@ -91,7 +91,7 @@ private struct AccountSignedInView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(profile.displayName).textStyle(.display).foregroundStyle(Color.ink)
+                Text(Preferences.displayName(app.preferences.displayName, email: profile.email)).textStyle(.display).foregroundStyle(Color.ink)
                     .lineLimit(1).minimumScaleFactor(0.5)
                     .accessibilityAddTraits(.isHeader)
                 Text(profile.email).textStyle(.bodySM).foregroundStyle(Color.bodyText)

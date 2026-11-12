@@ -26,10 +26,21 @@ struct PreferencesSheet: View {
 /// Every field of the contract, in the web's section order.
 struct PreferencesForm: View {
     let draft: PreferencesDraft
+    @Environment(AppState.self) private var app
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xl) {
-            AccountFormSection(title: "Where you fly from", isFirst: true) {
+            if app.isSignedIn {
+                AccountFormSection(title: "You", isFirst: true) {
+                    LodestarField(label: "Your name", text: Binding(
+                        get: { draft.value.displayName },
+                        set: { name in draft.update { $0.displayName = String(name.prefix(60)) } }
+                    ), placeholder: app.account.map { Preferences.displayName("", email: $0.email) } ?? "",
+                       hint: "What Lodestar calls you. Leave it empty to use your email's name.",
+                       contentType: .name, autocapitalization: .words)
+                }
+            }
+            AccountFormSection(title: "Where you fly from", isFirst: !app.isSignedIn) {
                 DraftCodePicker(draft: draft, field: .homeAirports, label: "Home airports (filled in for new searches)")
             }
             AccountFormSection(title: "Airlines") { airlines }

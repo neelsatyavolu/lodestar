@@ -4,6 +4,8 @@ import Foundation
 /// object (a missing field resets to its default), so always send a complete value.
 /// Decoding is lenient: every missing or invalid field falls back to its default.
 struct Preferences: Codable, Hashable, Sendable {
+    /// What the app calls you; empty means the email's name, capitalized (`displayName(_:email:)`).
+    var displayName = ""
     var homeAirports: [String] = []
     var alliances: [Alliance] = []
     var preferredAirlines: [String] = []
@@ -33,7 +35,7 @@ struct Preferences: Codable, Hashable, Sendable {
     init() {}
 
     enum CodingKeys: String, CodingKey {
-        case homeAirports, alliances, preferredAirlines, avoidedAirlines, cabin, stops, adults, bags
+        case displayName, homeAirports, alliances, preferredAirlines, avoidedAirlines, cabin, stops, adults, bags
         case avoidRedEyes, avoidSelfTransfer, noBasicEconomy, trustedOnly, nearby, flexible, split
         case cuisines, dietary, diningBudget, interests, pace, hotelBudget, hotelPriorities
     }
@@ -44,6 +46,7 @@ struct Preferences: Codable, Hashable, Sendable {
         func read<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
             (try? c.decodeIfPresent(T.self, forKey: key)) ?? fallback
         }
+        displayName = String(read(.displayName, d.displayName).trimmingCharacters(in: .whitespaces).prefix(60))
         homeAirports = read(.homeAirports, d.homeAirports)
         alliances = read(.alliances, d.alliances).filter { $0 != .unknown }
         preferredAirlines = read(.preferredAirlines, d.preferredAirlines)
@@ -71,6 +74,7 @@ struct Preferences: Codable, Hashable, Sendable {
     /// Every key is always written; `null` for an unset dining or hotel budget.
     func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(String(displayName.trimmingCharacters(in: .whitespaces).prefix(60)), forKey: .displayName)
         try c.encode(homeAirports, forKey: .homeAirports)
         try c.encode(alliances, forKey: .alliances)
         try c.encode(preferredAirlines, forKey: .preferredAirlines)
@@ -93,6 +97,14 @@ struct Preferences: Codable, Hashable, Sendable {
         try c.encode(pace, forKey: .pace)
         try c.encode(hotelBudget, forKey: .hotelBudget)
         try c.encode(hotelPriorities, forKey: .hotelPriorities)
+    }
+
+    /// "Neel Satyavolu" as typed, else "neel.s@x.com" → "Neel.s" (`displayName` in `lib/preferences.ts`).
+    static func displayName(_ name: String, email: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        let local = email.split(separator: "@", omittingEmptySubsequences: false).first.map(String.init) ?? email
+        return local.prefix(1).uppercased() + local.dropFirst()
     }
 
     private static func known<E: LenientEnum>(_ value: E, _ fallback: E) -> E {

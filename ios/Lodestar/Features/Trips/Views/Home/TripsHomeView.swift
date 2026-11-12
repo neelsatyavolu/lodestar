@@ -77,7 +77,7 @@ struct TripsHomeView: View {
             TripsMailCard(model: model, mail: list.mail)
         }
         if !list.unfiled.isEmpty {
-            TripsUnfiledSection(model: model, items: list.unfiled, journeys: list.journeys)
+            TripsUnfiledSection(model: model, items: list.unfiled, journeys: list.journeys.filter { $0.journey.isOwned })
         }
         if list.journeys.isEmpty {
             TripsStartCards { sheet = $0 }

@@ -21,7 +21,7 @@ struct TripsStopCard: View {
                     Text(text).textStyle(.bodySM).foregroundStyle(Color.bodyText).lineLimit(3)
                 }
                 chips
-                if item.status == .suggested { ideaButtons }
+                if item.status == .suggested && model.journey.canEdit { ideaButtons }
             }
             Spacer(minLength: 0)
             photo
@@ -115,6 +115,14 @@ struct TripsItemMenu: View {
     @Binding var confirmRemove: Bool
 
     var body: some View {
+        // A view-only member changes nothing (the server answers 403).
+        if model.journey.canEdit { actions }
+    }
+
+    @ViewBuilder private var actions: some View {
+        if item.kind != .note {
+            Button { present(.editStop(item.id)) } label: { Label("Edit", systemImage: "pencil") }
+        }
         if item.status == .planned {
             if item.details.reserve == true {
                 Button("Doesn't need booking") { patch(TripsRequests.doesNotNeedBooking) }

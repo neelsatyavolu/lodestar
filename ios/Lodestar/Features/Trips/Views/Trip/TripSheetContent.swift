@@ -29,6 +29,11 @@ struct TripSheetContent: View {
         case .markBooked(let id):
             TripsMarkItemBookedSheet(model: model, itemId: id)
                 .presentationDetents([.medium])
+        case .editStop(let id):
+            if let item = model.item(id) {
+                TripsStopEditSheet(model: model, item: item)
+                    .presentationDetents([.medium, .large])
+            }
         case .web(let url):
             SafariView(url: url).ignoresSafeArea()
         }

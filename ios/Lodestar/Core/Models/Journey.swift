@@ -13,6 +13,30 @@ struct Journey: Codable, Hashable, Sendable, Identifiable {
     let shareToken: String?
     let source: RecordSource
     let createdAt: EpochMillis
+    /// Set on a trip someone else shared with you: your role and the owner's name. nil = your own trip.
+    var access: JourneyAccess? = nil
+
+    /// You can change items, checklist, notes and budget (owner or editor).
+    var canEdit: Bool { access.map { $0.role == .editor } ?? true }
+    /// Share, delete and the share link are the owner's alone.
+    var isOwned: Bool { access == nil }
+}
+
+/// Your access to a trip shared with you (`access` on `GET /api/journeys` rows and `/api/journeys/:id`).
+struct JourneyAccess: Codable, Hashable, Sendable {
+    enum Role: String, LenientEnum {
+        case editor, viewer, unknown
+        static let unknownCase = Role.unknown
+    }
+
+    let role: Role
+    let owner: String
+
+    /// "Shared by Maya · can edit".
+    var line: String {
+        let who = owner.isEmpty ? "Shared with you" : "Shared by \(owner)"
+        return "\(who) · \(role == .editor ? "can edit" : "view only")"
+    }
 }
 
 /// A trip with its items (`GET /api/journeys` list rows).

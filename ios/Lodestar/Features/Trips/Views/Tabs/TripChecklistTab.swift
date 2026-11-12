@@ -22,9 +22,11 @@ struct TripChecklistTab: View {
             if tasks.isEmpty {
                 EmptyStateView(title: "Nothing on the checklist",
                                message: "Documents, reservations to make, what to pack. Your AI can write one for this trip, or start your own below.")
-                Button(PlanPart.checklist.draftAction) { Task { await model.draft(.checklist) } }
-                    .buttonStyle(.lodestar(.ghost, small: true, isLoading: model.drafter.running == .checklist))
-                    .disabled(model.drafter.isBusy)
+                if model.journey.canEdit {
+                    Button(PlanPart.checklist.draftAction) { Task { await model.draft(.checklist) } }
+                        .buttonStyle(.lodestar(.ghost, small: true, isLoading: model.drafter.running == .checklist))
+                        .disabled(model.drafter.isBusy)
+                }
             }
             ForEach(Self.sections(tasks), id: \.self) { name in
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -32,13 +34,14 @@ struct TripChecklistTab: View {
                     ForEach(tasks.filter { $0.section == name }) { row($0) }
                 }
             }
-            addForm(sections: Self.sections(tasks))
+            if model.journey.canEdit { addForm(sections: Self.sections(tasks)) }
         }
     }
 
     private func row(_ task: TripTask) -> some View {
         HStack(spacing: Spacing.sm) {
             TripsCheckbox(isOn: task.done, label: task.title) { Task { await model.setDone(task, !task.done) } }
+                .disabled(!model.journey.canEdit)
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(task.title)
                     .textStyle(.bodySM)
@@ -50,8 +53,9 @@ struct TripChecklistTab: View {
                 }
             }
             Spacer()
-            IconButton(systemName: "trash", accessibilityLabel: "Delete \(task.title)") { Task { await model.deleteTask(task.id) } }
-                .frame(width: 32, height: 32)
+            if model.journey.canEdit {
+                IconButton(systemName: "trash", accessibilityLabel: "Delete \(task.title)") { Task { await model.deleteTask(task.id) } }
+            }
         }
     }
 
