@@ -5,6 +5,7 @@ import { AirportField } from "./airport-field";
 import { Dialog, Field } from "./dialog";
 import { DiningFields, DoingFields } from "./tastes";
 import { Button, Toggle } from "./ui";
+import { XanomAccountRow } from "./xanom";
 
 export const CABIN_LABEL: Record<Cabin, string> = { ECONOMY: "Economy", PREMIUM_ECONOMY: "Premium economy", BUSINESS: "Business", FIRST: "First" };
 export const STOP_LABEL: Record<MaxStops, string> = { ANY: "Any", "0": "Nonstop only", "1": "1 stop or fewer", "2": "2 stops or fewer" };
@@ -26,6 +27,7 @@ export function PreferencesDialog({
   value,
   signedIn,
   email,
+  xanomEmail,
   onSave,
   onCreateAccount,
   onSignOut,
@@ -37,6 +39,8 @@ export function PreferencesDialog({
   value: Preferences;
   signedIn: boolean;
   email: string | null;
+  /** The linked Xanom account's email, or null when not linked. */
+  xanomEmail: string | null;
   /** Applies the preferences now; saves them when signed in. Resolves with an error message or null. */
   onSave: (prefs: Preferences) => Promise<string | null>;
   onCreateAccount: (prefs: Preferences) => void;
@@ -119,6 +123,11 @@ export function PreferencesDialog({
                 className="h-10 w-full rounded-md border border-hairline-hover bg-card px-3 text-[14px] text-ink outline-none placeholder:text-mute focus:border-accent max-sm:h-12"
               />
             </Field>
+          </Section>
+        )}
+        {signedIn && (
+          <Section title="Xanom account">
+            <XanomAccountRow xanomEmail={xanomEmail} />
           </Section>
         )}
         <Section title="Where you fly from">

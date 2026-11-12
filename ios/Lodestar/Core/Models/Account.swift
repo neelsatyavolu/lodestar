@@ -10,6 +10,10 @@ struct AccountProfile: Codable, Hashable, Sendable {
     let email: String
     /// Missing on login/register answers; present on `GET /api/account`.
     let createdAt: EpochMillis?
+    /// False for an account made through Xanom (no password). Present on `GET /api/account`.
+    var hasPassword: Bool?
+    /// The linked Xanom account's email, or nil when not linked. Present on `GET /api/account`.
+    var xanomEmail: String?
 
     /// The part before "@", shown on the account pill.
     var displayName: String { email.split(separator: "@").first.map(String.init) ?? email }
@@ -59,8 +63,10 @@ struct ResetRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `password` for an account that has one; `confirm: true` for one made through Xanom.
 struct DeleteAccountRequest: Codable, Hashable, Sendable {
-    let password: String
+    var password: String?
+    var confirm: Bool?
 }
 
 struct SignOutEverywhereRequest: Codable, Hashable, Sendable {
@@ -70,4 +76,27 @@ struct SignOutEverywhereRequest: Codable, Hashable, Sendable {
 /// `data` of `PUT /api/preferences`: adopt the normalized value.
 struct PreferencesResponse: Codable, Hashable, Sendable {
     let preferences: Preferences
+}
+
+/// `POST /api/xanom/ios-start`: the start link for linking or converting the signed-in account.
+struct XanomStartRequest: Codable, Hashable, Sendable {
+    let intent: String
+    let challenge: String
+}
+
+struct XanomStartResponse: Codable, Hashable, Sendable {
+    let url: URL
+}
+
+/// `POST /api/xanom/ios-exchange`: redeems the one-time ticket from `lodestar://xanom?ticket=…`.
+struct XanomExchangeRequest: Codable, Hashable, Sendable {
+    let ticket: String
+    let verifier: String
+}
+
+/// `data` of the exchange: like login, plus whether the account was just made.
+struct XanomExchangeResponse: Codable, Hashable, Sendable {
+    let user: AccountProfile
+    let preferences: Preferences
+    let created: Bool
 }

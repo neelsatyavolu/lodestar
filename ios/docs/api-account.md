@@ -530,3 +530,14 @@ Rules: serif only at 40pt and above (hero and section openers). Body weight stay
 - Color/border transitions 150 ms.
 - "rise": enter with 8pt upward offset + fade, 250 ms; stagger 40 ms in lists.
 - Honor Reduce Motion: no rise, no breathing, no transitions.
+
+---
+
+## Xanom sign-in (`lib/xanom/*`, `app/api/xanom/*`)
+
+The web backend runs the OIDC flow with accounts.xanom.co as Lodestar's confidential client. The app never sees a Xanom token.
+
+- **Sign in.** Make a random verifier (32 bytes, base64url) and its challenge (base64url SHA-256). Open `GET /api/xanom/start?platform=ios&intent=signin&ios_challenge=<challenge>` in `ASWebAuthenticationSession` (callback scheme `lodestar`, `prefersEphemeralWebBrowserSession = false`). It ends on `lodestar://xanom?ticket=<t>` or `lodestar://xanom?error=<code>`.
+- **Link / convert** (signed in). `POST /api/xanom/ios-start {intent: "link"|"convert", challenge}` returns `{url}`; open that instead. The sheet's browser doesn't have the app's cookie, so the link names the account for five minutes.
+- **Finish.** `POST /api/xanom/ios-exchange {ticket, verifier}` returns `{user, preferences, created}` and sets `ls_session`, like login. The ticket is single-use and lasts 60 s; the linking rules run here, with the app's own session for link/convert. Errors are `{ok:false, error}` sentences.
+- `GET /api/account` adds `hasPassword` (false for an account made through Xanom) and `xanomEmail` (null when not linked). `DELETE /api/account` takes `{confirm: true}` instead of `{password}` when `hasPassword` is false.

@@ -3,8 +3,10 @@ import { post } from "@/lib/client";
 import type { Preferences } from "@/lib/preferences";
 import { Dialog, Field, inputClass } from "./dialog";
 import { Button } from "./ui";
+import { ContinueWithXanom, OrDivider } from "./xanom";
 
-export type Account = { email: string };
+/** `xanomEmail` is set when the account is linked to Xanom; `hasPassword` is false for one made through Xanom. */
+export type Account = { email: string; xanomEmail?: string | null; hasPassword?: boolean };
 type Mode = "signin" | "register" | "forgot";
 
 const TITLE: Record<Mode, string> = { signin: "Sign in", register: "Create an account", forgot: "Reset your password" };
@@ -15,6 +17,8 @@ export function AccountDialog({
   onSignedIn,
   initialMode = "signin",
   pendingPreferences,
+  initialError = null,
+  xanomReturn,
 }: {
   open: boolean;
   onClose: () => void;
@@ -22,12 +26,16 @@ export function AccountDialog({
   initialMode?: Mode;
   /** Preferences set before signing up; saved with the new account. */
   pendingPreferences: Preferences;
+  /** A message to show on opening, e.g. why a Xanom sign-in failed. */
+  initialError?: string | null;
+  /** Where to land after a Xanom sign-in (it leaves the page). */
+  xanomReturn: () => string | null;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [notice, setNotice] = useState<string | null>(null);
 
   const switchTo = (m: Mode) => {
@@ -66,6 +74,12 @@ export function AccountDialog({
             An account saves your travel preferences (home airports, alliances, airlines to prefer or avoid) and applies them to every search, on any device.
           </p>
         )}
+        {mode !== "forgot" && (
+          <>
+            <ContinueWithXanom returnTo={xanomReturn} />
+            <OrDivider />
+          </>
+        )}
         <Field label="Email">
           <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
         </Field>
@@ -84,7 +98,7 @@ export function AccountDialog({
         )}
         {error && <p className="text-[13px] text-danger">{error}</p>}
         {notice && <p className="text-[13px] text-body">{notice}</p>}
-        <Button type="submit" variant="primary" disabled={busy} className="w-full">
+        <Button type="submit" variant={mode === "forgot" ? "primary" : "outline"} disabled={busy} className="w-full">
           {busy ? "One moment…" : mode === "signin" ? "Sign in" : mode === "register" ? "Create account" : "Email me a reset link"}
         </Button>
         <div className="flex flex-wrap justify-between gap-2 text-[13px]">

@@ -19,6 +19,10 @@ const schema = z.object({
   GOOGLE_PLACES_KEY: z.string().min(20).optional(),
   // AeroDataBox through RapidAPI: live flight status, gates and delays. Without it flights show their booked times only.
   AERODATABOX_KEY: z.string().min(20).optional(),
+  // Xanom sign-in (accounts.xanom.co). Without all three, "Continue with Xanom" explains it is unavailable.
+  XANOM_ISSUER: z.url().optional(),
+  XANOM_CLIENT_ID: z.string().min(1).optional(),
+  XANOM_CLIENT_SECRET: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -38,6 +42,9 @@ export function env(): Env {
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET || undefined,
     GOOGLE_PLACES_KEY: process.env.GOOGLE_PLACES_KEY || undefined,
     AERODATABOX_KEY: process.env.AERODATABOX_KEY || undefined,
+    XANOM_ISSUER: process.env.XANOM_ISSUER?.replace(/\/+$/, "") || undefined,
+    XANOM_CLIENT_ID: process.env.XANOM_CLIENT_ID || undefined,
+    XANOM_CLIENT_SECRET: process.env.XANOM_CLIENT_SECRET || undefined,
   });
   if (!parsed.success) throw new Error(`Server misconfigured: ${parsed.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
   cached = parsed.data;

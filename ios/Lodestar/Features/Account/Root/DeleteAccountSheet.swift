@@ -16,8 +16,10 @@ struct DeleteAccountSheet: View {
                 if let email = app.account?.email {
                     Text("Signed in as \(email)").textStyle(.caption).foregroundStyle(Color.ash)
                 }
-                LodestarField(label: "Password", text: $model.password, secure: true, contentType: .password,
-                              autocapitalization: .never, submitLabel: .done, onSubmit: askToConfirm)
+                if needsPassword {
+                    LodestarField(label: "Password", text: $model.password, secure: true, contentType: .password,
+                                  autocapitalization: .never, submitLabel: .done, onSubmit: askToConfirm)
+                }
                 if let error = model.error { InlineError(message: error) }
                 Button(model.isBusy ? "Deleting…" : "Delete account", action: askToConfirm)
                     .buttonStyle(.lodestar(.destructive, fullWidth: true, isLoading: model.isBusy))
@@ -32,7 +34,14 @@ struct DeleteAccountSheet: View {
         }
     }
 
+    /// An account made through Xanom has no password; the confirmation alone is enough.
+    private var needsPassword: Bool { app.account?.hasPassword != false }
+
     private func askToConfirm() {
+        guard needsPassword else {
+            confirming = true
+            return
+        }
         guard model.canSubmit else {
             Task { await delete() } // shows "Enter your password to delete your account."
             return
@@ -41,6 +50,12 @@ struct DeleteAccountSheet: View {
     }
 
     private func delete() async {
+        if !needsPassword {
+            let deleted = await model.deleteWithoutPassword(using: { try await app.deleteAccountWithoutPassword() },
+                                                            report: { error in error.isCancellation ? nil : error.userMessage })
+            if deleted || !app.isSignedIn { dismiss() }
+            return
+        }
         let deleted = await model.delete(using: { try await app.deleteAccount(password: $0) }, report: { error in
             error.isCancellation ? nil : error.userMessage
         })

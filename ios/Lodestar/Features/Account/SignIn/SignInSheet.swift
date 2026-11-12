@@ -11,6 +11,7 @@ struct SignInSheet: View {
     @Environment(AppState.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var model: AccountFormModel
+    @State private var xanom = XanomModel()
 
     init(startMode: Mode, email: String = "", resetLink: String = "") {
         self.startMode = startMode
@@ -23,8 +24,15 @@ struct SignInSheet: View {
             if model.mode == .reset {
                 ResetPasswordForm(model: model, submit: submit, onDone: { dismiss() })
             } else {
-                AccountCredentialsForm(model: model, submit: submit)
+                AccountCredentialsForm(model: model, xanom: xanom, submit: submit, continueWithXanom: continueWithXanom)
             }
+        }
+    }
+
+    /// A new account's onboarding is queued; RootView starts it once this sheet has closed.
+    private func continueWithXanom() {
+        Task {
+            if await xanom.run(.signIn, app: app) { dismiss() }
         }
     }
 
@@ -45,7 +53,9 @@ struct SignInSheet: View {
 /// Email and password fields, the error or notice, the primary button and the mode links.
 private struct AccountCredentialsForm: View {
     @Bindable var model: AccountFormModel
+    let xanom: XanomModel
     let submit: () -> Void
+    let continueWithXanom: () -> Void
     @FocusState private var focus: Field?
 
     private enum Field { case email, password }
@@ -55,6 +65,13 @@ private struct AccountCredentialsForm: View {
             if model.mode == .register {
                 Text("An account saves your travel preferences (home airports, alliances, airlines to prefer or avoid) and applies them to every search, on any device.")
                     .textStyle(.chip).foregroundStyle(Color.mute)
+            }
+            if model.mode != .forgot {
+                Button("Continue with Xanom", action: continueWithXanom)
+                    .buttonStyle(.lodestar(.primary, fullWidth: true, isLoading: xanom.busy != nil))
+                    .disabled(xanom.busy != nil || model.isBusy)
+                if let error = xanom.error { InlineError(message: error) }
+                OrWithEmail()
             }
             LodestarField(label: "Email", text: $model.email, contentType: model.mode == .register ? .emailAddress : .username,
                           keyboard: .emailAddress, autocapitalization: .never,
@@ -70,8 +87,8 @@ private struct AccountCredentialsForm: View {
             if let error = model.error { InlineError(message: error) }
             if let notice = model.notice { InlineNotice(message: notice) }
             Button(model.primaryTitle, action: submit)
-                .buttonStyle(.lodestar(.primary, fullWidth: true, isLoading: model.isBusy))
-                .disabled(model.isBusy)
+                .buttonStyle(.lodestar(model.mode == .forgot ? .primary : .outline, fullWidth: true, isLoading: model.isBusy))
+                .disabled(model.isBusy || xanom.busy != nil)
             links
         }
     }
@@ -99,5 +116,17 @@ private struct AccountCredentialsForm: View {
         }
         .textStyle(.chip)
         .frame(minHeight: Sizes.button)
+    }
+}
+
+/// The rule between "Continue with Xanom" and the email form.
+struct OrWithEmail: View {
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            Hairline()
+            Text("or with email").textStyle(.caption).foregroundStyle(Color.ash).fixedSize()
+            Hairline()
+        }
+        .accessibilityHidden(true)
     }
 }

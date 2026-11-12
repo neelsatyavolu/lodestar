@@ -14,7 +14,10 @@ export function GET(req: Request) {
     const db = userId ? await getDb() : null;
     const user = db && userId ? await getUser(db, userId) : null;
     if (!db || !user) return ok({ user: null, preferences: null });
-    return ok({ user: { email: user.email, createdAt: user.createdAt }, preferences: await getPreferences(db, user.id) });
+    return ok({
+      user: { email: user.email, createdAt: user.createdAt, hasPassword: user.passwordHash !== null, xanomEmail: user.xanomSub ? user.xanomEmail ?? user.email : null },
+      preferences: await getPreferences(db, user.id),
+    });
   });
 }
 
@@ -31,16 +34,22 @@ export function POST(req: Request) {
   });
 }
 
-// DELETE /api/account {password}: delete the account and its preferences.
+// DELETE /api/account {password} or, for an account with no password (made through Xanom),
+// {confirm: true}: delete the account and its preferences.
 export function DELETE(req: Request) {
   return handle(req, "account deletion", async () => {
     const userId = await currentUserId();
     if (!userId) return fail("Sign in first.", 401);
-    const body = z.object({ password: z.string().min(1).max(200) }).safeParse(await readJson(req));
-    if (!body.success) return fail("Enter your password to delete your account.", 400);
+    const body = z.object({ password: z.string().min(1).max(200).optional(), confirm: z.literal(true).optional() }).safeParse(await readJson(req));
     const db = await getDb();
     const user = await getUser(db, userId);
-    if (!user || !(await verifyPassword(body.data.password, user.passwordHash))) return fail("That password isn't right.", 401);
+    if (!user) return fail("Sign in first.", 401);
+    if (user.passwordHash === null) {
+      if (!body.success || body.data.confirm !== true) return fail("Confirm that you want to delete your account.", 400);
+    } else {
+      if (!body.success || !body.data.password) return fail("Enter your password to delete your account.", 400);
+      if (!(await verifyPassword(body.data.password, user.passwordHash))) return fail("That password isn't right.", 401);
+    }
     await deleteUser(db, userId);
     await clearAiSessions();
     await endSession();

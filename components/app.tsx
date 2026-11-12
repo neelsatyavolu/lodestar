@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { safeReturnPath } from "@/lib/account/return-path";
+import { xanomErrorMessage } from "@/lib/xanom/messages";
 import { ApiError, api, post } from "@/lib/client";
 import { money } from "@/lib/format";
 import { flexHack, type Hack } from "@/lib/hacks";
@@ -175,6 +176,8 @@ export function App() {
   const [agentsOpen, setAgentsOpen] = useState(false);
   // Where to go after signing in, when a page on this site (like an agent's consent screen) sent the traveller here.
   const afterSignIn = useRef<string | null>(null);
+  // Why a Xanom sign-in that came back failed, shown in the sign-in dialog.
+  const [xanomError, setXanomError] = useState<string | null>(null);
   const [onboarding, setOnboarding] = useState({ open: false, key: 0 });
   const [touring, setTouring] = useState(false);
   // Set when onboarding hands off to the AI sign-in, so the tour starts once that closes.
@@ -274,6 +277,22 @@ export function App() {
       .then((res) => {
         setAccount(res.user);
         remember(Boolean(res.user));
+        // Back from accounts.xanom.co: ?xanom=welcome|linked, or ?xanom_error=<code>.
+        const back = new URL(window.location.href);
+        const xanomDone = back.searchParams.get("xanom");
+        const xanomFailed = xanomErrorMessage(back.searchParams.get("xanom_error"));
+        if (xanomDone || xanomFailed) {
+          back.searchParams.delete("xanom");
+          back.searchParams.delete("xanom_error");
+          window.history.replaceState(null, "", `${back.pathname}${back.search}${back.hash}`);
+        }
+        if (xanomFailed && res.user) setError(xanomFailed);
+        else if (xanomFailed) {
+          setXanomError(xanomFailed);
+          setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }));
+        }
+        if (xanomDone === "welcome" && res.user) setOnboarding((o) => ({ open: true, key: o.key + 1 }));
+        if (xanomDone === "linked" && res.user) setPrefsDialog((d) => ({ open: true, key: d.key + 1 }));
         const trip = new URLSearchParams(window.location.search).get("trip");
         if (res.user && trip) {
           setFocusTrip(trip);
@@ -636,10 +655,16 @@ export function App() {
         onClose={() => {
           // Closed without signing in: a later sign-up shouldn't jump to the link that asked.
           afterSignIn.current = null;
+          setXanomError(null);
           setAccountDialog((d) => ({ ...d, open: false }));
         }}
         onSignedIn={signedIn}
         pendingPreferences={prefs}
+        initialError={xanomError}
+        xanomReturn={() =>
+          afterSignIn.current ??
+          (inviteAfterSignIn.current ? `/?invite=${encodeURIComponent(inviteAfterSignIn.current)}` : pairAfterSignIn.current ? "/?connect=flint" : null)
+        }
       />
       <PreferencesDialog
         key={`prefs-${prefsDialog.key}`}
@@ -648,6 +673,7 @@ export function App() {
         value={prefs}
         signedIn={Boolean(account)}
         email={account?.email ?? null}
+        xanomEmail={account?.xanomEmail ?? null}
         onSave={savePreferences}
         onSignOut={signOut}
         aiName={provider ? PROVIDER_NAME[provider] : null}

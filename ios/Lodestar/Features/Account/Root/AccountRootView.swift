@@ -65,7 +65,8 @@ private struct AccountSignedOutView: View {
                       paragraph: "An account saves your travel preferences (home airports, alliances, airlines to prefer or avoid) and applies them to every search, on any device.")
                 .rise()
             VStack(spacing: Spacing.sm) {
-                Button("Create account") { app.present(.register) }.buttonStyle(.lodestar(.primary, fullWidth: true))
+                ContinueWithXanomButton()
+                Button("Create account") { app.present(.register) }.buttonStyle(.lodestar(.ghost, fullWidth: true))
                 Button("Sign in") { app.present(.signIn) }.buttonStyle(.lodestar(.ghost, fullWidth: true))
             }
             VStack(alignment: .leading, spacing: 0) {
@@ -111,6 +112,7 @@ private struct AccountSignedInView: View {
                 }
             }
             .card(padding: 0)
+            AccountXanomSection(profile: profile)
             AccountAISection()
             AccountSessionSection(open: open)
         }

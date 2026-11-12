@@ -34,6 +34,22 @@ final class DeleteAccountModel {
             return false
         }
     }
+
+    /// For an account with no password (made through Xanom). True once it is gone.
+    func deleteWithoutPassword(using delete: @MainActor () async throws -> Void,
+                               report: @MainActor (any Error) -> String?) async -> Bool {
+        guard !isBusy else { return false }
+        error = nil
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            try await delete()
+            return true
+        } catch {
+            self.error = report(error)
+            return false
+        }
+    }
 }
 
 /// "Sign out of other devices" (`POST /api/account`). This device stays signed in.

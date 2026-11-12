@@ -23,7 +23,9 @@ export async function signIn(q: Queryable, input: { email: string; password: str
     await verifyPassword(input.password, DUMMY_HASH);
     return null;
   }
-  return (await verifyPassword(input.password, user.passwordHash)) ? user.id : null;
+  // An account made through Xanom has no password; it still spends the same time.
+  const ok = await verifyPassword(input.password, user.passwordHash ?? DUMMY_HASH);
+  return ok && user.passwordHash ? user.id : null;
 }
 
 const DUMMY_HASH = "scrypt$32768$8$3$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";

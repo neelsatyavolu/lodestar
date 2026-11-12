@@ -34,6 +34,10 @@ export const LIMITS = {
   oauthAuthorize: [30, 15 * MINUTE],
   oauthToken: [60, 15 * MINUTE],
   agentTokens: [20, 60 * MINUTE],
+  // Xanom sign-in: starting a flow, finishing it, and the iOS app redeeming its ticket.
+  xanomStart: [30, 15 * MINUTE],
+  xanomCallback: [30, 15 * MINUTE],
+  xanomExchange: [20, 15 * MINUTE],
 } as const;
 
 /** False once `key` has used up the named limit. */

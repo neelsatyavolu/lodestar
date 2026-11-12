@@ -20,6 +20,7 @@
     "@neelsatyavolu/shared-ai-auth": "github:neelsatyavolu/shared-ai-auth#bce03a005bee",
     "@vercel/functions": "^3.10.5",
     "geist": "^1.9.0",
+    "jose": "^6",
     "lucide-react": "^1.66.0",
     "maplibre-gl": "^6.16.0",
     "mcp-handler": "^2.3.1",

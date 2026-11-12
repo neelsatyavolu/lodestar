@@ -228,6 +228,25 @@ const STATEMENTS = [
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS journey_members_email ON journey_members (journey_id, email)`,
   `CREATE INDEX IF NOT EXISTS journey_members_user ON journey_members (user_id)`,
+  // Xanom sign-in (lib/xanom). An account made through Xanom has no password; xanom_sub is the
+  // Xanom account it is linked to, xanom_email that account's address. email_verified_at is set
+  // once Lodestar knows the address is the owner's (a finished reset, or Xanom vouching for it).
+  `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS xanom_sub text`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS xanom_email text`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at timestamptz`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS users_xanom_sub ON users (xanom_sub) WHERE xanom_sub IS NOT NULL`,
+  // The one-time tickets that hand a finished Xanom sign-in to the iOS app. Only a hash is kept.
+  `CREATE TABLE IF NOT EXISTS xanom_tickets (
+    ticket_hash text PRIMARY KEY,
+    sub text NOT NULL,
+    email text NOT NULL,
+    name text NOT NULL,
+    intent text NOT NULL,
+    user_id uuid REFERENCES users (id) ON DELETE CASCADE,
+    challenge text NOT NULL,
+    expires_at timestamptz NOT NULL
+  )`,
 ];
 
 export async function migrate(db: Queryable): Promise<void> {
