@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Db } from "../db/client";
 import { savePreferences } from "../db/preferences";
 import { getUser, findUserByEmail } from "../db/users";
-import { attachXanom, insertXanomUser, refreshXanomEmail, revokeAccess, userIdForXanomSub } from "../db/xanom";
+import { attachXanom, insertXanomUser, lockUser, refreshXanomEmail, revokeAccess, userIdForXanomSub } from "../db/xanom";
 import { DEFAULT_PREFERENCES } from "../preferences";
 import type { XanomIdentity } from "./oidc";
 import type { Intent } from "./state";
@@ -39,11 +39,12 @@ export async function linkXanom(db: Db, id: XanomIdentity, ctx: { intent: Intent
 
     if (ctx.intent !== "signin" && ctx.currentUserId) {
       if (linked) return linked === ctx.currentUserId ? done(linked) : refuse("already_linked");
+      await lockUser(tx, ctx.currentUserId);
       const me = await getUser(tx, ctx.currentUserId);
       if (!me) return refuse("signed_out");
       if (me.xanomSub) return refuse("other_xanom");
       if (ctx.intent === "convert" && me.email !== id.email) return refuse("email_mismatch");
-      await attachXanom(tx, me.id, id.sub, id.email);
+      if (!(await attachXanom(tx, me.id, id.sub, id.email))) return refuse("other_xanom");
       return done(me.id);
     }
 
@@ -52,11 +53,14 @@ export async function linkXanom(db: Db, id: XanomIdentity, ctx: { intent: Intent
       return done(linked);
     }
 
-    const sameEmail = await findUserByEmail(tx, id.email);
+    const found = await findUserByEmail(tx, id.email);
+    if (found) await lockUser(tx, found.id);
+    const sameEmail = found && (await getUser(tx, found.id));
     if (sameEmail) {
       if (sameEmail.xanomSub) return refuse("email_taken");
       if (!sameEmail.emailVerified && sameEmail.passwordHash) await revokeAccess(tx, sameEmail.id);
-      await attachXanom(tx, sameEmail.id, id.sub, id.email);
+      // Checked under the lock and again in the update: a link racing this one can't overwrite it.
+      if (!(await attachXanom(tx, sameEmail.id, id.sub, id.email))) return refuse("email_taken");
       return done(sameEmail.id);
     }
 

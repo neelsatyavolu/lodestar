@@ -35,6 +35,7 @@ export function POST(req: Request) {
     if (!linked.ok) return fail(XANOM_ERRORS[linked.reason], 409);
     await startSession(linked.userId);
     const user = await getUser(db, linked.userId);
-    return ok({ user: { email: user!.email }, preferences: await getPreferences(db, linked.userId), created: linked.created });
+    const profile = { email: user!.email, createdAt: user!.createdAt, hasPassword: user!.passwordHash !== null, xanomEmail: user!.xanomEmail ?? user!.email };
+    return ok({ user: profile, preferences: await getPreferences(db, linked.userId), created: linked.created });
   });
 }

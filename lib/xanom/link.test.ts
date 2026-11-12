@@ -80,6 +80,8 @@ describe("linking rules", () => {
     const squatter = (await register(db, { email: "ada@example.com", password: "attacker pass", now: NOW }))!;
     await createPersonalToken(db, squatter, "planted", NOW);
     await db.query("INSERT INTO ai_connections (user_id, provider, sealed, updated_at) VALUES ($1, 'codex', 'x', now())", [squatter]);
+    await db.query("INSERT INTO connector_links (id, user_id, sealed_secret, device_name, created_at) VALUES (gen_random_uuid(), $1, 'x', 'Flint', now())", [squatter]);
+    await db.query("INSERT INTO journey_inboxes (user_id, token) VALUES ($1, 'planted-token')", [squatter]);
     const versionBefore = await sessionVersionOf(db, squatter);
 
     const r = await linkXanom(db, ada, signin);
@@ -89,6 +91,8 @@ describe("linking rules", () => {
     expect(await sessionVersionOf(db, squatter)).toBe(versionBefore! + 1);
     expect(await listGrants(db, squatter)).toEqual([]);
     expect(await db.query("SELECT 1 FROM ai_connections WHERE user_id = $1", [squatter])).toEqual([]);
+    expect(await db.query("SELECT 1 FROM connector_links WHERE user_id = $1", [squatter])).toEqual([]);
+    expect(await db.query("SELECT 1 FROM journey_inboxes WHERE user_id = $1", [squatter])).toEqual([]);
     expect(await signIn(db, { email: "ada@example.com", password: "attacker pass" })).toBeNull();
   });
 
@@ -107,6 +111,15 @@ describe("linking rules", () => {
     const me = (await register(db, { email: "ada@example.com", password: "correct horse", now: NOW }))!;
     await linkXanom(db, { ...ada, sub: "xa_FIRST", email: "first@example.com" }, { intent: "link", currentUserId: me, now: NOW });
     expect(await linkXanom(db, ada, signin)).toEqual({ ok: false, reason: "email_taken" });
+  });
+
+  it("a link that lost the race to a Xanom sign-in can't overwrite it", async () => {
+    const id = (await register(db, { email: "ada@example.com", password: "attacker pass", now: NOW }))!;
+    await linkXanom(db, ada, signin);
+    // The attacker's link was checked before the sign-in attached; its update must now fail.
+    const { attachXanom } = await import("../db/xanom");
+    expect(await attachXanom(db, id, "xa_ATTACKER", "evil@example.com")).toBe(false);
+    expect((await getUser(db, id))!.xanomSub).toBe("xa_ADA");
   });
 
   it("refuses link/convert when the signed-in account no longer exists", async () => {
