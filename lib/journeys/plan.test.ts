@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookings, budget, daySummary, issues, nights, starterTasks, toBook } from "./plan";
+import { bookings, budget, daySummary, isPacking, issues, nights, starterTasks, toBook } from "./plan";
 import type { Cost, Item, TripDetail } from "./types";
 
 const item = (over: Partial<Item>): Item => ({
@@ -129,6 +129,15 @@ describe("starter checklist", () => {
     const titles = starterTasks("ski").map((t) => t.title);
     expect(titles).toContain("Book lift tickets and rentals");
     expect(starterTasks(null).length).toBeLessThan(titles.length);
+  });
+});
+
+describe("packing", () => {
+  it("is the Packing section, however it's typed", () => {
+    expect(isPacking({ section: "Packing" })).toBe(true);
+    expect(isPacking({ section: " packing " })).toBe(true);
+    expect(isPacking({ section: "Before you go" })).toBe(false);
+    expect(starterTasks("ski").filter(isPacking).map((t) => t.title)).toEqual(["Layers, goggles and gloves", "Chargers, medications and documents"]);
   });
 });
 

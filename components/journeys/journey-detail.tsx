@@ -3,14 +3,14 @@ import { api, post } from "@/lib/client";
 import { byItinerary, lookupsFor, searchCenter } from "@/lib/journeys/locate";
 import { locateWithOsm } from "@/lib/places/locate-osm";
 import { osmSearch } from "@/lib/places/osm";
-import { toBook } from "@/lib/journeys/plan";
+import { isPacking, toBook } from "@/lib/journeys/plan";
 import type { Item, TripDetail } from "@/lib/journeys/types";
 import type { Provider } from "../connect-ai";
 import { Dialog } from "../dialog";
 import { useGenerate } from "./ai-draft";
 import { BookingsTab } from "./bookings-tab";
 import { BudgetTab } from "./budget-tab";
-import { ChecklistTab } from "./checklist-tab";
+import { ChecklistTab, PackingTab } from "./checklist-tab";
 import { DraftProgress, useDraftRun } from "./draft-run";
 import { AddItemDialog, JourneyDialog } from "./forms";
 import { ItineraryTab } from "./itinerary-tab";
@@ -245,13 +245,16 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
   }
 
   const open_ = toBook(trip.items).length;
-  const done = trip.tasks.filter((t) => t.done).length;
+  const todo = trip.tasks.filter((t) => !isPacking(t));
+  const packing = trip.tasks.filter(isPacking);
+  const ratio = (ts: typeof trip.tasks) => `${ts.filter((t) => t.done).length}/${ts.length}`;
   const flightCount = trip.items.filter((i) => i.kind === "flight" && i.status !== "suggested" && i.status !== "cancelled").length;
   const stayCount = trip.items.filter((i) => i.kind === "stay" && i.status !== "suggested" && i.status !== "cancelled").length;
   const counts: Partial<Record<Tab, string>> = {
     ...(flightCount ? { flights: String(flightCount) } : {}),
     ...(stayCount ? { hotels: String(stayCount) } : {}),
-    ...(open_ ? { book: String(open_) } : {}), ...(trip.tasks.length ? { checklist: `${done}/${trip.tasks.length}` } : {}) };
+    ...(open_ ? { book: String(open_) } : {}), ...(todo.length ? { checklist: ratio(todo) } : {}),
+    ...(packing.length ? { packing: ratio(packing) } : {}) };
 
   return (
     // Wide screens break out of the page column: plan left, map right.
@@ -305,6 +308,7 @@ export function JourneyDetail({ journey, provider, onConnectAi, onBack, onChange
             {tab === "bookings" && <BookingsTab trip={trip} onOpenItem={open} onAdd={() => openDialog("add")} />}
             {tab === "budget" && <BudgetTab trip={trip} gen={gen} onOpenItem={open} onCosts={(u) => change((t) => ({ ...t, costs: u(t.costs) }))} />}
             {tab === "checklist" && <ChecklistTab trip={trip} gen={gen} onTasks={(u) => change((t) => ({ ...t, tasks: u(t.tasks) }))} />}
+            {tab === "packing" && <PackingTab trip={trip} onTasks={(u) => change((t) => ({ ...t, tasks: u(t.tasks) }))} />}
           </div>
           {gen.notice && !gen.running && <p className="mt-6 text-[12px] text-mute">{gen.notice}</p>}
         </div>

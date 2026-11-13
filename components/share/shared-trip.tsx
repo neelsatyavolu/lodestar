@@ -1,7 +1,7 @@
 import { BedDouble, Check, Phone, Plane, StickyNote, Ticket, TrainFront, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { addDays, day } from "@/lib/format";
-import { bookings, nights, toBook } from "@/lib/journeys/plan";
+import { bookings, isPacking, nights, toBook } from "@/lib/journeys/plan";
 import type { SharedTrip } from "@/lib/journeys/share";
 import type { Item, Kind } from "@/lib/journeys/types";
 import { time12 } from "../journeys/shared";
@@ -54,18 +54,39 @@ function Stop({ item }: { item: Item }) {
   );
 }
 
+function TaskList({ tasks }: { tasks: SharedTrip["tasks"] }) {
+  return (
+    <ul className="mt-2 space-y-2">
+      {tasks.map((t) => (
+        <li key={t.id} className="flex items-start gap-3 text-[14px]">
+          <span className={`mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded border ${t.done ? "border-accent bg-accent text-accent-on" : "border-hairline-strong"}`} role="img" aria-label={t.done ? "Done" : "Not done"}>
+            {t.done && <Check size={11} strokeWidth={3} />}
+          </span>
+          <span className={t.done ? "text-ash line-through" : "text-body"}>
+            {t.title}
+            {t.due && <span className="ml-2 text-[12px] text-mute">by {short(t.due)}</span>}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** `embedded`: inside the app (under its header) for someone the trip was shared with view-only; `label` replaces the "shared from Lodestar" line. */
 export function SharedTripView({ trip, today, embedded = false, label, top }: { trip: SharedTrip; today: string; embedded?: boolean; label?: string; top?: React.ReactNode }) {
   const runs = nights(trip);
   const open = toBook(trip.items);
   const booked = bookings(trip.items);
-  const sections = trip.tasks.reduce<Map<string, typeof trip.tasks>>((m, t) => m.set(t.section, [...(m.get(t.section) ?? []), t]), new Map());
+  const todo = trip.tasks.filter((t) => !isPacking(t));
+  const packing = trip.tasks.filter(isPacking);
+  const sections = todo.reduce<Map<string, typeof trip.tasks>>((m, t) => m.set(t.section, [...(m.get(t.section) ?? []), t]), new Map());
   const nav = [
     ["overview", "Overview"],
     ["itinerary", "Itinerary"],
     ...(open.length ? [["to-book", "To book"]] : []),
     ...(booked.length ? [["bookings", "Bookings"]] : []),
-    ...(trip.tasks.length ? [["checklist", "Checklist"]] : []),
+    ...(todo.length ? [["checklist", "Checklist"]] : []),
+    ...(packing.length ? [["packing", "Packing"]] : []),
   ];
 
   return (
@@ -183,28 +204,22 @@ export function SharedTripView({ trip, today, embedded = false, label, top }: { 
           </Section>
         )}
 
-        {trip.tasks.length > 0 && (
+        {todo.length > 0 && (
           <Section id="checklist" title="Checklist">
             <div className="space-y-6">
               {[...sections].map(([section, tasks]) => (
                 <div key={section}>
                   <h3 className="text-[13px] font-medium text-charcoal">{section}</h3>
-                  <ul className="mt-2 space-y-2">
-                    {tasks.map((t) => (
-                      <li key={t.id} className="flex items-start gap-3 text-[14px]">
-                        <span className={`mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded border ${t.done ? "border-accent bg-accent text-accent-on" : "border-hairline-strong"}`} role="img" aria-label={t.done ? "Done" : "Not done"}>
-                          {t.done && <Check size={11} strokeWidth={3} />}
-                        </span>
-                        <span className={t.done ? "text-ash line-through" : "text-body"}>
-                          {t.title}
-                          {t.due && <span className="ml-2 text-[12px] text-mute">by {short(t.due)}</span>}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <TaskList tasks={tasks} />
                 </div>
               ))}
             </div>
+          </Section>
+        )}
+
+        {packing.length > 0 && (
+          <Section id="packing" title="Packing">
+            <TaskList tasks={packing} />
           </Section>
         )}
       </div>

@@ -41,7 +41,8 @@ const PLANNING_GUIDE = `How a good Lodestar plan is built:
 - Booked vs planned: status "booked" only for things already reserved (put the code in confirmation and the cost in details.price). Everything else is "planned".
 - To book: a planned item that needs a reservation gets details.reserve = true and details.bookBy (the last sensible day to book), plus details.url or details.phone so the traveller can book it.
 - Budget: details.estimate for expected costs of planned items; add_cost for spending that isn't an item (gas, resort fees, tips).
-- Checklist: add_tasks for things to do before leaving (documents, packing, reservations without a date).
+- Checklist: add_tasks for things to do before leaving (documents, reservations without a date).
+- Packing list: add_tasks with section "Packing", one task per thing to bring ("Swimsuits", "Kids' car seat"). They show on the trip's Packing tab; tick one off with update_task done: true when it's packed.
 - Trip notes: set_note for context worth reading first, like "How the trip works", "Getting around" or "Dietary needs".
 Dates are YYYY-MM-DD and times HH:MM (24-hour, local to where it happens).`;
 
@@ -141,7 +142,7 @@ export const TOOLS: ToolDef[] = [
   tool({
     name: "add_tasks",
     title: "Add to the checklist",
-    description: 'Adds up to 50 checklist items. Group them with section, like "Before you go", "Packing", "Documents" or "Bookings"; due is an optional YYYY-MM-DD.',
+    description: 'Adds up to 50 checklist items. Group them with section, like "Before you go", "Documents" or "Bookings"; due is an optional YYYY-MM-DD. Section "Packing" puts items on the trip\'s packing list (its own Packing tab).',
     input: z.object({ tripId: TripId, tasks: z.array(NewTaskSchema).min(1).max(50) }),
     annotations: {},
     run: async ({ db, userId }, { tripId, tasks }) => {

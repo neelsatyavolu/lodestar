@@ -11,6 +11,7 @@ export const TABS = [
   { id: "bookings", label: "Bookings" },
   { id: "budget", label: "Budget" },
   { id: "checklist", label: "Checklist" },
+  { id: "packing", label: "Packing" },
 ] as const;
 export type Tab = (typeof TABS)[number]["id"];
 
@@ -39,7 +40,7 @@ export function writeLocation(trip: string | null, tab: Tab | null, item: string
 export function TabBar({ tab, onChange, counts }: { tab: Tab; onChange: (t: Tab) => void; counts: Partial<Record<Tab, string>> }) {
   return (
     <nav aria-label="Trip sections" className="sticky top-16 z-20 -mx-4 border-b border-hairline bg-canvas px-4 sm:-mx-0 sm:px-0">
-      <ul className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="flex gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
@@ -48,11 +49,11 @@ export function TabBar({ tab, onChange, counts }: { tab: Tab; onChange: (t: Tab)
                 type="button"
                 onClick={() => onChange(t.id)}
                 aria-current={active ? "page" : undefined}
-                className={`relative inline-flex h-11 cursor-pointer items-center gap-2 px-3 text-[14px] transition-colors duration-150 ${active ? "text-ink" : "text-mute hover:text-charcoal"}`}
+                className={`relative inline-flex h-11 cursor-pointer items-center gap-1.5 px-2.5 text-[14px] transition-colors duration-150 ${active ? "text-ink" : "text-mute hover:text-charcoal"}`}
               >
                 {t.label}
-                {counts[t.id] && <span className={`tnum rounded-full px-2 text-[12px] leading-[18px] ${active ? "bg-tint text-accent" : "bg-elevated text-mute"}`}>{counts[t.id]}</span>}
-                <span className={`absolute inset-x-3 -bottom-px h-0.5 rounded-full ${active ? "bg-accent" : "bg-transparent"}`} aria-hidden />
+                {counts[t.id] && <span className={`tnum rounded-full px-1.5 text-[12px] leading-[18px] ${active ? "bg-tint text-accent" : "bg-elevated text-mute"}`}>{counts[t.id]}</span>}
+                <span className={`absolute inset-x-2.5 -bottom-px h-0.5 rounded-full ${active ? "bg-accent" : "bg-transparent"}`} aria-hidden />
               </button>
             </li>
           );

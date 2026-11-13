@@ -1,4 +1,4 @@
-import { budget, issues, nights, toBook } from "../journeys/plan";
+import { budget, isPacking, issues, nights, toBook } from "../journeys/plan";
 import type { Item, TripDetail } from "../journeys/types";
 
 // Trips as text an agent can read at a glance. Every line that can be changed
@@ -47,7 +47,11 @@ export function describeTrip(t: TripDetail, today: string): string {
   const pending = toBook(t.items);
   if (pending.length) out.push("", "## To book", ...pending.map((i) => `- ${i.title} on ${i.startDate}${i.details.bookBy ? `, book by ${i.details.bookBy}` : ""} [item ${i.id}]`));
 
-  if (t.tasks.length) out.push("", "## Checklist", ...t.tasks.map((x) => `- [${x.done ? "x" : " "}] ${x.title}${x.due ? ` (due ${x.due})` : ""} · ${x.section} [task ${x.id}]`));
+  const taskLine = (x: TripDetail["tasks"][number]) => `- [${x.done ? "x" : " "}] ${x.title}${x.due ? ` (due ${x.due})` : ""} · ${x.section} [task ${x.id}]`;
+  const todo = t.tasks.filter((x) => !isPacking(x));
+  const packing = t.tasks.filter(isPacking);
+  if (todo.length) out.push("", "## Checklist", ...todo.map(taskLine));
+  if (packing.length) out.push("", "## Packing list", ...packing.map(taskLine));
   if (t.notes.length) out.push("", "## Notes", ...t.notes.flatMap((n) => [`### ${n.title} [note ${n.id}]`, n.body]));
 
   const b = budget(t);

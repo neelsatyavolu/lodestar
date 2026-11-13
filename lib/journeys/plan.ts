@@ -118,7 +118,10 @@ export function issues(trip: Pick<TripDetail, "startDate" | "endDate" | "items">
 export type StarterTask = { title: string; section: string };
 
 const BEFORE = "Before you go";
-const PACK = "Packing";
+export const PACK = "Packing";
+
+/** Checklist items in the Packing section, which get a tab of their own. */
+export const isPacking = (t: { section: string }): boolean => t.section.trim().toLowerCase() === PACK.toLowerCase();
 
 const BY_TYPE: Partial<Record<TripType, StarterTask[]>> = {
   beach: [{ title: "Reef-safe sunscreen and swimwear", section: PACK }],
