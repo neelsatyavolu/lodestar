@@ -51,7 +51,8 @@ describe("Trips tools", () => {
       ],
     });
     const [, spaId] = (added.data as { itemIds: string[] }).itemIds;
-    await okData("add_tasks", { tripId, tasks: [{ title: "Pack hiking boots", section: "Packing" }] });
+    await okData("add_tasks", { tripId, tasks: [{ title: "Renew passports" }] });
+    await okData("add_packing_items", { tripId, items: ["Hiking boots", "  "] });
     await okData("set_note", { tripId, title: "How the week works", body: "Rest first, one plan each morning." });
     await okData("add_cost", { tripId, label: "Gas", amount: 120, currency: "usd", category: "transport" });
 
@@ -59,7 +60,8 @@ describe("Trips tools", () => {
     expect(trip.text).toContain("## To book");
     expect(trip.text).toContain(`Resort spa on 2026-11-24, book by 2026-11-15 [item ${spaId}]`);
     expect(trip.text).toContain("### How the week works");
-    expect(trip.text).toContain("Pack hiking boots");
+    expect(trip.text).toMatch(/## Packing list\n(- .*\n)*- \[ \] Hiking boots · Packing \[task /);
+    expect(trip.text.split("## Packing list")[0]).toContain("Renew passports");
     const budget = (trip.data as { budget: { total: number; currency: string } }).budget;
     expect(budget).toMatchObject({ currency: "USD", total: 6907 + 600 + 120 });
 

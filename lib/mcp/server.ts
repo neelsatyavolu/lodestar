@@ -8,7 +8,7 @@ import { runTool, TOOLS } from "./tools";
 // Registers the Trips tools on an MCP server. The account comes from the
 // bearer token, verified by withMcpAuth before any tool runs.
 
-export const INSTRUCTIONS = `Lodestar Trips holds the traveller's trips: an itinerary by day with a map, what still needs booking, bookings, a budget, a checklist and notes. Use list_trips and get_trip to read, and get_preferences for the traveller's food taste and home airports; the create/add/update tools to plan. Build complete plans: times on items, reserve + bookBy on anything that needs a reservation, estimates for costs, a checklist and a short "How the trip works" note. Ask before deleting anything.`;
+export const INSTRUCTIONS = `Lodestar Trips holds the traveller's trips: an itinerary by day with a map, what still needs booking, bookings, a budget, a checklist, a packing list and notes. Use list_trips and get_trip to read, and get_preferences for the traveller's food taste and home airports; the create/add/update tools to plan. Build complete plans: times on items, reserve + bookBy on anything that needs a reservation, estimates for costs, a checklist, a packing list (add_packing_items) and a short "How the trip works" note. Ask before deleting anything.`;
 
 const failure = (text: string) => ({ content: [{ type: "text" as const, text }], isError: true });
 

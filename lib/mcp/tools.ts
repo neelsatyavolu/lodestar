@@ -4,7 +4,7 @@ import { listJourneys } from "../db/journeys";
 import { getPreferences } from "../db/preferences";
 import { PlanError } from "../journeys/errors";
 import { CostPatchSchema, ItemPatchSchema, JourneyPatchSchema, NewCostSchema, NewItemSchema, NewJourneySchema, NewTaskSchema, NoteSchema, TaskPatchSchema } from "../journeys/input";
-import { budget, issues, nights, toBook } from "../journeys/plan";
+import { budget, issues, nights, PACK, toBook } from "../journeys/plan";
 import {
   addItems, addTripCost, addTripTasks, createTrip, loadTrip, patchCost, patchItem, patchTask, removeCost, removeItem, removeNote, removeTask, removeTrip, updateTrip, writeNote,
 } from "../server/plan-ops";
@@ -42,7 +42,7 @@ const PLANNING_GUIDE = `How a good Lodestar plan is built:
 - To book: a planned item that needs a reservation gets details.reserve = true and details.bookBy (the last sensible day to book), plus details.url or details.phone so the traveller can book it.
 - Budget: details.estimate for expected costs of planned items; add_cost for spending that isn't an item (gas, resort fees, tips).
 - Checklist: add_tasks for things to do before leaving (documents, reservations without a date).
-- Packing list: add_tasks with section "Packing", one task per thing to bring ("Swimsuits", "Kids' car seat"). They show on the trip's Packing tab; tick one off with update_task done: true when it's packed.
+- Packing list: add_packing_items, one entry per thing to bring ("Swimsuits", "Kids' car seat"). They show on the trip's Packing tab; tick one off with update_task done: true when it's packed.
 - Trip notes: set_note for context worth reading first, like "How the trip works", "Getting around" or "Dietary needs".
 Dates are YYYY-MM-DD and times HH:MM (24-hour, local to where it happens).`;
 
@@ -64,7 +64,7 @@ export const TOOLS: ToolDef[] = [
   tool({
     name: "get_trip",
     title: "Get a trip",
-    description: "One trip in full: itinerary by day, where each night is spent, what still needs booking, the checklist, notes, the budget and anything that needs attention (missing stays, overdue bookings, clashes). Ids for every item, task, note and cost are included.",
+    description: "One trip in full: itinerary by day, where each night is spent, what still needs booking, the checklist, the packing list, notes, the budget and anything that needs attention (missing stays, overdue bookings, clashes). Ids for every item, task, note and cost are included.",
     input: z.object({ tripId: TripId }),
     annotations: { readOnlyHint: true },
     run: async ({ db, userId, today }, { tripId }) => {
@@ -151,9 +151,22 @@ export const TOOLS: ToolDef[] = [
     },
   }),
   tool({
+    name: "add_packing_items",
+    title: "Add to the packing list",
+    description: "Adds up to 80 things to bring to the trip's packing list, shown on its Packing tab: one short entry each, like \"Swimsuits\" or \"Kids' car seat\". Read the list with get_trip; tick an item off with update_task (done: true) and remove one with remove_task.",
+    input: z.object({ tripId: TripId, items: z.array(z.string().trim().max(200)).min(1).max(80).describe("What to bring, one entry per thing.") }),
+    annotations: {},
+    run: async ({ db, userId }, { tripId, items }) => {
+      const titles = items.filter(Boolean);
+      if (!titles.length) throw new PlanError("Say what to pack.", 400);
+      const added = await addTripTasks(db, userId, tripId, titles.map((title) => ({ title, due: null, section: PACK })), "agent");
+      return { text: `Added ${added.length} to the packing list:\n${added.map((t) => `- ${t.title} [task ${t.id}]`).join("\n")}`, data: { taskIds: added.map((t) => t.id) } };
+    },
+  }),
+  tool({
     name: "update_task",
     title: "Update a checklist item",
-    description: "Ticks off (done: true) or edits a checklist item.",
+    description: "Ticks off (done: true) or edits a checklist or packing list item.",
     input: z.object({ taskId: Id("task"), changes: TaskPatchSchema }),
     annotations: { idempotentHint: true },
     run: async ({ db, userId }, { taskId, changes }) => {
@@ -164,7 +177,7 @@ export const TOOLS: ToolDef[] = [
   tool({
     name: "remove_task",
     title: "Remove a checklist item",
-    description: "Removes a checklist item. To tick one off, use update_task with done: true.",
+    description: "Removes a checklist or packing list item. To tick one off, use update_task with done: true.",
     input: z.object({ taskId: Id("task") }),
     annotations: { destructiveHint: true, idempotentHint: true },
     run: async ({ db, userId }, { taskId }) => {
