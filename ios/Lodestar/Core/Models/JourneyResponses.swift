@@ -49,6 +49,30 @@ struct ShareResponse: Codable, Hashable, Sendable {
     var token: String? { url.flatMap { URL(string: $0)?.lastPathComponent } }
 }
 
+/// Someone the owner shared the trip with by email (`Member` in `lib/db/members.ts`).
+struct TripMember: Codable, Hashable, Sendable, Identifiable {
+    let id: String
+    let email: String
+    let canEdit: Bool
+    /// False until they open the invite link.
+    let joined: Bool
+    let name: String?
+
+    func with(canEdit: Bool) -> TripMember {
+        TripMember(id: id, email: email, canEdit: canEdit, joined: joined, name: name)
+    }
+}
+
+/// `data` of `GET /api/journeys/:id/members`.
+struct MembersResponse: Codable, Hashable, Sendable {
+    let members: [TripMember]
+}
+
+/// `data` of `POST /api/journeys/:id/members`.
+struct MemberResponse: Codable, Hashable, Sendable {
+    let member: TripMember
+}
+
 /// `data` of `GET /api/journeys/:id/legs`.
 struct LegsResponse: Codable, Hashable, Sendable {
     let legs: [StopLeg]

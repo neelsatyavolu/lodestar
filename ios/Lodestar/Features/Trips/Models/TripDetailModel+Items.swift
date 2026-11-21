@@ -8,6 +8,7 @@ extension TripDetailModel {
     func addItem(_ item: NewItem) async -> String? {
         do {
             _ = try await app.api.send(API.Journeys.addItem(journeyId: id, item))
+            // Saved either way: a failed reload shows its error on the page, not as a failed add.
             await reload()
             return nil
         } catch {
@@ -69,13 +70,13 @@ extension TripDetailModel {
 
     /// Optimistic, like the web: flips at once and rolls back on failure.
     func setDone(_ task: TripTask, _ done: Bool) async {
-        let before = trip.tasks
-        adopt(trip.withTasks(before.map { $0.id == task.id ? $0.with(done: done) : $0 }))
+        adopt(trip.withTasks(trip.tasks.map { $0.id == task.id ? $0.with(done: done) : $0 }))
         do {
             let saved = try await app.api.send(API.Journeys.updateTask(task.id, TaskPatch(done: done))).task
             adopt(trip.withTasks(trip.tasks.map { $0.id == saved.id ? saved : $0 }))
         } catch {
-            adopt(trip.withTasks(before))
+            // Undo only this tick: others made meanwhile may have saved.
+            adopt(trip.withTasks(trip.tasks.map { $0.id == task.id ? $0.with(done: !done) : $0 }))
             self.error = app.handle(error)
         }
     }
@@ -138,13 +139,12 @@ extension TripDetailModel {
     }
 
     func setPaid(_ cost: TripCost, _ paid: Bool) async {
-        let before = trip.costs
-        adopt(trip.withCosts(before.map { $0.id == cost.id ? $0.with(paid: paid) : $0 }))
+        adopt(trip.withCosts(trip.costs.map { $0.id == cost.id ? $0.with(paid: paid) : $0 }))
         do {
             let saved = try await app.api.send(API.Journeys.updateCost(cost.id, CostPatch(paid: paid))).cost
             adopt(trip.withCosts(trip.costs.map { $0.id == saved.id ? saved : $0 }))
         } catch {
-            adopt(trip.withCosts(before))
+            adopt(trip.withCosts(trip.costs.map { $0.id == cost.id ? $0.with(paid: !paid) : $0 }))
             self.error = app.handle(error)
         }
     }

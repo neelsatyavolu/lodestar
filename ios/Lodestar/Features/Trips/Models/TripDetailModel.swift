@@ -3,7 +3,7 @@ import Observation
 
 /// Tabs of the trip page, in the web's order.
 enum TripsTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, itinerary, flights, hotels, book, bookings, budget, checklist
+    case overview, itinerary, flights, hotels, book, bookings, budget, checklist, packing
 
     var id: String { rawValue }
 
@@ -17,6 +17,7 @@ enum TripsTab: String, CaseIterable, Identifiable, Sendable {
         case .bookings: "Bookings"
         case .budget: "Budget"
         case .checklist: "Checklist"
+        case .packing: "Packing"
         }
     }
 }
@@ -51,6 +52,8 @@ final class TripDetailModel {
     var onChange: ((TripDetail?) -> Void)?
 
     private var located = false
+    /// Bumped on every local change, so a fetch can tell it was overtaken by a write.
+    private var version = 0
 
     init(app: AppState, journey: JourneyWithItems, openTab: TripsTab = .overview) {
         self.app = app
@@ -84,9 +87,10 @@ final class TripDetailModel {
     /// `GET /api/journeys/:id`, then the locate loop once.
     func load() async {
         do {
-            adopt(try await app.api.send(API.Journeys.get(id)).journey)
+            adopt(try await fetchLatest())
             hasFullTrip = true
             loadError = nil
+            error = nil
         } catch {
             guard let message = app.handle(error) else { return }
             if (error as? APIError)?.isNotFound == true { isDeleted = true }
@@ -107,8 +111,10 @@ final class TripDetailModel {
         let ms = EpochMillis.from(now)
         guard trip.items.contains(where: { TripsPlan.needsLocation($0, now: ms) }) else { return }
         for _ in 0..<6 {
+            let startedAt = version
             guard let round = try? await app.api.send(API.Journeys.locate(id)) else { return }
-            if let journey = round.journey { adopt(trip.with(items: journey.items)) }
+            // A write since this round started is newer than its answer; the next round catches up.
+            if let journey = round.journey, version == startedAt { adopt(trip.with(items: journey.items)) }
             if round.remaining == 0 || round.settled == 0 { return }
         }
     }
@@ -211,16 +217,42 @@ final class TripDetailModel {
     // MARK: - Internal
 
     func adopt(_ next: TripDetail) {
+        version += 1
         trip = next
         onChange?(next)
+    }
+
+    /// `GET /api/journeys/:id`, fetched again if a local write landed while it was in flight
+    /// (the answer could predate that write and would undo it).
+    private func fetchLatest() async throws -> TripDetail {
+        var answer: TripDetail
+        var attempts = 0
+        repeat {
+            let startedAt = version
+            answer = try await app.api.send(API.Journeys.get(id)).journey
+            if version == startedAt { break }
+            attempts += 1
+        } while attempts < 3
+        return answer
     }
 
     func markBusy(_ itemId: String, _ busy: Bool) {
         if busy { busyItems.insert(itemId) } else { busyItems.remove(itemId) }
     }
 
-    /// Reloads after a create (items answer only an id).
-    func reload() async {
-        if let next = try? await app.api.send(API.Journeys.get(id)).journey { adopt(next) }
+    /// Reloads after a create (items answer only an id) or a pull to refresh. Returns an error to show.
+    @discardableResult
+    func reload() async -> String? {
+        do {
+            adopt(try await fetchLatest())
+            hasFullTrip = true
+            loadError = nil
+            error = nil
+            return nil
+        } catch {
+            let message = app.handle(error)
+            self.error = message
+            return message
+        }
     }
 }

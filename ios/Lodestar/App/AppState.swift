@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Tabs of the root TabView. Trips exists only when signed in (as on the web).
+/// Tabs of the root TabView. Trips is always there; signed out it asks to sign in (as on the web).
 enum AppTab: String, Hashable, Sendable {
     case search, stays, plan, trips, account
 }

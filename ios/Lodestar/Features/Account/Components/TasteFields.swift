@@ -28,7 +28,7 @@ struct TasteChipsField: View {
             .submitLabel(.done)
             .focused($otherFocused)
             .padding(.horizontal, 14)
-            .frame(width: 112, height: Sizes.chip)
+            .frame(minWidth: 112, minHeight: Sizes.chip)
             .overlay(Capsule().strokeBorder(otherFocused ? Color.accent : Color.hairlineStrong,
                                             style: StrokeStyle(lineWidth: Sizes.hairline, dash: [3, 3])))
             .onSubmit(commit)
@@ -106,7 +106,7 @@ struct DoingFields: View {
                 .keyboardType(.numberPad)
                 .focused($budgetFocused)
                 .padding(.horizontal, 14)
-                .frame(width: 160, height: Sizes.input)
+                .frame(minWidth: 160, minHeight: Sizes.input)
                 .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
                 .overlay(RoundedRectangle(cornerRadius: Radius.md)
                     .strokeBorder(budgetFocused ? Color.accent : Color.hairlineHover, lineWidth: Sizes.hairline))

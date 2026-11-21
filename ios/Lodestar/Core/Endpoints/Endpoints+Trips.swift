@@ -79,6 +79,24 @@ extension API {
             Endpoint(method: .post, path: "/api/journeys/\(id)/share", body: ShareRequest(on: on))
         }
 
+        /// Who the trip is shared with by email (owner only).
+        static func members(_ id: String) -> Endpoint<MembersResponse> {
+            Endpoint(method: .get, path: "/api/journeys/\(id)/members")
+        }
+
+        /// Emails an invite link (or a fresh one to someone already invited).
+        static func invite(_ id: String, _ body: InviteRequest) -> Endpoint<MemberResponse> {
+            Endpoint(method: .post, path: "/api/journeys/\(id)/members", body: body)
+        }
+
+        static func updateMember(_ id: String, memberId: String, canEdit: Bool) -> Endpoint<EmptyResponse> {
+            Endpoint(method: .patch, path: "/api/journeys/\(id)/members/\(memberId)", body: MemberPatch(canEdit: canEdit))
+        }
+
+        static func removeMember(_ id: String, memberId: String) -> Endpoint<EmptyResponse> {
+            Endpoint(method: .delete, path: "/api/journeys/\(id)/members/\(memberId)")
+        }
+
         /// Live flight status per flight item (AeroDataBox, server-cached). Never fatal: on error show booked times.
         static func flights(_ id: String) -> Endpoint<FlightsResponse> {
             Endpoint(method: .get, path: "/api/journeys/\(id)/flights")

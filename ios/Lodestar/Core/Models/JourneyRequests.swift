@@ -227,6 +227,17 @@ struct ShareRequest: Codable, Hashable, Sendable {
     let on: Bool
 }
 
+/// Body of `POST /api/journeys/:id/members`: invite someone by email (or resend their link).
+struct InviteRequest: Codable, Hashable, Sendable {
+    let email: String
+    let canEdit: Bool
+}
+
+/// Body of `PATCH /api/journeys/:id/members/:memberId`.
+struct MemberPatch: Codable, Hashable, Sendable {
+    let canEdit: Bool
+}
+
 /// Body of `POST /api/journeys/:id/generate`.
 struct GenerateRequest: Codable, Hashable, Sendable {
     let provider: AIProvider

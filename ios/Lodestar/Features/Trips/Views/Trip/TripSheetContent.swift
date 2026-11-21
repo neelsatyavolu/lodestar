@@ -40,7 +40,7 @@ struct TripSheetContent: View {
     }
 }
 
-/// The share link: toggle, copy, share sheet, open.
+/// The share link (toggle, copy, share sheet, open) and the people it is shared with by email.
 struct TripsShareSheet: View {
     let model: TripDetailModel
     @State private var web: WebPage?
@@ -65,6 +65,8 @@ struct TripsShareSheet: View {
                     .textStyle(.caption).foregroundStyle(Color.mute)
             }
             if let error = model.error { InlineError(message: error) }
+            Divider()
+            TripsSharePeople(app: model.app, journeyId: model.id)
         }
         .sheet(item: $web) { SafariView(url: $0.url).ignoresSafeArea() }
     }

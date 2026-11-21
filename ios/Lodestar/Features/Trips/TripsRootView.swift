@@ -8,8 +8,8 @@ struct TripsRoute: Hashable {
     var draftWishes: String?
 }
 
-/// The Trips tab. RootView shows it only when signed in; the signed-out state is still handled
-/// in case the session ends while the tab is on screen.
+/// The Trips tab. RootView always shows it, so it appears at launch with the other tabs;
+/// signed out it asks to sign in.
 struct TripsRootView: View {
     @Environment(AppState.self) private var app
 
@@ -57,7 +57,16 @@ struct TripsHomeScreen: View {
                 .navigationDestination(for: TripsRoute.self) { route in
                     if let journey = model.journey(id: route.id) {
                         TripDetailScreen(app: model.app, journey: journey, route: route) { detail in
-                            model.apply(detail, removing: detail == nil ? route.id : nil)
+                            if detail == nil {
+                                // Deleted or left: drop it once the page has popped, so the closing
+                                // page doesn't flash "That trip doesn't exist."
+                                Task {
+                                    try? await Task.sleep(for: .milliseconds(600))
+                                    model.apply(nil, removing: route.id)
+                                }
+                            } else {
+                                model.apply(detail, removing: nil)
+                            }
                         }
                     } else {
                         ErrorStateView(message: "That trip doesn't exist.").padding(Spacing.gutter).canvasBackground()

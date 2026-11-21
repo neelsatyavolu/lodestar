@@ -5,12 +5,14 @@ struct FareWatchSection: View {
     let model: FareWatchListModel
 
     var body: some View {
-        if let error = model.loadError {
+        if let error = model.loadError, model.trips.isEmpty {
             InlineError(message: error)
         } else if !model.trips.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 SectionHeader(title: "Watching fares",
                               detail: "Shortlists saved from Plan. Lodestar checks their fares daily and emails you when an alert fires.")
+                // A failed refresh keeps the watches already on screen.
+                if let error = model.loadError { InlineError(message: error) }
                 ForEach(model.trips) { trip in
                     FareWatchCard(model: model, trip: trip).id(trip.id)
                 }
@@ -109,7 +111,7 @@ struct FareWatchCard: View {
                         .keyboardType(.numberPad)
                         .focused($targetFocused)
                         .textStyle(.bodySM)
-                        .frame(width: 96, height: 36)
+                        .frame(minWidth: 96, minHeight: 36)
                         .padding(.horizontal, Spacing.sm)
                         .background(Color.card, in: RoundedRectangle(cornerRadius: Radius.md))
                         .overlay(RoundedRectangle(cornerRadius: Radius.md).strokeBorder(Color.hairlineHover, lineWidth: Sizes.hairline))

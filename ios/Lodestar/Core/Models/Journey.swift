@@ -185,6 +185,16 @@ struct TripTask: Codable, Hashable, Sendable, Identifiable {
     let source: RecordSource
 }
 
+extension TripTask {
+    /// The checklist section that gets a tab of its own (`PACK` in `lib/journeys/plan.ts`).
+    static let packingSection = "Packing"
+
+    /// In the Packing section (any case), so it shows on the Packing tab, not the checklist.
+    var isPacking: Bool {
+        section.trimmingCharacters(in: .whitespaces).lowercased() == Self.packingSection.lowercased()
+    }
+}
+
 struct TripNote: Codable, Hashable, Sendable, Identifiable {
     let id: String
     let journeyId: String

@@ -67,6 +67,11 @@ struct TripDetailScreen: View {
             proxy.scrollTo(target, anchor: .top)
         }
         #endif
+        // During the trip, opening the itinerary lands on what's on now (or today's heading).
+        .task(id: model.tab) {
+            guard model.tab == .itinerary else { return }
+            await jumpToNow(proxy)
+        }
         }
         .canvasBackground()
         .navigationTitle(model.journey.title)
@@ -75,6 +80,8 @@ struct TripDetailScreen: View {
         // Live flight status for the Flights tab and the itinerary's flight cards alike.
         .task(id: flightSignature) { await model.pollFlights() }
         .task {
+            // Once per screen: coming back from a pushed page keeps what's here (pull to refresh reloads).
+            guard !model.hasFullTrip else { return }
             await model.load()
             if let wishes = route.draftWishes, model.drafter.parts.isEmpty {
                 await model.draftEverything(wishes: wishes)
@@ -106,8 +113,38 @@ struct TripDetailScreen: View {
             .map { "\($0.id):\($0.startDate.string):\($0.details.flightNumber ?? $0.title)" }.joined(separator: "|")
     }
 
+    /// Today's stop on now (or next), else today's heading; nothing outside the trip's days.
+    private func jumpToNow(_ proxy: ScrollViewProxy) async {
+        let today = LocalDate.today()
+        guard model.days.contains(today) else { return }
+        // Let the tab lay out first, so the anchors exist.
+        try? await Task.sleep(for: .milliseconds(350))
+        guard !Task.isCancelled else { return }
+        let now = Calendar.current.dateComponents([.hour, .minute], from: .now)
+        let clock = String(format: "%02d:%02d", now.hour ?? 0, now.minute ?? 0)
+        withAnimation(Motion.fast) {
+            proxy.scrollTo(today.string, anchor: .top)
+            // A stop folded into a flight's card has no anchor of its own; the day heading stays.
+            if let id = TripsPlan.nowStop(model.trip.items, date: today, clock: clock) {
+                proxy.scrollTo(TripsPlan.scrollID(id), anchor: .top)
+            }
+        }
+    }
+
     private func present(_ next: TripsTripSheet) {
         sheet = next
+    }
+
+    /// The checklist, notes and costs come with the full trip, not the list row: until it loads,
+    /// these tabs would claim to be empty (and offer to draft what's already there).
+    @ViewBuilder private func fullTrip(@ViewBuilder _ content: () -> some View) -> some View {
+        if model.hasFullTrip {
+            content()
+        } else if let problem = model.loadError {
+            ErrorStateView(message: problem, retry: { Task { await model.load() } })
+        } else {
+            LoadingStateView(message: "Loading…")
+        }
     }
 
     @ViewBuilder private var tabContent: some View {
@@ -119,8 +156,9 @@ struct TripDetailScreen: View {
         case .hotels: TripHotelsTab(model: model, present: present)
         case .book: TripToBookTab(model: model, present: present)
         case .bookings: TripBookingsTab(model: model, present: present)
-        case .budget: TripBudgetTab(model: model)
-        case .checklist: TripChecklistTab(model: model)
+        case .budget: fullTrip { TripBudgetTab(model: model) }
+        case .checklist: fullTrip { TripChecklistTab(model: model) }
+        case .packing: fullTrip { TripPackingTab(model: model) }
         }
     }
 }
@@ -148,11 +186,16 @@ struct TripTabBar: View {
             let n = model.toBook.count
             return n > 0 ? "\(tab.label) \(n)" : tab.label
         case .checklist:
-            let tasks = model.trip.tasks
-            return tasks.isEmpty ? tab.label : "\(tab.label) \(tasks.filter(\.done).count)/\(tasks.count)"
+            return ratio(tab, model.trip.tasks.filter { !$0.isPacking })
+        case .packing:
+            return ratio(tab, model.trip.tasks.filter(\.isPacking))
         default:
             return tab.label
         }
+    }
+
+    private func ratio(_ tab: TripsTab, _ tasks: [TripTask]) -> String {
+        tasks.isEmpty ? tab.label : "\(tab.label) \(tasks.filter(\.done).count)/\(tasks.count)"
     }
 }
 

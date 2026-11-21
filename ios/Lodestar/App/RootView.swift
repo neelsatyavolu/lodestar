@@ -17,10 +17,9 @@ struct RootView: View {
             Tab("Plan", systemImage: "sparkles", value: AppTab.plan) {
                 PlanRootView()
             }
-            if app.isSignedIn {
-                Tab("Trips", systemImage: "suitcase", value: AppTab.trips) {
-                    TripsRootView()
-                }
+            // Always present, so it shows at launch with the others; signed out it asks to sign in.
+            Tab("Trips", systemImage: "suitcase", value: AppTab.trips) {
+                TripsRootView()
             }
             Tab("Account", systemImage: "person.crop.circle", value: AppTab.account) {
                 AccountRootView()
