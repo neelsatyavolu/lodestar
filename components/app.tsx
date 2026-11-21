@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { safeReturnPath } from "@/lib/account/return-path";
 import { xanomErrorMessage } from "@/lib/xanom/messages";
 import { ApiError, api, post } from "@/lib/client";
@@ -29,7 +29,7 @@ import { DateStrip, HackCards } from "./hacks";
 import { ItineraryCard, allAirlines, type SellerCheck } from "./itinerary-card";
 import { Results } from "./results";
 import { SearchForm, defaultForm, toQuery, type FormState } from "./search-form";
-import { Button, Pill } from "./ui";
+import { Button, Pill, Spinner } from "./ui";
 
 type Mode = "search" | "stays" | "ai" | "trips";
 const MODE_LABEL: Record<Mode, string> = { search: "Search", stays: "Stays", ai: "Plan", trips: "Trips" };
@@ -126,29 +126,8 @@ function formToUrl(f: FormState): string {
   return `?${p}`;
 }
 
-/** Set while signed in, so the Trips tab shows before the account check answers. */
-const SIGNED_IN_KEY = "lodestar:signed-in";
-const readRemembered = () => {
-  try {
-    return localStorage.getItem(SIGNED_IN_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
-const noSubscribe = () => () => {};
-const remember = (on: boolean) => {
-  try {
-    if (on) localStorage.setItem(SIGNED_IN_KEY, "1");
-    else localStorage.removeItem(SIGNED_IN_KEY);
-  } catch {
-    // Storage blocked: the tab shows once the account check answers.
-  }
-};
-
 export function App() {
   const [mode, setMode] = useState<Mode>("search");
-  // Until the account check answers, trust the last visit: the Trips tab shows straight away.
-  const remembered = useSyncExternalStore(noSubscribe, readRemembered, () => false);
   const [accountChecked, setAccountChecked] = useState(false);
   // The saved trip to show in Trips, from an alert email's link or a fresh save.
   const [focusTrip, setFocusTrip] = useState<string | null>(null);
@@ -276,7 +255,6 @@ export function App() {
     api<{ user: Account | null; preferences: Preferences | null }>("/api/account")
       .then((res) => {
         setAccount(res.user);
-        remember(Boolean(res.user));
         // Back from accounts.xanom.co: ?xanom=welcome|linked, or ?xanom_error=<code>.
         const back = new URL(window.location.href);
         const xanomDone = back.searchParams.get("xanom");
@@ -360,7 +338,6 @@ export function App() {
 
   const signedIn = (a: Account, p: Preferences, created: boolean) => {
     setAccount(a);
-    remember(true);
     adoptPreferences(p, true);
     refreshAi();
     if (afterSignIn.current) {
@@ -386,7 +363,6 @@ export function App() {
   const signOut = async () => {
     await post("/api/account/logout", {}).catch(() => {});
     setAccount(null);
-    remember(false);
     setMode((m) => (m === "trips" ? "search" : m));
     adoptPreferences(DEFAULT_PREFERENCES, false);
     refreshAi();
@@ -445,9 +421,9 @@ export function App() {
             </svg>
             <span className="text-[18px] font-medium tracking-[-0.02em] max-md:sr-only">Lodestar</span>
           </Link>
-          <nav className="ml-1 inline-flex min-w-0 overflow-x-auto rounded-full bg-elevated p-1 text-[13px] [scrollbar-width:none] pointer-coarse:p-0 sm:ml-2" aria-label="Mode">
-            {((account || (remembered && !accountChecked) ? ["search", "stays", "ai", "trips"] : ["search", "stays", "ai"]) as Mode[]).map((m) => (
-              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-2 pointer-coarse:h-11 md:px-4 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
+          <nav className="inline-flex min-w-0 overflow-x-auto rounded-full bg-elevated p-1 text-[13px] [scrollbar-width:none] pointer-coarse:p-0 sm:ml-2" aria-label="Mode">
+            {(["search", "stays", "ai", "trips"] as Mode[]).map((m) => (
+              <button key={m} type="button" onClick={() => setMode(m)} aria-current={mode === m} data-tour={m} className={`h-8 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-1.5 pointer-coarse:h-11 sm:px-2 md:px-4 ${mode === m ? "bg-hover text-ink" : "text-mute hover:text-charcoal"}`}>
                 {MODE_LABEL[m]}
               </button>
             ))}
@@ -477,7 +453,7 @@ export function App() {
                 <Pill>{displayName(prefs.displayName, account.email)}</Pill>
               </button>
             ) : (
-              <Button size="sm" variant="quiet" onClick={() => setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }))}>
+              <Button size="sm" variant="quiet" className="max-sm:px-1.5" onClick={() => setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }))}>
                 Sign in
               </Button>
             )}
@@ -623,6 +599,24 @@ export function App() {
             />
           </section>
         </div>
+        {mode === "trips" && !account && (
+          <section className="pt-16 pb-12 sm:pt-24">
+            {accountChecked ? (
+              <div className="max-w-xl">
+                <h1 className="font-display text-[clamp(36px,5vw,56px)]">Your trips, day by day.</h1>
+                <p className="mt-4 text-[15px] text-charcoal">Sign in to see your trips, bookings, packing list and fare watches.</p>
+                <div className="mt-6 flex gap-2">
+                  <Button variant="primary" onClick={() => setAccountDialog((d) => ({ open: true, mode: "signin", key: d.key + 1 }))}>Sign in</Button>
+                  <Button onClick={() => setAccountDialog((d) => ({ open: true, mode: "register", key: d.key + 1 }))}>
+                    Create account
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Spinner />
+            )}
+          </section>
+        )}
         {account && mode === "trips" && (
           <Journeys
             provider={provider}
