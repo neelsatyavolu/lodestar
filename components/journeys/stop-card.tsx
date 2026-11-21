@@ -94,8 +94,9 @@ export function StopCard({ item, pin, selected, onOpen, onChanged, onRemoved }: 
   return (
     <li
       ref={ref}
+      id={`item-${item.id}`}
       onClick={onOpen}
-      className={`group relative flex cursor-pointer gap-3 rounded-xl border px-3 py-3 transition-colors duration-150 sm:px-4 ${selected ? "border-hairline-hover bg-elevated" : suggested ? "border-dashed border-hairline-strong hover:bg-hover" : "border-hairline-strong bg-card hover:border-hairline-hover"}`}
+      className={`group relative scroll-mt-32 flex cursor-pointer gap-3 rounded-xl border px-3 py-3 transition-colors duration-150 sm:px-4 ${selected ? "border-hairline-hover bg-elevated" : suggested ? "border-dashed border-hairline-strong hover:bg-hover" : "border-hairline-strong bg-card hover:border-hairline-hover"}`}
     >
       <Teardrop pin={pin} kind={item.kind} dashed={suggested} />
       {editing ? (

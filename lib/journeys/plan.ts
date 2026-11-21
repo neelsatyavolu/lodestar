@@ -161,3 +161,28 @@ export function daySummary(trip: Pick<TripDetail, "startDate" | "endDate" | "ite
     .filter((t, k, all) => all.indexOf(t) === k)
     .join(", ");
 }
+
+/** How long a stop with no end time counts as "on now" after it starts. */
+const ASSUMED_MINUTES = 90;
+const minutes = (clock: string): number => {
+  const [h, m] = clock.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+
+/**
+ * The stop to show first when the itinerary opens on `date` at `clock` (HH:MM):
+ * the one on now, else the next one today. null when nothing timed is still ahead.
+ * Stays and notes are left out; suggestions too, as they aren't the plan yet.
+ */
+export function nowStop(items: Item[], date: string, clock: string): string | null {
+  const now = minutes(clock);
+  const timed = items
+    .filter((i) => i.startDate === date && i.startTime && i.kind !== "stay" && i.kind !== "note" && i.status !== "suggested" && i.status !== "cancelled")
+    .sort((a, b) => minutes(a.startTime!) - minutes(b.startTime!));
+  const current = timed.findLast((i) => {
+    const start = minutes(i.startTime!);
+    const end = i.endTime && (i.endDate ?? i.startDate) === date ? minutes(i.endTime) : start + ASSUMED_MINUTES;
+    return start <= now && now < end;
+  });
+  return (current ?? timed.find((i) => minutes(i.startTime!) > now))?.id ?? null;
+}

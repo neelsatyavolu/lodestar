@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookings, budget, daySummary, isPacking, issues, nights, starterTasks, toBook } from "./plan";
+import { bookings, budget, daySummary, isPacking, issues, nights, nowStop, starterTasks, toBook } from "./plan";
 import type { Cost, Item, TripDetail } from "./types";
 
 const item = (over: Partial<Item>): Item => ({
@@ -152,5 +152,31 @@ describe("day summary", () => {
     expect(daySummary(t, "2026-11-21")).toBe("Fly in, Pizzeria Bianco, Penca");
     expect(daySummary(t, "2026-11-26")).toBe("Fly home");
     expect(daySummary(t, "2026-11-23")).toBe("");
+  });
+});
+
+describe("now stop", () => {
+  const day = "2027-05-02";
+  const at = (id: string, startTime: string | null, over: Partial<Item> = {}) => item({ id, kind: "activity", status: "planned", startDate: day, startTime, ...over });
+  const items = [at("museum", "09:00", { endTime: "11:00" }), at("lunch", "13:00", { kind: "dining" }), at("walk", null), at("dinner", "19:30", { kind: "dining" })];
+
+  it("picks the stop on now", () => {
+    expect(nowStop(items, day, "10:15")).toBe("museum");
+    expect(nowStop(items, day, "14:00")).toBe("lunch"); // no end time: on for 90 minutes
+  });
+
+  it("picks the next stop between stops", () => {
+    expect(nowStop(items, day, "11:30")).toBe("lunch");
+    expect(nowStop(items, day, "07:00")).toBe("museum");
+  });
+
+  it("is null once the day's timed stops are over, or on another day", () => {
+    expect(nowStop(items, day, "23:00")).toBeNull();
+    expect(nowStop(items, "2027-05-03", "10:00")).toBeNull();
+  });
+
+  it("skips suggestions, cancellations, stays and notes", () => {
+    const skip = [at("idea", "10:00", { status: "suggested" }), at("off", "10:00", { status: "cancelled" }), at("hotel", "10:00", { kind: "stay" }), at("tip", "10:00", { kind: "note" })];
+    expect(nowStop(skip, day, "10:30")).toBeNull();
   });
 });

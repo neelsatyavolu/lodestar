@@ -1,9 +1,12 @@
 import { BedDouble, Building2, CalendarDays, Map as MapIcon, Plus, UtensilsCrossed } from "lucide-react";
+import { useEffect } from "react";
+import { nowStop } from "@/lib/journeys/plan";
 import type { Item, TripDetail } from "@/lib/journeys/types";
 import { Button, Spinner } from "../ui";
 import { AiButton, AiStatus, EmptyState, TabHead, type Generator } from "./ai-draft";
 import { DaySection } from "./day-section";
 import { ItemRow } from "./item-row";
+import { today } from "./shared";
 import type { Flights } from "./use-flights";
 
 // Day by day: every stop in order with drive times, numbered like the map.
@@ -32,6 +35,7 @@ export function ItineraryTab(p: Props) {
   const hotelIdeas = trip.items.filter((i) => i.kind === "stay" && i.status === "suggested");
   const hasDates = Boolean(trip.startDate);
   const planned = trip.items.some((i) => i.kind !== "flight" && i.kind !== "stay" && i.status !== "cancelled");
+  useJumpToNow(trip, days, p.selectedId);
 
   return (
     <div className="space-y-6">
@@ -91,4 +95,24 @@ export function ItineraryTab(p: Props) {
       {trip.items.some((i) => i.kind === "dining" && i.status === "suggested") && <p className="text-[12px] text-ash">Meal ideas come from the AI&apos;s knowledge, not live listings. Check hours and book ahead.</p>}
     </div>
   );
+}
+
+/**
+ * During the trip, opening the itinerary lands on what's on now: the stop happening
+ * (or next up) today, else today's heading. Runs once per opening of the tab, and not
+ * when a stop is already open (from the address or the map).
+ */
+function useJumpToNow(trip: TripDetail, days: string[], selectedId: string | null) {
+  useEffect(() => {
+    const date = today();
+    if (selectedId || !days.includes(date)) return;
+    const clock = new Date().toTimeString().slice(0, 5);
+    const id = nowStop(trip.items, date, clock);
+    // A stop folded into a flight's card has no element of its own: fall back to the day.
+    const target = (id && document.getElementById(`item-${id}`)) || document.getElementById(`day-${date}`);
+    const frame = requestAnimationFrame(() => target?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    return () => cancelAnimationFrame(frame);
+    // Once per opening: later edits to the trip shouldn't yank the page around.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

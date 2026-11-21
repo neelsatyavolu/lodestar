@@ -103,7 +103,7 @@ export function FlightSegment({ group, v, pins, selectedId, onOpen, onChanged, o
   const sub = [v.minutes ? duration(v.minutes) : null, flight.details.guests ? `${flight.details.guests} travelers` : null, v.aircraft].filter(Boolean).join(" · ");
 
   return (
-    <li className={`overflow-hidden rounded-xl border bg-card transition-colors duration-150 ${selected ? "border-hairline-hover" : "border-hairline-strong"}`}>
+    <li id={`item-${group.flight.id}`} className={`scroll-mt-32 overflow-hidden rounded-xl border bg-card transition-colors duration-150 ${selected ? "border-hairline-hover" : "border-hairline-strong"}`}>
       <div onClick={() => onOpen(flight.id)} className="flex cursor-pointer items-center gap-3 border-b border-hairline px-3 py-3 hover:bg-hover sm:px-4">
         {v.airline ? <AirlineLogo code={v.airline} name={v.airlineName} size={28} /> : <Node pin={undefined} />}
         <div className="min-w-0 flex-1">

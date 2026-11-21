@@ -80,6 +80,35 @@ enum TripsPlan {
         days.first { $0 >= today } ?? days.first
     }
 
+    /// How long a stop with no end time counts as "on now" after it starts.
+    static let assumedMinutes = 90
+
+    /// The stop to show first when the itinerary opens on `date` at `clock` (HH:MM), as `nowStop`
+    /// in `lib/journeys/plan.ts`: the one on now, else the next one today. nil when nothing timed is
+    /// still ahead. Stays, notes, suggestions and cancellations are left out.
+    static func nowStop(_ items: [TripItem], date: LocalDate, clock: String) -> String? {
+        let now = minutes(clock)
+        let timed = items
+            .filter { $0.startDate == date && $0.startTime != nil && $0.kind != .stay && $0.kind != .note
+                && $0.status != .suggested && $0.status != .cancelled }
+            .sorted { minutes($0.startTime ?? "") < minutes($1.startTime ?? "") }
+        let current = timed.last { item in
+            let start = minutes(item.startTime ?? "")
+            let end = item.endTime.flatMap { (item.endDate ?? item.startDate) == date ? minutes($0) : nil } ?? start + assumedMinutes
+            return start <= now && now < end
+        }
+        return (current ?? timed.first { minutes($0.startTime ?? "") > now })?.id
+    }
+
+    /// The scroll anchor of a stop's card on the itinerary.
+    static func scrollID(_ itemId: String) -> String { "item-\(itemId)" }
+
+    /// "HH:MM" as minutes since midnight (0 when unreadable).
+    static func minutes(_ clock: String) -> Int {
+        let parts = clock.split(separator: ":").compactMap { Int($0) }
+        return (parts.first ?? 0) * 60 + (parts.count > 1 ? parts[1] : 0)
+    }
+
     static let locationTTL: EpochMillis = 30 * 86_400_000
     static let retryFailed: EpochMillis = 7 * 86_400_000
 

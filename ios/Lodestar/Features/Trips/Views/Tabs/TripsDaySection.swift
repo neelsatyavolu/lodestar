@@ -69,11 +69,13 @@ struct TripsDaySection: View {
             if item.kind == .flight, let group = plan.groups[item.id] {
                 TripsFlightSegment(model: model, group: group, view: TripsFlightView(group: group, status: model.flightStatus(item.id)),
                                    pins: pins, dayColor: color, present: present)
+                    .id(TripsPlan.scrollID(item.id))
                 if let leg = plan.legAfterFlight(group) { legRow(leg) }
             } else if item.kind == .note {
                 noteCard(item, inLeg: plan.noteInLeg(at: k))
             } else {
                 TripsStopCard(model: model, item: item, pin: pins[item.id], present: present)
+                    .id(TripsPlan.scrollID(item.id))
                 if let leg = plan.legAfter(item) { legRow(leg) }
             }
         }
